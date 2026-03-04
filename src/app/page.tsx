@@ -85,7 +85,7 @@ export default function Home() {
           </Link>
         </div>
         <h1 className="text-3xl font-extrabold text-stone-700 mb-1">
-          Your Quest Log
+          Dreamboard
         </h1>
         <p className="text-stone-400 text-sm">
           Total Level{" "}
