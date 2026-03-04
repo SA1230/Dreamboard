@@ -8,7 +8,7 @@ const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function TinyWaterIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 48 48" fill="none">
+    <svg width="20" height="20" viewBox="0 0 48 48" fill="none">
       <rect x="18" y="4" width="12" height="6" rx="2" fill="#3b82f6" />
       <rect x="20" y="10" width="8" height="4" fill="#60a5fa" />
       <path
@@ -28,7 +28,7 @@ function TinyWaterIcon() {
 
 function TinyNailsIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 48 48" fill="none">
+    <svg width="20" height="20" viewBox="0 0 48 48" fill="none">
       <ellipse cx="24" cy="38" rx="14" ry="8" fill="#fce7f3" stroke="#ec4899" strokeWidth="2" />
       <rect x="8" y="16" width="5" height="18" rx="2.5" fill="#fce7f3" stroke="#ec4899" strokeWidth="2" />
       <rect x="14" y="10" width="5" height="22" rx="2.5" fill="#fce7f3" stroke="#ec4899" strokeWidth="2" />
@@ -46,7 +46,7 @@ function TinyNailsIcon() {
 
 function TinyBrushIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 48 48" fill="none">
+    <svg width="20" height="20" viewBox="0 0 48 48" fill="none">
       <rect x="10" y="6" width="16" height="10" rx="3" fill="#ccfbf1" stroke="#14b8a6" strokeWidth="2" />
       {[12, 15, 18, 21, 24].map((x) => (
         <rect key={x} x={x} y="2" width="1.5" height="5" rx="0.75" fill="#14b8a6" />
@@ -58,7 +58,7 @@ function TinyBrushIcon() {
 
 function TinyNoSugarIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 48 48" fill="none">
+    <svg width="20" height="20" viewBox="0 0 48 48" fill="none">
       <circle cx="24" cy="24" r="16" fill="#fef3c7" stroke="#f59e0b" strokeWidth="2" />
       <circle cx="24" cy="24" r="6" fill="#fffbeb" stroke="#f59e0b" strokeWidth="2" />
       <circle cx="24" cy="24" r="20" fill="none" stroke="#dc2626" strokeWidth="3" />
@@ -132,7 +132,7 @@ export function MonthCalendar({
           return (
             <div
               key={day}
-              className="min-h-[120px] rounded-xl p-2.5 transition-colors duration-200"
+              className="min-h-[120px] rounded-xl p-2.5 flex flex-col transition-colors duration-200"
               style={{
                 backgroundColor: isToday
                   ? "rgba(201, 148, 62, 0.08)"
@@ -153,7 +153,7 @@ export function MonthCalendar({
 
               {/* Stat icons with XP count */}
               {statEntries.length > 0 && (
-                <div className="flex flex-wrap gap-x-1 gap-y-0.5">
+                <div className="flex flex-wrap gap-x-1.5 gap-y-1">
                   {statEntries.map(([statKey, count]) => {
                     const definition = definitions[statKey];
                     if (!definition) return null;
@@ -166,11 +166,11 @@ export function MonthCalendar({
                         <div style={{ color: definition.color }}>
                           <StatIcon
                             iconKey={definition.iconKey}
-                            className="w-3.5 h-3.5"
+                            className="w-6 h-6"
                           />
                         </div>
                         <span
-                          className="text-[9px] font-bold leading-none -ml-0.5 -mt-1.5"
+                          className="text-[11px] font-bold leading-none -ml-0.5 -mt-2"
                           style={{ color: definition.color }}
                         >
                           +{count}
@@ -183,7 +183,7 @@ export function MonthCalendar({
 
               {/* Healthy habit icons */}
               {habitsByDay[day] && habitsByDay[day].length > 0 && (
-                <div className="flex gap-0.5 mt-0.5">
+                <div className="flex gap-1 mt-auto pt-1">
                   {habitsByDay[day].includes("water") && (
                     <div title="Drank 64oz water">
                       <TinyWaterIcon />
@@ -207,12 +207,6 @@ export function MonthCalendar({
                 </div>
               )}
 
-              {/* Total XP at bottom */}
-              {totalXP > 0 && (
-                <div className="text-[9px] font-semibold text-stone-400 mt-auto pt-0.5">
-                  {totalXP} XP
-                </div>
-              )}
             </div>
           );
         })}
