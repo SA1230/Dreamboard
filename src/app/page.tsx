@@ -186,7 +186,7 @@ function LevelDisplay({
             filter: "drop-shadow(0 1px 0 rgba(120,80,30,0.4)) drop-shadow(0 2px 1px rgba(100,60,20,0.25)) drop-shadow(0 4px 3px rgba(80,50,15,0.15))",
           }}
         >
-          {level}
+          <span className="text-2xl font-bold mr-0.5" style={{ background: "inherit", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Lv.</span>{level}
         </span>
       </div>
 
