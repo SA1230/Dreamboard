@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { GameData, StatKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getTotalLevel, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals } from "@/lib/storage";
+import { loadGameData, addXP, getTotalLevel, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
 import { AddXPModal } from "@/components/AddXPModal";
 import { ActivityLog } from "@/components/ActivityLog";
@@ -38,6 +38,24 @@ export default function Home() {
   const monthlyXP = useMemo(() => {
     if (!gameData) return null;
     return getMonthlyXPTotals(gameData.activities);
+  }, [gameData]);
+
+  // Build an array of daily XP totals for the sparkline chart
+  const dailyXPForMonth = useMemo(() => {
+    if (!gameData) return [];
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const today = now.getDate();
+    const activitiesByDay = getActivitiesByDay(gameData.activities, year, month);
+
+    // Create an array from day 1 to today, summing all stat XP per day
+    return Array.from({ length: today }, (_, index) => {
+      const day = index + 1;
+      const dayStats = activitiesByDay[day];
+      if (!dayStats) return 0;
+      return Object.values(dayStats).reduce((sum, xp) => sum + (xp ?? 0), 0);
+    });
   }, [gameData]);
 
   const handleAddXP = useCallback(
@@ -108,6 +126,7 @@ export default function Home() {
       <MonthlyXPSummary
         currentMonthXP={monthlyXP.currentMonthXP}
         lastMonthXP={monthlyXP.lastMonthXP}
+        dailyXP={dailyXPForMonth}
       />
 
       {/* Stat Card Grid */}

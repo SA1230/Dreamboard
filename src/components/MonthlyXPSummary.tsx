@@ -3,9 +3,10 @@ import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 interface MonthlyXPSummaryProps {
   currentMonthXP: number;
   lastMonthXP: number;
+  dailyXP: number[];
 }
 
-export function MonthlyXPSummary({ currentMonthXP, lastMonthXP }: MonthlyXPSummaryProps) {
+export function MonthlyXPSummary({ currentMonthXP, lastMonthXP, dailyXP }: MonthlyXPSummaryProps) {
   // Calculate percentage change from last month to this month
   let percentChange = 0;
   if (lastMonthXP > 0) {
@@ -22,6 +23,12 @@ export function MonthlyXPSummary({ currentMonthXP, lastMonthXP }: MonthlyXPSumma
   const currentMonthName = now.toLocaleString("default", { month: "long" });
   const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const lastMonthName = lastMonthDate.toLocaleString("default", { month: "short" });
+
+  // Sparkline: show all days of the month, not just up to today
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const todayDate = now.getDate();
+  const maxXP = Math.max(...dailyXP, 1);
+  const chartHeight = 48;
 
   return (
     <div className="mb-8 rounded-2xl bg-stone-50 border border-stone-200 p-5">
@@ -63,6 +70,51 @@ export function MonthlyXPSummary({ currentMonthXP, lastMonthXP }: MonthlyXPSumma
           </div>
         </div>
       </div>
+
+      {/* Daily XP sparkline bar chart */}
+      {dailyXP.length > 0 && (
+        <div className="mt-4">
+          {/* Bars */}
+          <div className="flex items-end gap-[2px]" style={{ height: chartHeight }}>
+            {Array.from({ length: daysInMonth }, (_, index) => {
+              const day = index + 1;
+              const xp = dailyXP[index] ?? 0;
+              const isFutureDay = day > todayDate;
+              const isToday = day === todayDate;
+              const heightPercent = xp === 0 ? 0 : (xp / maxXP) * 100;
+
+              return (
+                <div key={day} className="flex-1 flex items-end h-full">
+                  {isFutureDay ? (
+                    <div className="w-full h-[1px] bg-stone-100 rounded-sm" />
+                  ) : xp === 0 ? (
+                    <div className="w-full h-[2px] bg-stone-200 rounded-sm" />
+                  ) : (
+                    <div
+                      className={`w-full rounded-sm ${isToday ? "bg-emerald-500" : "bg-emerald-300"}`}
+                      style={{ height: `${Math.max(heightPercent, 8)}%` }}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {/* Day labels */}
+          <div className="flex gap-[2px] mt-1">
+            {Array.from({ length: daysInMonth }, (_, index) => {
+              const day = index + 1;
+              const showLabel = day === 1 || day % 5 === 0 || day === daysInMonth;
+              return (
+                <div key={day} className="flex-1 text-center">
+                  {showLabel && (
+                    <span className="text-[9px] text-stone-300">{day}</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
