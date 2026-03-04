@@ -1,4 +1,4 @@
-import { GameData, StatKey, Activity, StatProgress, CustomStatOverride } from "./types";
+import { GameData, StatKey, HabitKey, Activity, StatProgress, CustomStatOverride } from "./types";
 import { STAT_KEYS, STAT_DEFINITIONS, StatDefinition, COLOR_PRESETS } from "./stats";
 
 const STORAGE_KEY = "dreamboard-data";
@@ -292,6 +292,39 @@ export function getMonthlyXPTotals(activities: Activity[]): {
   }
 
   return { currentMonthXP, lastMonthXP };
+}
+
+// --- Healthy Habits ---
+
+function getTodayString(): string {
+  return new Date().toISOString().split("T")[0];
+}
+
+export function isHabitCompletedToday(data: GameData, habitKey: HabitKey): boolean {
+  const dates = data.healthyHabits?.[habitKey];
+  if (!dates) return false;
+  return dates.includes(getTodayString());
+}
+
+export function toggleHabitForToday(data: GameData, habitKey: HabitKey): GameData {
+  const today = getTodayString();
+  const currentDates = data.healthyHabits?.[habitKey] ?? [];
+  const alreadyCompleted = currentDates.includes(today);
+
+  const updatedDates = alreadyCompleted
+    ? currentDates.filter((date) => date !== today)
+    : [...currentDates, today];
+
+  const newData: GameData = {
+    ...data,
+    healthyHabits: {
+      ...data.healthyHabits,
+      [habitKey]: updatedDates,
+    },
+  };
+
+  saveGameData(newData);
+  return newData;
 }
 
 export function exportGameData(data: GameData): void {
