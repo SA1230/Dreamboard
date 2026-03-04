@@ -221,6 +221,38 @@ export function getStatStreaks(activities: Activity[]): Record<StatKey, number> 
   return result;
 }
 
+// Calculate total XP earned in the current month and last month
+export function getMonthlyXPTotals(activities: Activity[]): {
+  currentMonthXP: number;
+  lastMonthXP: number;
+} {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+
+  // Calculate last month's year and month (handles January → December of previous year)
+  const lastMonthDate = new Date(currentYear, currentMonth - 1, 1);
+  const lastMonthYear = lastMonthDate.getFullYear();
+  const lastMonth = lastMonthDate.getMonth();
+
+  let currentMonthXP = 0;
+  let lastMonthXP = 0;
+
+  for (const activity of activities) {
+    const date = new Date(activity.timestamp);
+    const activityYear = date.getFullYear();
+    const activityMonth = date.getMonth();
+
+    if (activityYear === currentYear && activityMonth === currentMonth) {
+      currentMonthXP++;
+    } else if (activityYear === lastMonthYear && activityMonth === lastMonth) {
+      lastMonthXP++;
+    }
+  }
+
+  return { currentMonthXP, lastMonthXP };
+}
+
 export function exportGameData(data: GameData): void {
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: "application/json" });
