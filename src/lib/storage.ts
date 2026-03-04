@@ -151,6 +151,27 @@ export function resetCustomDefinitions(data: GameData): GameData {
   return newData;
 }
 
+// Group activities by day for a given month (year, month are 0-indexed month)
+// Returns: { dayNumber: { statKey: xpCount } } e.g. { 5: { strength: 2, wisdom: 1 } }
+export function getActivitiesByDay(
+  activities: Activity[],
+  year: number,
+  month: number
+): Record<number, Partial<Record<StatKey, number>>> {
+  const result: Record<number, Partial<Record<StatKey, number>>> = {};
+
+  for (const activity of activities) {
+    const date = new Date(activity.timestamp);
+    if (date.getFullYear() !== year || date.getMonth() !== month) continue;
+
+    const day = date.getDate();
+    if (!result[day]) result[day] = {};
+    result[day][activity.stat] = (result[day][activity.stat] ?? 0) + 1;
+  }
+
+  return result;
+}
+
 export function exportGameData(data: GameData): void {
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: "application/json" });
