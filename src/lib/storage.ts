@@ -107,14 +107,15 @@ const HELL_LEVELS = new Set([30, 35, 40, 45, 50, 55]);
 
 // XP required to advance past a given level
 function getXPRequiredForLevel(level: number): number {
-  // Base curve: starts at 3 XP, grows ~7% per level
-  const base = Math.floor(3 * Math.pow(1.07, level));
+  // Gentle quadratic curve: 5 at level 1, visibly grows each level
+  // L1→2: 5, L2→3: 8, L3→4: 12, L5→6: 20, L10→11: 42, L20→21: 102
+  const base = Math.round(0.1 * level * level + 3 * level + 2);
 
   // Level 59 is the ultimate hell level before cap
-  if (level === 59) return Math.floor(base * 2.5);
+  if (level === 59) return Math.round(base * 2.5);
 
   // Other hell levels require 1.5x XP
-  if (HELL_LEVELS.has(level)) return Math.floor(base * 1.5);
+  if (HELL_LEVELS.has(level)) return Math.round(base * 1.5);
 
   return base;
 }
