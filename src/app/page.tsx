@@ -3,10 +3,11 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { GameData, StatKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getTotalLevel, exportGameData, getEffectiveDefinitions, getStatStreaks } from "@/lib/storage";
+import { loadGameData, addXP, getTotalLevel, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
 import { AddXPModal } from "@/components/AddXPModal";
 import { ActivityLog } from "@/components/ActivityLog";
+import { MonthlyXPSummary } from "@/components/MonthlyXPSummary";
 import { Download, Settings, CalendarDays } from "lucide-react";
 import Link from "next/link";
 
@@ -33,6 +34,12 @@ export default function Home() {
     return getStatStreaks(gameData.activities);
   }, [gameData]);
 
+  // Calculate monthly XP totals for trend display
+  const monthlyXP = useMemo(() => {
+    if (!gameData) return null;
+    return getMonthlyXPTotals(gameData.activities);
+  }, [gameData]);
+
   const handleAddXP = useCallback(
     (statKey: StatKey, note: string) => {
       if (!gameData) return;
@@ -54,7 +61,7 @@ export default function Home() {
   );
 
   // Show nothing while loading from localStorage (prevents hydration flash)
-  if (!gameData || !definitions || !streaks) {
+  if (!gameData || !definitions || !streaks || !monthlyXP) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-stone-300 border-t-stone-500 animate-spin" />
@@ -96,6 +103,12 @@ export default function Home() {
           </span>
         </p>
       </header>
+
+      {/* Monthly XP Summary */}
+      <MonthlyXPSummary
+        currentMonthXP={monthlyXP.currentMonthXP}
+        lastMonthXP={monthlyXP.lastMonthXP}
+      />
 
       {/* Stat Card Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
