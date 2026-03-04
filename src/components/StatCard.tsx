@@ -26,6 +26,7 @@ interface StatCardProps {
   leveledUp: boolean;
   justGainedXP: boolean;
   streak: number;
+  isActiveThisMonth: boolean;
 }
 
 export function StatCard({
@@ -35,6 +36,7 @@ export function StatCard({
   leveledUp,
   justGainedXP,
   streak,
+  isActiveThisMonth,
 }: StatCardProps) {
   const xpNeeded = getXPForNextLevel(progress.level);
   const progressPercent = Math.min((progress.xp / xpNeeded) * 100, 100);
@@ -59,7 +61,9 @@ export function StatCard({
 
   return (
     <div
-      className="relative rounded-2xl p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
+      className={`relative rounded-2xl p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${
+        !isActiveThisMonth ? "opacity-50 saturate-[0.3]" : ""
+      }`}
       style={{ backgroundColor: definition.backgroundColor }}
     >
       {/* Level-up celebration overlay */}
@@ -108,8 +112,21 @@ export function StatCard({
       {/* Icon and stat name */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div style={{ color: definition.color }}>
-            <StatIcon iconKey={definition.iconKey} className="w-10 h-10" />
+          <div className="relative w-10 h-10">
+            {/* Empty (unfilled) icon layer */}
+            <div style={{ color: `${definition.color}30` }} className="absolute inset-0">
+              <StatIcon iconKey={definition.iconKey} className="w-10 h-10" />
+            </div>
+            {/* Filled icon layer — clips from bottom up based on XP progress */}
+            <div
+              className="absolute inset-0 transition-[clip-path] duration-700 ease-out"
+              style={{
+                color: definition.color,
+                clipPath: `inset(${100 - progressPercent}% 0 0 0)`,
+              }}
+            >
+              <StatIcon iconKey={definition.iconKey} className="w-10 h-10" />
+            </div>
           </div>
           <div>
             <h3 className="font-bold text-base" style={{ color: definition.color }}>
