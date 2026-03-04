@@ -1,5 +1,55 @@
 # CLAUDE.md
 
+## What this project is
+
+Dreamboard is a gamified personal habit tracker. Users earn XP by logging real-life activities across 8 stats (Strength, Wisdom, Vitality, Charisma, Craft, Discipline, Spirit, Wealth). Each stat levels up as XP accumulates. Think RPG character sheet for your daily life.
+
+## Tech stack
+
+- **Framework:** Next.js 15 (App Router) with React 19 and TypeScript
+- **Styling:** Tailwind CSS 4 — warm earth tones, stone backgrounds, rounded cards
+- **Icons:** lucide-react (no other UI library)
+- **Storage:** Browser localStorage only — no database, no backend, no API
+- **Charts:** None — we build visualizations with plain CSS/SVG (no recharts, no d3)
+- **Run locally:** `npm run dev` (port 3000) / `npm run build` to check for errors
+
+## Project structure
+
+```
+src/
+├── app/
+│   ├── page.tsx            # Homepage — stat cards, monthly XP summary, activity log
+│   ├── layout.tsx          # Root layout with global styles
+│   ├── globals.css         # Tailwind base + custom styles
+│   ├── calendar/           # Monthly calendar view showing daily XP breakdown
+│   └── settings/           # Customize stat names, descriptions, colors, icons
+├── components/
+│   ├── StatCard.tsx         # One card per stat (icon, name, level, XP bar, + button)
+│   ├── MonthlyXPSummary.tsx # Monthly XP total with sparkline chart + trend vs last month
+│   ├── AddXPModal.tsx       # Modal to log an activity (pick stat, add note)
+│   ├── ActivityLog.tsx      # Scrollable list of recent activities
+│   ├── MonthCalendar.tsx    # Calendar grid with per-day XP breakdown
+│   └── StatIcons.tsx        # SVG icon components for each stat
+└── lib/
+    ├── types.ts             # TypeScript types: StatKey, Activity, GameData, etc.
+    ├── stats.ts             # Stat definitions (names, colors, XP descriptions)
+    └── storage.ts           # All data logic: load/save, addXP, getActivitiesByDay, streaks, etc.
+```
+
+## Data model (defined in `src/lib/types.ts`)
+
+- **StatKey** — one of 8 strings: `"strength"`, `"wisdom"`, `"vitality"`, etc.
+- **Activity** — `{ id, stat, note, timestamp }` — one logged action = 1 XP
+- **GameData** — the root object stored in localStorage: `{ stats, activities, customDefinitions? }`
+- **Leveling:** XP thresholds grow per level. Logic lives in `storage.ts` (`addXP`, `getTotalLevel`)
+
+## Key patterns
+
+- All state flows through `GameData` loaded from localStorage on mount in `page.tsx`
+- Helper functions in `storage.ts` derive computed data (monthly totals, streaks, daily breakdowns)
+- Components receive data as props — no global state library, no context
+- Stat definitions (names, colors, icons) have defaults in `stats.ts` but can be overridden via `customDefinitions` in settings
+
 ## How to work with me
 
 1. **Explain your plan in plain English before writing any code.** Before touching a single file, tell me what you're going to do in 2-3 sentences. Say which files you'll change and why. Wait for my approval before proceeding.
