@@ -50,6 +50,14 @@ src/
 - Components receive data as props — no global state library, no context
 - Stat definitions (names, colors, icons) have defaults in `stats.ts` but can be overridden via `customDefinitions` in settings
 
+## ⚠ Using this context correctly
+
+The sections above are a **map, not the source of truth.** They may be outdated. Before making any change:
+
+1. **Always read the actual file(s) you plan to edit.** The summaries above tell you *where* to look — they don't tell you what's currently in the code.
+2. **If a task touches `storage.ts` or `page.tsx`, read the relevant functions first** — these files evolve the most and the summaries above won't capture new helpers or changed signatures.
+3. **If you're unsure whether a helper function already exists, check `storage.ts` before writing a new one.** Duplicating logic is worse than spending one tool call to read the file.
+
 ## How to work with me
 
 1. **Explain your plan in plain English before writing any code.** Before touching a single file, tell me what you're going to do in 2-3 sentences. Say which files you'll change and why. Wait for my approval before proceeding.
