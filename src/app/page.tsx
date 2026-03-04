@@ -233,6 +233,22 @@ export default function Home() {
     return getMonthlyXPTotals(gameData.activities);
   }, [gameData]);
 
+  // Determine which stats have at least one activity this month
+  const activeStatsThisMonth = useMemo(() => {
+    if (!gameData) return new Set<StatKey>();
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    const activeStats = new Set<StatKey>();
+    for (const activity of gameData.activities) {
+      const date = new Date(activity.timestamp);
+      if (date.getFullYear() === currentYear && date.getMonth() === currentMonth) {
+        activeStats.add(activity.stat);
+      }
+    }
+    return activeStats;
+  }, [gameData]);
+
   // Build an array of daily XP totals for the sparkline chart
   const dailyXPForMonth = useMemo(() => {
     if (!gameData) return [];
@@ -351,6 +367,7 @@ export default function Home() {
             leveledUp={leveledUpStat === key}
             justGainedXP={xpGainedStat === key}
             streak={streaks[key]}
+            isActiveThisMonth={activeStatsThisMonth.has(key)}
           />
         ))}
       </div>
