@@ -1,4 +1,4 @@
-import { GameData, StatKey, Activity, StatProgress, CustomStatOverride } from "./types";
+import { GameData, StatKey, HabitKey, Activity, StatProgress, CustomStatOverride } from "./types";
 import { STAT_KEYS, STAT_DEFINITIONS, StatDefinition, COLOR_PRESETS } from "./stats";
 
 const STORAGE_KEY = "dreamboard-data";
@@ -85,6 +85,7 @@ export function addXP(
   };
 
   const newData: GameData = {
+    ...data,
     stats: { ...data.stats, [statKey]: stat },
     activities: [activity, ...data.activities],
   };
@@ -292,6 +293,69 @@ export function getMonthlyXPTotals(activities: Activity[]): {
   }
 
   return { currentMonthXP, lastMonthXP };
+}
+
+// --- Healthy Habits ---
+
+function getTodayString(): string {
+  return new Date().toISOString().split("T")[0];
+}
+
+export function isHabitCompletedToday(data: GameData, habitKey: HabitKey): boolean {
+  const dates = data.healthyHabits?.[habitKey];
+  if (!dates) return false;
+  return dates.includes(getTodayString());
+}
+
+export function toggleHabitForToday(data: GameData, habitKey: HabitKey): GameData {
+  const today = getTodayString();
+  const currentDates = data.healthyHabits?.[habitKey] ?? [];
+  const alreadyCompleted = currentDates.includes(today);
+
+  const updatedDates = alreadyCompleted
+    ? currentDates.filter((date) => date !== today)
+    : [...currentDates, today];
+
+  const newData: GameData = {
+    ...data,
+    healthyHabits: {
+      ...data.healthyHabits,
+      [habitKey]: updatedDates,
+    },
+  };
+
+  saveGameData(newData);
+  return newData;
+}
+
+// Group healthy habits by day for a given month
+// Returns: { dayNumber: ["water", "nails"] } for days where habits were completed
+export function getHabitsByDay(
+  data: GameData,
+  year: number,
+  month: number
+): Record<number, HabitKey[]> {
+  const result: Record<number, HabitKey[]> = {};
+  const habits = data.healthyHabits;
+  if (!habits) return result;
+
+  const habitKeys: HabitKey[] = ["water", "nails"];
+
+  for (const habitKey of habitKeys) {
+    const dates = habits[habitKey];
+    if (!dates) continue;
+
+    for (const dateString of dates) {
+      const date = new Date(dateString + "T00:00:00");
+      if (date.getFullYear() !== year || date.getMonth() !== month) continue;
+
+      const day = date.getDate();
+      if (!result[day]) result[day] = [];
+      result[day].push(habitKey);
+    }
+  }
+
+  return result;
 }
 
 export function exportGameData(data: GameData): void {

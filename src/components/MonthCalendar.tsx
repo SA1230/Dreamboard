@@ -1,15 +1,54 @@
 "use client";
 
-import { StatKey } from "@/lib/types";
+import { StatKey, HabitKey } from "@/lib/types";
 import { StatDefinition } from "@/lib/stats";
 import { StatIcon } from "./StatIcons";
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+function TinyWaterIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 48 48" fill="none">
+      <rect x="18" y="4" width="12" height="6" rx="2" fill="#3b82f6" />
+      <rect x="20" y="10" width="8" height="4" fill="#60a5fa" />
+      <path
+        d="M16 14h16v26a4 4 0 01-4 4H20a4 4 0 01-4-4V14z"
+        fill="#dbeafe"
+        stroke="#3b82f6"
+        strokeWidth="2"
+      />
+      <path
+        d="M16.75 24h14.5v16a3.25 3.25 0 01-3.25 3.25H20a3.25 3.25 0 01-3.25-3.25V24z"
+        fill="#3b82f6"
+        opacity="0.7"
+      />
+    </svg>
+  );
+}
+
+function TinyNailsIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 48 48" fill="none">
+      <ellipse cx="24" cy="38" rx="14" ry="8" fill="#fce7f3" stroke="#ec4899" strokeWidth="2" />
+      <rect x="8" y="16" width="5" height="18" rx="2.5" fill="#fce7f3" stroke="#ec4899" strokeWidth="2" />
+      <rect x="14" y="10" width="5" height="22" rx="2.5" fill="#fce7f3" stroke="#ec4899" strokeWidth="2" />
+      <rect x="21" y="7" width="5.5" height="25" rx="2.75" fill="#fce7f3" stroke="#ec4899" strokeWidth="2" />
+      <rect x="28" y="10" width="5" height="22" rx="2.5" fill="#fce7f3" stroke="#ec4899" strokeWidth="2" />
+      <rect x="34" y="18" width="5" height="16" rx="2.5" fill="#fce7f3" stroke="#ec4899" strokeWidth="2" />
+      <rect x="8.75" y="16" width="3.5" height="4.5" rx="1.75" fill="#ec4899" />
+      <rect x="14.75" y="10" width="3.5" height="4.5" rx="1.75" fill="#ec4899" />
+      <rect x="22" y="7" width="3.5" height="5" rx="1.75" fill="#ec4899" />
+      <rect x="28.75" y="10" width="3.5" height="4.5" rx="1.75" fill="#ec4899" />
+      <rect x="34.75" y="18" width="3.5" height="4.5" rx="1.75" fill="#ec4899" />
+    </svg>
+  );
+}
+
 interface MonthCalendarProps {
   year: number;
   month: number; // 0-indexed (0 = January)
   activitiesByDay: Record<number, Partial<Record<StatKey, number>>>;
+  habitsByDay: Record<number, HabitKey[]>;
   definitions: Record<StatKey, StatDefinition>;
 }
 
@@ -17,6 +56,7 @@ export function MonthCalendar({
   year,
   month,
   activitiesByDay,
+  habitsByDay,
   definitions,
 }: MonthCalendarProps) {
   const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Sunday
@@ -115,6 +155,22 @@ export function MonthCalendar({
                       </div>
                     );
                   })}
+                </div>
+              )}
+
+              {/* Healthy habit icons */}
+              {habitsByDay[day] && habitsByDay[day].length > 0 && (
+                <div className="flex gap-0.5 mt-0.5">
+                  {habitsByDay[day].includes("water") && (
+                    <div title="Drank 64oz water">
+                      <TinyWaterIcon />
+                    </div>
+                  )}
+                  {habitsByDay[day].includes("nails") && (
+                    <div title="No nail biting">
+                      <TinyNailsIcon />
+                    </div>
+                  )}
                 </div>
               )}
 
