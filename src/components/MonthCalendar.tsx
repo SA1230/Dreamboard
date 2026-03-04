@@ -113,7 +113,7 @@ export function MonthCalendar({
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-1.5">
         {cells.map((day, index) => {
           if (day === null) {
             return <div key={`empty-${index}`} />;
@@ -132,7 +132,7 @@ export function MonthCalendar({
           return (
             <div
               key={day}
-              className="min-h-[80px] rounded-xl p-1.5 transition-colors duration-200"
+              className="min-h-[120px] rounded-xl p-2.5 transition-colors duration-200"
               style={{
                 backgroundColor: isToday
                   ? "rgba(201, 148, 62, 0.08)"
@@ -144,7 +144,7 @@ export function MonthCalendar({
             >
               {/* Day number */}
               <div
-                className={`text-xs font-bold mb-1 ${
+                className={`text-sm font-bold mb-1 ${
                   isToday ? "text-amber-600" : "text-stone-400"
                 }`}
               >
