@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { GameData, StatKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
 import { loadGameData, addXP, getOverallLevel, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay } from "@/lib/storage";
@@ -10,6 +10,198 @@ import { ActivityLog } from "@/components/ActivityLog";
 import { MonthlyXPSummary } from "@/components/MonthlyXPSummary";
 import { Download, Settings, CalendarDays } from "lucide-react";
 import Link from "next/link";
+
+// Rank titles that change every ~5 levels
+const RANK_TITLES: [number, string][] = [
+  [1, "Novice"],
+  [5, "Apprentice"],
+  [10, "Journeyman"],
+  [15, "Adept"],
+  [20, "Expert"],
+  [25, "Veteran"],
+  [30, "Elite"],
+  [35, "Master"],
+  [40, "Grandmaster"],
+  [45, "Champion"],
+  [50, "Legend"],
+  [55, "Mythic"],
+  [60, "Transcendent"],
+];
+
+function getRankTitle(level: number): string {
+  let title = "Novice";
+  for (const [threshold, name] of RANK_TITLES) {
+    if (level >= threshold) title = name;
+  }
+  return title;
+}
+
+function LevelDisplay({
+  level,
+  progressPercent,
+  xpIntoLevel,
+  xpForNextLevel,
+}: {
+  level: number;
+  progressPercent: number;
+  xpIntoLevel: number;
+  xpForNextLevel: number;
+}) {
+  const numberRef = useRef<HTMLSpanElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Parallax tilt on hover (desktop) and scroll (mobile)
+  useEffect(() => {
+    const numberElement = numberRef.current;
+    const containerElement = containerRef.current;
+    if (!numberElement || !containerElement) return;
+
+    // Desktop: tilt toward mouse position
+    function handleMouseMove(event: MouseEvent) {
+      if (!containerElement || !numberElement) return;
+      const rect = containerElement.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const offsetX = ((event.clientX - centerX) / (rect.width / 2)) * 6;
+      const offsetY = ((event.clientY - centerY) / (rect.height / 2)) * 6;
+      numberElement.style.transform = `perspective(200px) rotateY(${offsetX}deg) rotateX(${-offsetY}deg)`;
+    }
+
+    function handleMouseLeave() {
+      if (!numberElement) return;
+      numberElement.style.transform = "perspective(200px) rotateY(0deg) rotateX(0deg)";
+    }
+
+    // Mobile: subtle float based on scroll position
+    function handleScroll() {
+      if (!containerElement || !numberElement) return;
+      const rect = containerElement.getBoundingClientRect();
+      const viewportCenter = window.innerHeight / 2;
+      const distanceFromCenter = (rect.top + rect.height / 2 - viewportCenter) / viewportCenter;
+      const tiltX = distanceFromCenter * 4;
+      numberElement.style.transform = `perspective(200px) rotateX(${tiltX}deg)`;
+    }
+
+    containerElement.addEventListener("mousemove", handleMouseMove);
+    containerElement.addEventListener("mouseleave", handleMouseLeave);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      containerElement.removeEventListener("mousemove", handleMouseMove);
+      containerElement.removeEventListener("mouseleave", handleMouseLeave);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  const isMaxLevel = level >= 60;
+  const rank = getRankTitle(level);
+
+  // SVG ring dimensions
+  const ringSize = 160;
+  const strokeWidth = 6;
+  const radius = (ringSize - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (circumference * progressPercent) / 100;
+
+  return (
+    <div
+      ref={containerRef}
+      className="flex flex-col items-center justify-center rounded-2xl px-8 py-6 relative cursor-default w-full"
+      style={{
+        background: "linear-gradient(135deg, #fefcf9 0%, #f5f0e8 50%, #ede4d6 100%)",
+        boxShadow: "0 2px 16px rgba(180, 150, 100, 0.12), inset 0 1px 0 rgba(255,255,255,0.7)",
+      }}
+    >
+      {/* Rank title */}
+      <span className="text-xs font-bold uppercase tracking-[0.2em] text-amber-600/70 mb-3">
+        {rank}
+      </span>
+
+      {/* Ring + Number */}
+      <div className="relative" style={{ width: ringSize, height: ringSize }}>
+        {/* SVG progress ring */}
+        <svg
+          width={ringSize}
+          height={ringSize}
+          className="absolute inset-0 -rotate-90"
+        >
+          <defs>
+            <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#f59e0b" />
+              <stop offset="50%" stopColor="#d97706" />
+              <stop offset="100%" stopColor="#b45309" />
+            </linearGradient>
+          </defs>
+          {/* Background track */}
+          <circle
+            cx={ringSize / 2}
+            cy={ringSize / 2}
+            r={radius}
+            fill="none"
+            stroke="#e7e0d5"
+            strokeWidth={strokeWidth}
+          />
+          {/* Progress arc */}
+          {!isMaxLevel && (
+            <circle
+              cx={ringSize / 2}
+              cy={ringSize / 2}
+              r={radius}
+              fill="none"
+              stroke="url(#ringGradient)"
+              strokeWidth={strokeWidth}
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={strokeDashoffset}
+              className="transition-all duration-700 ease-out"
+            />
+          )}
+          {/* Full ring for max level */}
+          {isMaxLevel && (
+            <circle
+              cx={ringSize / 2}
+              cy={ringSize / 2}
+              r={radius}
+              fill="none"
+              stroke="url(#ringGradient)"
+              strokeWidth={strokeWidth}
+              strokeDasharray={circumference}
+              strokeDashoffset={0}
+            />
+          )}
+        </svg>
+
+        {/* Level number with 3D effect */}
+        <span
+          ref={numberRef}
+          className="absolute inset-0 flex items-center justify-center text-6xl font-black select-none"
+          style={{
+            transition: "transform 0.2s ease-out",
+            background: "linear-gradient(180deg, #c47a20 0%, #8b5a1a 60%, #6b4215 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+            textShadow: "none",
+            filter: "drop-shadow(0 1px 0 rgba(120,80,30,0.4)) drop-shadow(0 2px 1px rgba(100,60,20,0.25)) drop-shadow(0 4px 3px rgba(80,50,15,0.15))",
+          }}
+        >
+          {level}
+        </span>
+      </div>
+
+      {/* XP text */}
+      {!isMaxLevel ? (
+        <span className="text-xs text-stone-400 mt-3 font-medium">
+          {xpIntoLevel} / {xpForNextLevel} XP to Level {level + 1}
+        </span>
+      ) : (
+        <span className="text-xs text-amber-600 font-bold mt-3 uppercase tracking-wider">
+          Max Level
+        </span>
+      )}
+    </div>
+  );
+}
 
 export default function Home() {
   const [gameData, setGameData] = useState<GameData | null>(null);
@@ -114,38 +306,29 @@ export default function Home() {
         <h1 className="text-3xl font-extrabold text-stone-700 mb-1">
           Dreamboard
         </h1>
-        <p className="text-stone-400 text-sm mb-4">
+        <p className="text-stone-400 text-sm">
           {gameData.activities.length} activit{gameData.activities.length === 1 ? "y" : "ies"} logged
         </p>
-
-        {/* Prominent level display */}
-        <div className="inline-flex flex-col items-center bg-stone-100 rounded-2xl px-8 py-4">
-          <span className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1">Current Level</span>
-          <span className="text-5xl font-extrabold text-stone-700 leading-none">{overallLevel}</span>
-          {overallLevel < 60 ? (
-            <>
-              <div className="w-48 h-2 bg-stone-200 rounded-full mt-3 overflow-hidden">
-                <div
-                  className="h-full bg-amber-400 rounded-full transition-all duration-500"
-                  style={{ width: `${overallProgressPercent}%` }}
-                />
-              </div>
-              <span className="text-xs text-stone-400 mt-1.5">
-                {xpIntoLevel} / {xpForNextLevel} XP to Level {overallLevel + 1}
-              </span>
-            </>
-          ) : (
-            <span className="text-xs text-amber-500 font-semibold mt-2">MAX LEVEL</span>
-          )}
-        </div>
       </header>
 
-      {/* Monthly XP Summary */}
-      <MonthlyXPSummary
-        currentMonthXP={monthlyXP.currentMonthXP}
-        lastMonthXP={monthlyXP.lastMonthXP}
-        dailyXP={dailyXPForMonth}
-      />
+      {/* Monthly XP Summary + Level Display — side by side on desktop, stacked on mobile */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-8">
+        <div className="flex-1 min-w-0">
+          <MonthlyXPSummary
+            currentMonthXP={monthlyXP.currentMonthXP}
+            lastMonthXP={monthlyXP.lastMonthXP}
+            dailyXP={dailyXPForMonth}
+          />
+        </div>
+        <div className="flex items-stretch">
+          <LevelDisplay
+            level={overallLevel}
+            progressPercent={overallProgressPercent}
+            xpIntoLevel={xpIntoLevel}
+            xpForNextLevel={xpForNextLevel}
+          />
+        </div>
+      </div>
 
       {/* Stat Card Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
