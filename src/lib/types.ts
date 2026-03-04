@@ -28,8 +28,11 @@ export interface CustomStatOverride {
   iconKey?: string;
 }
 
+export type HabitKey = "water" | "nails";
+
 export interface GameData {
   stats: Record<StatKey, StatProgress>;
   activities: Activity[];
   customDefinitions?: Partial<Record<StatKey, CustomStatOverride>>;
+  healthyHabits?: Partial<Record<HabitKey, string[]>>;
 }

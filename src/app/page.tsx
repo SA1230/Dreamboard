@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { GameData, StatKey } from "@/lib/types";
+import { GameData, StatKey, HabitKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getOverallLevel, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay } from "@/lib/storage";
+import { loadGameData, addXP, getOverallLevel, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, toggleHabitForToday } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
 import { AddXPModal } from "@/components/AddXPModal";
 import { ActivityLog } from "@/components/ActivityLog";
 import { MonthlyXPSummary } from "@/components/MonthlyXPSummary";
+import { HealthyHabits } from "@/components/HealthyHabits";
 import { Download, Settings, CalendarDays } from "lucide-react";
 import Link from "next/link";
 
@@ -270,6 +271,15 @@ export default function Home() {
     [gameData]
   );
 
+  const handleToggleHabit = useCallback(
+    (habitKey: HabitKey) => {
+      if (!gameData) return;
+      const newData = toggleHabitForToday(gameData, habitKey);
+      setGameData(newData);
+    },
+    [gameData]
+  );
+
   // Show nothing while loading from localStorage (prevents hydration flash)
   if (!gameData || !definitions || !streaks || !monthlyXP) {
     return (
@@ -344,6 +354,9 @@ export default function Home() {
           />
         ))}
       </div>
+
+      {/* Healthy Habits */}
+      <HealthyHabits gameData={gameData} onToggleHabit={handleToggleHabit} />
 
       {/* Activity Log */}
       <section>
