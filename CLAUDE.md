@@ -126,3 +126,5 @@ The sections above are a **map, not the source of truth.** They may be outdated.
 19. **After completing a task, give me a one-line summary of what changed.** Just one line. Example: "Added a /login route that shows a username and password form." No bullet-point recaps.
 
 20. **If I ask "what does this do?", explain it like I'm smart but unfamiliar.** Don't dumb it down to the point of being patronizing. Don't assume jargon I haven't used. Find the middle ground — clear, accurate, concise.
+
+21. **Keep CLAUDE.md accurate after structural changes.** If your change adds a new file, new type, new exported function, or changes a key pattern documented in CLAUDE.md, update the relevant section of CLAUDE.md in the same commit. Don't update it for small bug fixes or styling tweaks — only when the doc would become misleading without the update.
