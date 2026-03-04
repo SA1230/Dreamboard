@@ -40,7 +40,7 @@ export const STAT_DEFINITIONS: Record<StatKey, StatDefinition> = {
   strength: {
     key: "strength",
     name: "Strength",
-    description: "Fiery, powerful",
+    description: "e.g. Gym, running, sports",
     earnsXP: "Went to the gym / completed a workout",
     color: "#C45C3E",
     backgroundColor: "#FDF0EC",
@@ -50,7 +50,7 @@ export const STAT_DEFINITIONS: Record<StatKey, StatDefinition> = {
   wisdom: {
     key: "wisdom",
     name: "Wisdom",
-    description: "Deep, calm",
+    description: "e.g. Reading, courses, podcasts",
     earnsXP: "Read a chapter or listened to an audiobook section",
     color: "#5B7AA5",
     backgroundColor: "#EDF2F8",
@@ -60,7 +60,7 @@ export const STAT_DEFINITIONS: Record<StatKey, StatDefinition> = {
   vitality: {
     key: "vitality",
     name: "Vitality",
-    description: "Fresh, alive",
+    description: "e.g. Healthy meals, sleep, hydration",
     earnsXP: "Cooked a healthy meal / got 7+ hrs sleep",
     color: "#6A8E5B",
     backgroundColor: "#EFF5EC",
@@ -70,7 +70,7 @@ export const STAT_DEFINITIONS: Record<StatKey, StatDefinition> = {
   charisma: {
     key: "charisma",
     name: "Charisma",
-    description: "Bright, warm",
+    description: "e.g. Social events, networking, dates",
     earnsXP: "Attended a social event / meaningful conversation",
     color: "#C9943E",
     backgroundColor: "#FDF6EC",
@@ -80,7 +80,7 @@ export const STAT_DEFINITIONS: Record<StatKey, StatDefinition> = {
   craft: {
     key: "craft",
     name: "Craft",
-    description: "Industrious, focused",
+    description: "e.g. Side projects, coding, creative work",
     earnsXP: "Worked on Made That or a side project",
     color: "#8B6B4A",
     backgroundColor: "#F5F0EB",
@@ -90,7 +90,7 @@ export const STAT_DEFINITIONS: Record<StatKey, StatDefinition> = {
   discipline: {
     key: "discipline",
     name: "Discipline",
-    description: "Sturdy, steady",
+    description: "e.g. Chores, errands, hard tasks",
     earnsXP: "Did a chore, errand, or hard task I was avoiding",
     color: "#6B7B8D",
     backgroundColor: "#EEF1F4",
@@ -100,7 +100,7 @@ export const STAT_DEFINITIONS: Record<StatKey, StatDefinition> = {
   spirit: {
     key: "spirit",
     name: "Spirit",
-    description: "Ethereal, peaceful",
+    description: "e.g. Meditation, journaling, gratitude",
     earnsXP: "Meditated, journaled, or reflected",
     color: "#8B6BA5",
     backgroundColor: "#F3EFF7",
@@ -110,7 +110,7 @@ export const STAT_DEFINITIONS: Record<StatKey, StatDefinition> = {
   wealth: {
     key: "wealth",
     name: "Wealth",
-    description: "Rich, golden",
+    description: "e.g. Saving, budgeting, investing",
     earnsXP: "Saved money or took a financial action",
     color: "#B8963E",
     backgroundColor: "#F9F4E8",
