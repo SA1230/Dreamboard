@@ -310,7 +310,7 @@ export default function Home() {
   const overallProgressPercent = xpForNextLevel > 0 ? Math.round((xpIntoLevel / xpForNextLevel) * 100) : 100;
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-8 pb-20">
+    <main className="max-w-4xl mx-auto px-4 py-8 pb-20">
       {/* Header */}
       <header className="text-center mb-10 relative">
         <div className="absolute right-0 top-1 flex items-center gap-2">
@@ -337,14 +337,21 @@ export default function Home() {
         </p>
       </header>
 
-      {/* Monthly XP Summary + Level Display — side by side on desktop, stacked on mobile */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-8">
+      {/* Monthly XP Summary + Today's XP + Level Display — wider than card grid */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-8 sm:-mx-12">
         <div className="flex-1 min-w-0">
           <MonthlyXPSummary
             currentMonthXP={monthlyXP.currentMonthXP}
             lastMonthXP={monthlyXP.lastMonthXP}
             dailyXP={dailyXPForMonth}
           />
+        </div>
+        <div className="flex flex-col items-center justify-center rounded-2xl bg-stone-50 border border-stone-200 px-16 py-5 shrink-0">
+          <p className="text-xs font-medium text-stone-400 uppercase tracking-wide">Today</p>
+          <p className="text-4xl font-extrabold text-emerald-500 mt-1">
+            {dailyXPForMonth[new Date().getDate() - 1] ?? 0}
+          </p>
+          <p className="text-[10px] font-medium text-stone-400 mt-1">XP earned</p>
         </div>
         <div className="flex items-stretch">
           <LevelDisplay
