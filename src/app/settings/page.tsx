@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { GameData, StatKey, CustomStatOverride } from "@/lib/types";
 import { STAT_DEFINITIONS, STAT_KEYS, COLOR_PRESETS, StatDefinition } from "@/lib/stats";
-import { loadGameData, saveCustomDefinitions, getEffectiveDefinitions } from "@/lib/storage";
+import { loadGameData, saveCustomDefinitions } from "@/lib/storage";
 import { StatIcon, ICON_OPTIONS } from "@/components/StatIcons";
 import { ArrowLeft, RotateCcw } from "lucide-react";
 import Link from "next/link";
@@ -63,8 +63,9 @@ export default function SettingsPage() {
       // Clean up empty overrides
       const hasValues = Object.values(updated).some((v) => v !== undefined);
       if (!hasValues) {
-        const { [key]: _, ...rest } = prev;
-        return rest;
+        return Object.fromEntries(
+          Object.entries(prev).filter(([k]) => k !== key)
+        ) as typeof prev;
       }
       return { ...prev, [key]: updated };
     });
@@ -73,8 +74,9 @@ export default function SettingsPage() {
 
   function resetStat(key: StatKey) {
     setOverrides((prev) => {
-      const { [key]: _, ...rest } = prev;
-      return rest;
+      return Object.fromEntries(
+        Object.entries(prev).filter(([k]) => k !== key)
+      ) as typeof prev;
     });
     setSaved(false);
   }

@@ -7,7 +7,7 @@ import { loadGameData, addXP, getTotalLevel, exportGameData, getEffectiveDefinit
 import { StatCard } from "@/components/StatCard";
 import { AddXPModal } from "@/components/AddXPModal";
 import { ActivityLog } from "@/components/ActivityLog";
-import { Download, Settings } from "lucide-react";
+import { Download, Settings, CalendarDays } from "lucide-react";
 import Link from "next/link";
 
 export default function Home() {
@@ -62,13 +62,22 @@ export default function Home() {
     <main className="max-w-3xl mx-auto px-4 py-8 pb-20">
       {/* Header */}
       <header className="text-center mb-10 relative">
-        <Link
-          href="/settings"
-          className="absolute right-0 top-1 w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
-          title="Customize stats"
-        >
-          <Settings size={18} />
-        </Link>
+        <div className="absolute right-0 top-1 flex items-center gap-2">
+          <Link
+            href="/calendar"
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
+            title="Monthly calendar"
+          >
+            <CalendarDays size={18} />
+          </Link>
+          <Link
+            href="/settings"
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
+            title="Customize stats"
+          >
+            <Settings size={18} />
+          </Link>
+        </div>
         <h1 className="text-3xl font-extrabold text-stone-700 mb-1">
           Your Quest Log
         </h1>
