@@ -85,6 +85,7 @@ export function addXP(
   };
 
   const newData: GameData = {
+    ...data,
     stats: { ...data.stats, [statKey]: stat },
     activities: [activity, ...data.activities],
   };
@@ -325,6 +326,36 @@ export function toggleHabitForToday(data: GameData, habitKey: HabitKey): GameDat
 
   saveGameData(newData);
   return newData;
+}
+
+// Group healthy habits by day for a given month
+// Returns: { dayNumber: ["water", "nails"] } for days where habits were completed
+export function getHabitsByDay(
+  data: GameData,
+  year: number,
+  month: number
+): Record<number, HabitKey[]> {
+  const result: Record<number, HabitKey[]> = {};
+  const habits = data.healthyHabits;
+  if (!habits) return result;
+
+  const habitKeys: HabitKey[] = ["water", "nails"];
+
+  for (const habitKey of habitKeys) {
+    const dates = habits[habitKey];
+    if (!dates) continue;
+
+    for (const dateString of dates) {
+      const date = new Date(dateString + "T00:00:00");
+      if (date.getFullYear() !== year || date.getMonth() !== month) continue;
+
+      const day = date.getDate();
+      if (!result[day]) result[day] = [];
+      result[day].push(habitKey);
+    }
+  }
+
+  return result;
 }
 
 export function exportGameData(data: GameData): void {
