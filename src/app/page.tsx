@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { GameData, StatKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getTotalLevel, exportGameData, getEffectiveDefinitions } from "@/lib/storage";
+import { loadGameData, addXP, getTotalLevel, exportGameData, getEffectiveDefinitions, getStatStreaks } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
 import { AddXPModal } from "@/components/AddXPModal";
 import { ActivityLog } from "@/components/ActivityLog";
@@ -27,6 +27,12 @@ export default function Home() {
     return getEffectiveDefinitions(gameData);
   }, [gameData]);
 
+  // Calculate per-stat streaks
+  const streaks = useMemo(() => {
+    if (!gameData) return null;
+    return getStatStreaks(gameData.activities);
+  }, [gameData]);
+
   const handleAddXP = useCallback(
     (statKey: StatKey, note: string) => {
       if (!gameData) return;
@@ -48,7 +54,7 @@ export default function Home() {
   );
 
   // Show nothing while loading from localStorage (prevents hydration flash)
-  if (!gameData || !definitions) {
+  if (!gameData || !definitions || !streaks) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-stone-300 border-t-stone-500 animate-spin" />
@@ -101,6 +107,7 @@ export default function Home() {
             onAddXP={() => setActiveModal(key)}
             leveledUp={leveledUpStat === key}
             justGainedXP={xpGainedStat === key}
+            streak={streaks[key]}
           />
         ))}
       </div>

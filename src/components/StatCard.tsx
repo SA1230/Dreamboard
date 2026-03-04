@@ -4,7 +4,7 @@ import { StatProgress } from "@/lib/types";
 import { StatDefinition } from "@/lib/stats";
 import { getXPForNextLevel } from "@/lib/storage";
 import { StatIcon } from "./StatIcons";
-import { Plus } from "lucide-react";
+import { Plus, Flame } from "lucide-react";
 import { useState, useEffect } from "react";
 
 // Pre-generated particle positions for the level-up celebration
@@ -25,6 +25,7 @@ interface StatCardProps {
   onAddXP: () => void;
   leveledUp: boolean;
   justGainedXP: boolean;
+  streak: number;
 }
 
 export function StatCard({
@@ -33,6 +34,7 @@ export function StatCard({
   onAddXP,
   leveledUp,
   justGainedXP,
+  streak,
 }: StatCardProps) {
   const xpNeeded = getXPForNextLevel(progress.level);
   const progressPercent = Math.min((progress.xp / xpNeeded) * 100, 100);
@@ -131,7 +133,7 @@ export function StatCard({
         </button>
       </div>
 
-      {/* Level badge */}
+      {/* Level badge + streak */}
       <div className="flex items-center gap-2 mb-2">
         <span
           className="text-xs font-semibold px-2 py-0.5 rounded-full"
@@ -145,6 +147,18 @@ export function StatCard({
         <span className="text-xs opacity-50" style={{ color: definition.color }}>
           {progress.xp} / {xpNeeded} XP
         </span>
+        {streak >= 2 && (
+          <span
+            className="flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full ml-auto"
+            style={{
+              backgroundColor: `${definition.color}18`,
+              color: definition.color,
+            }}
+          >
+            <Flame size={12} />
+            {streak}d
+          </span>
+        )}
       </div>
 
       {/* Progress bar */}
