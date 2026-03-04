@@ -31,7 +31,7 @@ export function MonthlyXPSummary({ currentMonthXP, lastMonthXP, dailyXP }: Month
   const chartHeight = 48;
 
   return (
-    <div className="mb-8 rounded-2xl bg-stone-50 border border-stone-200 p-5">
+    <div className="rounded-2xl bg-stone-50 border border-stone-200 p-5 h-full">
       <div className="flex items-center justify-between">
         {/* This month's XP */}
         <div>
