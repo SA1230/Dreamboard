@@ -107,7 +107,7 @@ export function StatCard({
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
           <div style={{ color: definition.color }}>
-            <StatIcon stat={definition.key} className="w-10 h-10" />
+            <StatIcon iconKey={definition.iconKey} className="w-10 h-10" />
           </div>
           <div>
             <h3 className="font-bold text-base" style={{ color: definition.color }}>

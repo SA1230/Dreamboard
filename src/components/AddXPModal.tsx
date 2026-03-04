@@ -46,7 +46,7 @@ export function AddXPModal({ definition, onConfirm, onCancel }: AddXPModalProps)
       <div className="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm animate-modalSlideUp">
         <div className="flex items-center gap-3 mb-4">
           <div style={{ color: definition.color }}>
-            <StatIcon stat={definition.key} className="w-8 h-8" />
+            <StatIcon iconKey={definition.iconKey} className="w-8 h-8" />
           </div>
           <div>
             <h3 className="font-bold text-lg" style={{ color: definition.color }}>

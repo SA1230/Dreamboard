@@ -1,5 +1,5 @@
-import { GameData, StatKey, Activity, StatProgress } from "./types";
-import { STAT_KEYS } from "./stats";
+import { GameData, StatKey, Activity, StatProgress, CustomStatOverride } from "./types";
+import { STAT_KEYS, STAT_DEFINITIONS, StatDefinition, COLOR_PRESETS } from "./stats";
 
 const STORAGE_KEY = "dreamboard-data";
 
@@ -95,6 +95,60 @@ export function addXP(
 
 export function getTotalLevel(data: GameData): number {
   return STAT_KEYS.reduce((sum, key) => sum + data.stats[key].level, 0);
+}
+
+export function getEffectiveDefinitions(data: GameData): Record<StatKey, StatDefinition> {
+  const result = {} as Record<StatKey, StatDefinition>;
+  for (const key of STAT_KEYS) {
+    const base = STAT_DEFINITIONS[key];
+    const override = data.customDefinitions?.[key];
+    if (override) {
+      // If color was overridden, find matching preset for bg/progress colors
+      let backgroundColor = base.backgroundColor;
+      let progressColor = base.progressColor;
+      if (override.color) {
+        const preset = COLOR_PRESETS.find((p) => p.color === override.color);
+        if (preset) {
+          backgroundColor = preset.backgroundColor;
+          progressColor = preset.progressColor;
+        }
+      }
+      result[key] = {
+        ...base,
+        name: override.name ?? base.name,
+        description: override.description ?? base.description,
+        earnsXP: override.earnsXP ?? base.earnsXP,
+        color: override.color ?? base.color,
+        backgroundColor,
+        progressColor,
+        iconKey: override.iconKey ?? base.iconKey,
+      };
+    } else {
+      result[key] = base;
+    }
+  }
+  return result;
+}
+
+export function saveCustomDefinitions(
+  data: GameData,
+  customDefinitions: Partial<Record<StatKey, CustomStatOverride>>
+): GameData {
+  const newData: GameData = {
+    ...data,
+    customDefinitions,
+  };
+  saveGameData(newData);
+  return newData;
+}
+
+export function resetCustomDefinitions(data: GameData): GameData {
+  const newData: GameData = {
+    ...data,
+    customDefinitions: undefined,
+  };
+  saveGameData(newData);
+  return newData;
 }
 
 export function exportGameData(data: GameData): void {

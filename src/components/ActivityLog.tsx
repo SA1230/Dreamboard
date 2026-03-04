@@ -1,11 +1,12 @@
 "use client";
 
-import { Activity } from "@/lib/types";
-import { STAT_DEFINITIONS } from "@/lib/stats";
+import { Activity, StatKey } from "@/lib/types";
+import { StatDefinition } from "@/lib/stats";
 import { StatIcon } from "./StatIcons";
 
 interface ActivityLogProps {
   activities: Activity[];
+  definitions: Record<StatKey, StatDefinition>;
 }
 
 function formatTimestamp(isoString: string): string {
@@ -27,7 +28,7 @@ function formatTimestamp(isoString: string): string {
   });
 }
 
-export function ActivityLog({ activities }: ActivityLogProps) {
+export function ActivityLog({ activities, definitions }: ActivityLogProps) {
   const recentActivities = activities.slice(0, 20);
 
   if (recentActivities.length === 0) {
@@ -41,7 +42,7 @@ export function ActivityLog({ activities }: ActivityLogProps) {
   return (
     <div className="space-y-2">
       {recentActivities.map((activity, index) => {
-        const definition = STAT_DEFINITIONS[activity.stat];
+        const definition = definitions[activity.stat];
         return (
           <div
             key={activity.id}
@@ -51,7 +52,7 @@ export function ActivityLog({ activities }: ActivityLogProps) {
             }}
           >
             <div style={{ color: definition.color }} className="flex-shrink-0">
-              <StatIcon stat={activity.stat} className="w-5 h-5" />
+              <StatIcon iconKey={definition.iconKey} className="w-5 h-5" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
