@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { HealthyHabitsData, HealthyHabitKey, loadHealthyHabits, toggleHealthyHabit, isHabitDoneToday } from "@/lib/storage";
 
 function WaterBottleIcon({ active }: { active: boolean }) {
@@ -78,20 +78,11 @@ function NailsIcon({ active }: { active: boolean }) {
 }
 
 export function HealthyHabits() {
-  const [habits, setHabits] = useState<HealthyHabitsData | null>(null);
-
-  useEffect(() => {
-    setHabits(loadHealthyHabits());
-  }, []);
+  const [habits, setHabits] = useState<HealthyHabitsData>(() => loadHealthyHabits());
 
   const handleToggle = useCallback((habit: HealthyHabitKey) => {
-    setHabits((current) => {
-      if (!current) return current;
-      return toggleHealthyHabit(current, habit);
-    });
+    setHabits((current) => toggleHealthyHabit(current, habit));
   }, []);
-
-  if (!habits) return null;
 
   const waterDone = isHabitDoneToday(habits, "water");
   const nailsDone = isHabitDoneToday(habits, "nails");
