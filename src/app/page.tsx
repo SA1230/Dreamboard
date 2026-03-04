@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { GameData, StatKey } from "@/lib/types";
-import { STAT_DEFINITIONS, STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getTotalLevel, exportGameData } from "@/lib/storage";
+import { STAT_KEYS } from "@/lib/stats";
+import { loadGameData, addXP, getTotalLevel, exportGameData, getEffectiveDefinitions } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
 import { AddXPModal } from "@/components/AddXPModal";
 import { ActivityLog } from "@/components/ActivityLog";
-import { Download } from "lucide-react";
+import { Download, Settings } from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
   const [gameData, setGameData] = useState<GameData | null>(null);
@@ -19,6 +20,12 @@ export default function Home() {
   useEffect(() => {
     setGameData(loadGameData());
   }, []);
+
+  // Merge custom overrides with defaults
+  const definitions = useMemo(() => {
+    if (!gameData) return null;
+    return getEffectiveDefinitions(gameData);
+  }, [gameData]);
 
   const handleAddXP = useCallback(
     (statKey: StatKey, note: string) => {
@@ -41,7 +48,7 @@ export default function Home() {
   );
 
   // Show nothing while loading from localStorage (prevents hydration flash)
-  if (!gameData) {
+  if (!gameData || !definitions) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-stone-300 border-t-stone-500 animate-spin" />
@@ -54,7 +61,14 @@ export default function Home() {
   return (
     <main className="max-w-3xl mx-auto px-4 py-8 pb-20">
       {/* Header */}
-      <header className="text-center mb-10">
+      <header className="text-center mb-10 relative">
+        <Link
+          href="/settings"
+          className="absolute right-0 top-1 w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
+          title="Customize stats"
+        >
+          <Settings size={18} />
+        </Link>
         <h1 className="text-3xl font-extrabold text-stone-700 mb-1">
           Your Quest Log
         </h1>
@@ -73,7 +87,7 @@ export default function Home() {
         {STAT_KEYS.map((key) => (
           <StatCard
             key={key}
-            definition={STAT_DEFINITIONS[key]}
+            definition={definitions[key]}
             progress={gameData.stats[key]}
             onAddXP={() => setActiveModal(key)}
             leveledUp={leveledUpStat === key}
@@ -95,13 +109,13 @@ export default function Home() {
             Export
           </button>
         </div>
-        <ActivityLog activities={gameData.activities} />
+        <ActivityLog activities={gameData.activities} definitions={definitions} />
       </section>
 
       {/* AddXP Modal */}
       {activeModal && (
         <AddXPModal
-          definition={STAT_DEFINITIONS[activeModal]}
+          definition={definitions[activeModal]}
           onConfirm={(note) => handleAddXP(activeModal, note)}
           onCancel={() => setActiveModal(null)}
         />
