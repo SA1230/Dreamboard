@@ -97,6 +97,47 @@ export function getTotalLevel(data: GameData): number {
   return STAT_KEYS.reduce((sum, key) => sum + data.stats[key].level, 0);
 }
 
+// --- Overall player level (based on total lifetime XP, EQ-inspired curve) ---
+
+const MAX_OVERALL_LEVEL = 60;
+
+// Hell levels require significantly more XP to push past, like EverQuest
+const HELL_LEVELS = new Set([30, 35, 40, 45, 50, 55]);
+
+// XP required to advance past a given level
+function getXPRequiredForLevel(level: number): number {
+  // Base curve: starts at 3 XP, grows ~7% per level
+  const base = Math.floor(3 * Math.pow(1.07, level));
+
+  // Level 59 is the ultimate hell level before cap
+  if (level === 59) return Math.floor(base * 2.5);
+
+  // Other hell levels require 1.5x XP
+  if (HELL_LEVELS.has(level)) return Math.floor(base * 1.5);
+
+  return base;
+}
+
+// Given total lifetime XP (= total activities logged), compute overall level + progress
+export function getOverallLevel(totalXP: number): {
+  level: number;
+  xpIntoLevel: number;
+  xpForNextLevel: number;
+} {
+  let xpRemaining = totalXP;
+
+  for (let level = 1; level < MAX_OVERALL_LEVEL; level++) {
+    const xpNeeded = getXPRequiredForLevel(level);
+    if (xpRemaining < xpNeeded) {
+      return { level, xpIntoLevel: xpRemaining, xpForNextLevel: xpNeeded };
+    }
+    xpRemaining -= xpNeeded;
+  }
+
+  // Max level reached
+  return { level: MAX_OVERALL_LEVEL, xpIntoLevel: 0, xpForNextLevel: 0 };
+}
+
 export function getEffectiveDefinitions(data: GameData): Record<StatKey, StatDefinition> {
   const result = {} as Record<StatKey, StatDefinition>;
   for (const key of STAT_KEYS) {

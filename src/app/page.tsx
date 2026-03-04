@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { GameData, StatKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getTotalLevel, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay } from "@/lib/storage";
+import { loadGameData, addXP, getOverallLevel, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
 import { AddXPModal } from "@/components/AddXPModal";
 import { ActivityLog } from "@/components/ActivityLog";
@@ -87,7 +87,9 @@ export default function Home() {
     );
   }
 
-  const totalLevel = getTotalLevel(gameData);
+  // Overall player level based on total lifetime XP (activities logged)
+  const { level: overallLevel, xpIntoLevel, xpForNextLevel } = getOverallLevel(gameData.activities.length);
+  const overallProgressPercent = xpForNextLevel > 0 ? Math.round((xpIntoLevel / xpForNextLevel) * 100) : 100;
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8 pb-20">
@@ -112,14 +114,30 @@ export default function Home() {
         <h1 className="text-3xl font-extrabold text-stone-700 mb-1">
           Dreamboard
         </h1>
-        <p className="text-stone-400 text-sm">
-          Total Level{" "}
-          <span className="font-bold text-stone-500">{totalLevel}</span>
-          <span className="mx-1.5 text-stone-300">&middot;</span>
-          <span className="text-stone-400">
-            {gameData.activities.length} activit{gameData.activities.length === 1 ? "y" : "ies"} logged
-          </span>
+        <p className="text-stone-400 text-sm mb-4">
+          {gameData.activities.length} activit{gameData.activities.length === 1 ? "y" : "ies"} logged
         </p>
+
+        {/* Prominent level display */}
+        <div className="inline-flex flex-col items-center bg-stone-100 rounded-2xl px-8 py-4">
+          <span className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1">Current Level</span>
+          <span className="text-5xl font-extrabold text-stone-700 leading-none">{overallLevel}</span>
+          {overallLevel < 60 ? (
+            <>
+              <div className="w-48 h-2 bg-stone-200 rounded-full mt-3 overflow-hidden">
+                <div
+                  className="h-full bg-amber-400 rounded-full transition-all duration-500"
+                  style={{ width: `${overallProgressPercent}%` }}
+                />
+              </div>
+              <span className="text-xs text-stone-400 mt-1.5">
+                {xpIntoLevel} / {xpForNextLevel} XP to Level {overallLevel + 1}
+              </span>
+            </>
+          ) : (
+            <span className="text-xs text-amber-500 font-semibold mt-2">MAX LEVEL</span>
+          )}
+        </div>
       </header>
 
       {/* Monthly XP Summary */}
