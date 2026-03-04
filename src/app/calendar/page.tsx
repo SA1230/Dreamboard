@@ -80,7 +80,7 @@ export default function CalendarPage() {
   }
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-8 pb-20">
+    <main className="mx-auto px-8 py-8 pb-20 lg:px-16">
       {/* Header */}
       <header className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
