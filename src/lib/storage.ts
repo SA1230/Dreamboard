@@ -294,6 +294,50 @@ export function getMonthlyXPTotals(activities: Activity[]): {
   return { currentMonthXP, lastMonthXP };
 }
 
+// --- Healthy Habits ---
+// Stored separately from GameData since habits are a simple daily toggle, not part of the XP system.
+// Shape: { "water": ["2026-03-04", ...], "nails": ["2026-03-04", ...] }
+
+const HEALTHY_HABITS_KEY = "dreamboard-healthy-habits";
+
+export type HealthyHabitKey = "water" | "nails";
+
+export type HealthyHabitsData = Record<HealthyHabitKey, string[]>;
+
+function createDefaultHealthyHabits(): HealthyHabitsData {
+  return { water: [], nails: [] };
+}
+
+export function loadHealthyHabits(): HealthyHabitsData {
+  if (typeof window === "undefined") return createDefaultHealthyHabits();
+  const stored = localStorage.getItem(HEALTHY_HABITS_KEY);
+  if (!stored) return createDefaultHealthyHabits();
+  try {
+    return JSON.parse(stored) as HealthyHabitsData;
+  } catch {
+    return createDefaultHealthyHabits();
+  }
+}
+
+export function toggleHealthyHabit(data: HealthyHabitsData, habit: HealthyHabitKey): HealthyHabitsData {
+  const today = new Date().toISOString().split("T")[0];
+  const dates = data[habit];
+  const alreadyDone = dates.includes(today);
+  const newData = {
+    ...data,
+    [habit]: alreadyDone ? dates.filter((d) => d !== today) : [...dates, today],
+  };
+  if (typeof window !== "undefined") {
+    localStorage.setItem(HEALTHY_HABITS_KEY, JSON.stringify(newData));
+  }
+  return newData;
+}
+
+export function isHabitDoneToday(data: HealthyHabitsData, habit: HealthyHabitKey): boolean {
+  const today = new Date().toISOString().split("T")[0];
+  return data[habit].includes(today);
+}
+
 export function exportGameData(data: GameData): void {
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: "application/json" });

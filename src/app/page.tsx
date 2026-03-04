@@ -8,6 +8,7 @@ import { StatCard } from "@/components/StatCard";
 import { AddXPModal } from "@/components/AddXPModal";
 import { ActivityLog } from "@/components/ActivityLog";
 import { MonthlyXPSummary } from "@/components/MonthlyXPSummary";
+import { HealthyHabits } from "@/components/HealthyHabits";
 import { Download, Settings, CalendarDays } from "lucide-react";
 import Link from "next/link";
 
@@ -329,6 +330,9 @@ export default function Home() {
           />
         </div>
       </div>
+
+      {/* Healthy Habits */}
+      <HealthyHabits />
 
       {/* Stat Card Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
