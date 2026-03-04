@@ -1,103 +1,111 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { GameData, StatKey } from "@/lib/types";
+import { STAT_DEFINITIONS, STAT_KEYS } from "@/lib/stats";
+import { loadGameData, addXP, getTotalLevel, exportGameData } from "@/lib/storage";
+import { StatCard } from "@/components/StatCard";
+import { AddXPModal } from "@/components/AddXPModal";
+import { ActivityLog } from "@/components/ActivityLog";
+import { Download } from "lucide-react";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [gameData, setGameData] = useState<GameData | null>(null);
+  const [activeModal, setActiveModal] = useState<StatKey | null>(null);
+  const [leveledUpStat, setLeveledUpStat] = useState<StatKey | null>(null);
+  const [xpGainedStat, setXpGainedStat] = useState<StatKey | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  // Load data from localStorage on mount
+  useEffect(() => {
+    setGameData(loadGameData());
+  }, []);
+
+  const handleAddXP = useCallback(
+    (statKey: StatKey, note: string) => {
+      if (!gameData) return;
+      const { newData, leveledUp } = addXP(gameData, statKey, note);
+      setGameData(newData);
+      setActiveModal(null);
+
+      // Trigger XP gain animation
+      setXpGainedStat(statKey);
+      setTimeout(() => setXpGainedStat(null), 900);
+
+      // Trigger level-up animation
+      if (leveledUp) {
+        setLeveledUpStat(statKey);
+        setTimeout(() => setLeveledUpStat(null), 2100);
+      }
+    },
+    [gameData]
+  );
+
+  // Show nothing while loading from localStorage (prevents hydration flash)
+  if (!gameData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-stone-300 border-t-stone-500 animate-spin" />
+      </div>
+    );
+  }
+
+  const totalLevel = getTotalLevel(gameData);
+
+  return (
+    <main className="max-w-3xl mx-auto px-4 py-8 pb-20">
+      {/* Header */}
+      <header className="text-center mb-10">
+        <h1 className="text-3xl font-extrabold text-stone-700 mb-1">
+          Your Quest Log
+        </h1>
+        <p className="text-stone-400 text-sm">
+          Total Level{" "}
+          <span className="font-bold text-stone-500">{totalLevel}</span>
+          <span className="mx-1.5 text-stone-300">&middot;</span>
+          <span className="text-stone-400">
+            {gameData.activities.length} activit{gameData.activities.length === 1 ? "y" : "ies"} logged
+          </span>
+        </p>
+      </header>
+
+      {/* Stat Card Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
+        {STAT_KEYS.map((key) => (
+          <StatCard
+            key={key}
+            definition={STAT_DEFINITIONS[key]}
+            progress={gameData.stats[key]}
+            onAddXP={() => setActiveModal(key)}
+            leveledUp={leveledUpStat === key}
+            justGainedXP={xpGainedStat === key}
+          />
+        ))}
+      </div>
+
+      {/* Activity Log */}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-stone-600">Recent Activity</h2>
+          <button
+            onClick={() => exportGameData(gameData)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-400 bg-stone-100 hover:bg-stone-200 transition-colors duration-200"
+            title="Export your data as JSON"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <Download size={14} />
+            Export
+          </button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+        <ActivityLog activities={gameData.activities} />
+      </section>
+
+      {/* AddXP Modal */}
+      {activeModal && (
+        <AddXPModal
+          definition={STAT_DEFINITIONS[activeModal]}
+          onConfirm={(note) => handleAddXP(activeModal, note)}
+          onCancel={() => setActiveModal(null)}
+        />
+      )}
+    </main>
   );
 }
