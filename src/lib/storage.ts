@@ -172,6 +172,55 @@ export function getActivitiesByDay(
   return result;
 }
 
+// Calculate current streak per stat (consecutive days ending today/yesterday with activity)
+// Returns: { strength: 3, wisdom: 0, ... }
+export function getStatStreaks(activities: Activity[]): Record<StatKey, number> {
+  // Build a set of "YYYY-MM-DD" strings per stat for fast lookup
+  const daysPerStat: Record<string, Set<string>> = {};
+  for (const activity of activities) {
+    const dateString = activity.timestamp.split("T")[0];
+    if (!daysPerStat[activity.stat]) daysPerStat[activity.stat] = new Set();
+    daysPerStat[activity.stat].add(dateString);
+  }
+
+  const result = {} as Record<StatKey, number>;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (const key of STAT_KEYS) {
+    const days = daysPerStat[key];
+    if (!days || days.size === 0) {
+      result[key] = 0;
+      continue;
+    }
+
+    // Start checking from today, then yesterday, etc.
+    let streak = 0;
+    const checkDate = new Date(today);
+
+    // If no activity today, check if yesterday had activity (streak is still alive)
+    const todayString = checkDate.toISOString().split("T")[0];
+    if (!days.has(todayString)) {
+      checkDate.setDate(checkDate.getDate() - 1);
+      const yesterdayString = checkDate.toISOString().split("T")[0];
+      if (!days.has(yesterdayString)) {
+        result[key] = 0;
+        continue;
+      }
+    }
+
+    // Count consecutive days backwards
+    while (days.has(checkDate.toISOString().split("T")[0])) {
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    result[key] = streak;
+  }
+
+  return result;
+}
+
 export function exportGameData(data: GameData): void {
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: "application/json" });
