@@ -28,7 +28,7 @@ export interface CustomStatOverride {
   iconKey?: string;
 }
 
-export type HabitKey = "water" | "nails";
+export type HabitKey = "water" | "nails" | "brush" | "nosugar";
 
 export interface GameData {
   stats: Record<StatKey, StatProgress>;

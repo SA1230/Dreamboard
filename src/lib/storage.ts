@@ -339,7 +339,7 @@ export function getHabitsByDay(
   const habits = data.healthyHabits;
   if (!habits) return result;
 
-  const habitKeys: HabitKey[] = ["water", "nails"];
+  const habitKeys: HabitKey[] = ["water", "nails", "brush", "nosugar"];
 
   for (const habitKey of habitKeys) {
     const dates = habits[habitKey];

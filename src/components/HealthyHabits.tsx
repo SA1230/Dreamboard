@@ -228,65 +228,241 @@ function NailsIcon({ completed }: { completed: boolean }) {
   );
 }
 
+function ToothbrushIcon({ completed }: { completed: boolean }) {
+  return (
+    <svg
+      width="48"
+      height="48"
+      viewBox="0 0 48 48"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="transition-all duration-500 ease-out"
+      style={{
+        filter: completed
+          ? "drop-shadow(0 2px 8px rgba(20, 184, 166, 0.4))"
+          : "none",
+      }}
+    >
+      {/* Brush head */}
+      <rect
+        x="10"
+        y="6"
+        width="16"
+        height="10"
+        rx="3"
+        fill={completed ? "#ccfbf1" : "#f3f4f6"}
+        stroke={completed ? "#14b8a6" : "#d1d5db"}
+        strokeWidth="1.5"
+        className="transition-all duration-500"
+      />
+      {/* Bristles */}
+      {[12, 15, 18, 21, 24].map((x) => (
+        <rect
+          key={x}
+          x={x}
+          y="2"
+          width="1.5"
+          height="5"
+          rx="0.75"
+          fill={completed ? "#14b8a6" : "#d1d5db"}
+          className="transition-colors duration-500"
+        />
+      ))}
+      {/* Handle */}
+      <rect
+        x="15"
+        y="16"
+        width="6"
+        height="28"
+        rx="3"
+        fill={completed ? "#99f6e4" : "#f3f4f6"}
+        stroke={completed ? "#14b8a6" : "#d1d5db"}
+        strokeWidth="1.5"
+        className="transition-all duration-500"
+      />
+      {/* Handle stripe */}
+      <rect
+        x="16.5"
+        y="22"
+        width="3"
+        height="8"
+        rx="1.5"
+        fill={completed ? "#14b8a6" : "#d1d5db"}
+        opacity={completed ? 0.5 : 0.3}
+        className="transition-all duration-500"
+      />
+      {/* Sparkle when completed */}
+      {completed && (
+        <>
+          <circle cx="32" cy="10" r="1.5" fill="#14b8a6" opacity="0.7" />
+          <circle cx="35" cy="6" r="1" fill="#14b8a6" opacity="0.5" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+function NoSugarIcon({ completed }: { completed: boolean }) {
+  return (
+    <svg
+      width="48"
+      height="48"
+      viewBox="0 0 48 48"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="transition-all duration-500 ease-out"
+      style={{
+        filter: completed
+          ? "drop-shadow(0 2px 8px rgba(245, 158, 11, 0.4))"
+          : "none",
+      }}
+    >
+      {/* Donut body (outer ring) */}
+      <circle
+        cx="24"
+        cy="24"
+        r="16"
+        fill={completed ? "#fef3c7" : "#f3f4f6"}
+        stroke={completed ? "#f59e0b" : "#d1d5db"}
+        strokeWidth="1.5"
+        className="transition-all duration-500"
+      />
+      {/* Donut hole */}
+      <circle
+        cx="24"
+        cy="24"
+        r="6"
+        fill={completed ? "#fffbeb" : "#fafaf9"}
+        stroke={completed ? "#f59e0b" : "#d1d5db"}
+        strokeWidth="1.5"
+        className="transition-all duration-500"
+      />
+      {/* Frosting on top half */}
+      <path
+        d="M9 22c1 3 3 5 6 4s4-3 5-2 2 3 4 3 3-2 4-3 2 1 5 2 5-2 6-4"
+        stroke={completed ? "#f472b6" : "#d1d5db"}
+        strokeWidth="2"
+        fill="none"
+        strokeLinecap="round"
+        className="transition-colors duration-500"
+      />
+      {/* Sprinkles */}
+      <rect
+        x="14"
+        y="14"
+        width="3"
+        height="1.5"
+        rx="0.75"
+        fill={completed ? "#ef4444" : "#e5e7eb"}
+        transform="rotate(-30 14 14)"
+        className="transition-colors duration-500"
+      />
+      <rect
+        x="30"
+        y="15"
+        width="3"
+        height="1.5"
+        rx="0.75"
+        fill={completed ? "#3b82f6" : "#e5e7eb"}
+        transform="rotate(20 30 15)"
+        className="transition-colors duration-500"
+      />
+      <rect
+        x="22"
+        y="11"
+        width="3"
+        height="1.5"
+        rx="0.75"
+        fill={completed ? "#22c55e" : "#e5e7eb"}
+        transform="rotate(45 22 11)"
+        className="transition-colors duration-500"
+      />
+      {/* Prohibition slash circle */}
+      <circle
+        cx="24"
+        cy="24"
+        r="20"
+        fill="none"
+        stroke={completed ? "#dc2626" : "#d1d5db"}
+        strokeWidth="2.5"
+        className="transition-colors duration-500"
+      />
+      {/* Diagonal slash */}
+      <line
+        x1="10"
+        y1="10"
+        x2="38"
+        y2="38"
+        stroke={completed ? "#dc2626" : "#d1d5db"}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        className="transition-colors duration-500"
+      />
+    </svg>
+  );
+}
+
 const HABIT_CONFIG: Record<HabitKey, { label: string; completedLabel: string }> = {
   water: { label: "Drink 64oz", completedLabel: "64oz done!" },
   nails: { label: "No nail biting", completedLabel: "Nails safe!" },
+  brush: { label: "Brush 2x", completedLabel: "Brushed!" },
+  nosugar: { label: "No sugar", completedLabel: "Sugar free!" },
 };
 
-export function HealthyHabits({ gameData, onToggleHabit }: HealthyHabitsProps) {
-  const waterCompleted = isHabitCompletedToday(gameData, "water");
-  const nailsCompleted = isHabitCompletedToday(gameData, "nails");
+const HABIT_STYLES: Record<HabitKey, { activeBackground: string; activeBorder: string; activeText: string }> = {
+  water: { activeBackground: "#eff6ff", activeBorder: "#3b82f6", activeText: "#2563eb" },
+  nails: { activeBackground: "#fdf2f8", activeBorder: "#ec4899", activeText: "#db2777" },
+  brush: { activeBackground: "#f0fdfa", activeBorder: "#14b8a6", activeText: "#0d9488" },
+  nosugar: { activeBackground: "#fffbeb", activeBorder: "#f59e0b", activeText: "#d97706" },
+};
 
+const HABIT_ICONS: Record<HabitKey, React.ComponentType<{ completed: boolean }>> = {
+  water: WaterBottleIcon,
+  nails: NailsIcon,
+  brush: ToothbrushIcon,
+  nosugar: NoSugarIcon,
+};
+
+const HABIT_ORDER: HabitKey[] = ["water", "nails", "brush", "nosugar"];
+
+export function HealthyHabits({ gameData, onToggleHabit }: HealthyHabitsProps) {
   return (
     <section className="mb-12">
       <h2 className="text-lg font-bold text-stone-600 mb-4">Healthy Habits</h2>
-      <div className="flex gap-4">
-        {/* Water Bottle */}
-        <button
-          onClick={() => onToggleHabit("water")}
-          className="flex-1 flex flex-col items-center gap-2 rounded-2xl py-5 px-4 transition-all duration-300 cursor-pointer"
-          style={{
-            backgroundColor: waterCompleted ? "#eff6ff" : "#fafaf9",
-            border: waterCompleted ? "2px solid #3b82f6" : "2px solid #e7e5e4",
-            transform: waterCompleted ? "scale(1)" : "scale(1)",
-          }}
-        >
-          <div
-            className="transition-transform duration-300"
-            style={{ transform: waterCompleted ? "scale(1.1)" : "scale(1)" }}
-          >
-            <WaterBottleIcon completed={waterCompleted} />
-          </div>
-          <span
-            className="text-xs font-semibold transition-colors duration-300"
-            style={{ color: waterCompleted ? "#2563eb" : "#a8a29e" }}
-          >
-            {waterCompleted ? HABIT_CONFIG.water.completedLabel : HABIT_CONFIG.water.label}
-          </span>
-        </button>
+      <div className="grid grid-cols-2 gap-4">
+        {HABIT_ORDER.map((habitKey) => {
+          const completed = isHabitCompletedToday(gameData, habitKey);
+          const styles = HABIT_STYLES[habitKey];
+          const config = HABIT_CONFIG[habitKey];
+          const IconComponent = HABIT_ICONS[habitKey];
 
-        {/* Nails */}
-        <button
-          onClick={() => onToggleHabit("nails")}
-          className="flex-1 flex flex-col items-center gap-2 rounded-2xl py-5 px-4 transition-all duration-300 cursor-pointer"
-          style={{
-            backgroundColor: nailsCompleted ? "#fdf2f8" : "#fafaf9",
-            border: nailsCompleted ? "2px solid #ec4899" : "2px solid #e7e5e4",
-          }}
-        >
-          <div
-            className="transition-transform duration-300"
-            style={{ transform: nailsCompleted ? "scale(1.1)" : "scale(1)" }}
-          >
-            <NailsIcon completed={nailsCompleted} />
-          </div>
-          <span
-            className="text-xs font-semibold transition-colors duration-300"
-            style={{ color: nailsCompleted ? "#db2777" : "#a8a29e" }}
-          >
-            {nailsCompleted ? HABIT_CONFIG.nails.completedLabel : HABIT_CONFIG.nails.label}
-          </span>
-        </button>
+          return (
+            <button
+              key={habitKey}
+              onClick={() => onToggleHabit(habitKey)}
+              className="flex flex-col items-center gap-2 rounded-2xl py-5 px-4 transition-all duration-300 cursor-pointer"
+              style={{
+                backgroundColor: completed ? styles.activeBackground : "#fafaf9",
+                border: completed
+                  ? `2px solid ${styles.activeBorder}`
+                  : "2px solid #e7e5e4",
+              }}
+            >
+              <div
+                className="transition-transform duration-300"
+                style={{ transform: completed ? "scale(1.1)" : "scale(1)" }}
+              >
+                <IconComponent completed={completed} />
+              </div>
+              <span
+                className="text-xs font-semibold transition-colors duration-300"
+                style={{ color: completed ? styles.activeText : "#a8a29e" }}
+              >
+                {completed ? config.completedLabel : config.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </section>
   );

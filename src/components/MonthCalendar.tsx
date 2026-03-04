@@ -44,6 +44,29 @@ function TinyNailsIcon() {
   );
 }
 
+function TinyBrushIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 48 48" fill="none">
+      <rect x="10" y="6" width="16" height="10" rx="3" fill="#ccfbf1" stroke="#14b8a6" strokeWidth="2" />
+      {[12, 15, 18, 21, 24].map((x) => (
+        <rect key={x} x={x} y="2" width="1.5" height="5" rx="0.75" fill="#14b8a6" />
+      ))}
+      <rect x="15" y="16" width="6" height="28" rx="3" fill="#99f6e4" stroke="#14b8a6" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function TinyNoSugarIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 48 48" fill="none">
+      <circle cx="24" cy="24" r="16" fill="#fef3c7" stroke="#f59e0b" strokeWidth="2" />
+      <circle cx="24" cy="24" r="6" fill="#fffbeb" stroke="#f59e0b" strokeWidth="2" />
+      <circle cx="24" cy="24" r="20" fill="none" stroke="#dc2626" strokeWidth="3" />
+      <line x1="10" y1="10" x2="38" y2="38" stroke="#dc2626" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 interface MonthCalendarProps {
   year: number;
   month: number; // 0-indexed (0 = January)
@@ -169,6 +192,16 @@ export function MonthCalendar({
                   {habitsByDay[day].includes("nails") && (
                     <div title="No nail biting">
                       <TinyNailsIcon />
+                    </div>
+                  )}
+                  {habitsByDay[day].includes("brush") && (
+                    <div title="Brushed 2x">
+                      <TinyBrushIcon />
+                    </div>
+                  )}
+                  {habitsByDay[day].includes("nosugar") && (
+                    <div title="No sugar">
+                      <TinyNoSugarIcon />
                     </div>
                   )}
                 </div>
