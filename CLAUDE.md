@@ -8,9 +8,11 @@ Dreamboard is a gamified personal habit tracker. Users earn XP by logging real-l
 
 - **Framework:** Next.js 15 (App Router) with React 19 and TypeScript
 - **Styling:** Tailwind CSS 4 — warm earth tones, stone backgrounds, rounded cards
-- **Icons:** lucide-react (no other UI library)
+- **Icons:** lucide-react + 20 hand-drawn SVG icons in `StatIcons.tsx` (no other UI library)
+- **Font:** Nunito (Google Font) loaded via `next/font/google` in `layout.tsx`
 - **Storage:** Browser localStorage only — no database, no backend, no API
 - **Charts:** None — we build visualizations with plain CSS/SVG (no recharts, no d3)
+- **Animations:** 6 custom keyframe animations in `globals.css` (fadeIn, modalSlideUp, xpPop, levelUpGlow, levelUpText, particle)
 - **Run locally:** `npm run dev` (port 3000) / `npm run build` to check for errors
 
 ## Project structure
@@ -18,37 +20,62 @@ Dreamboard is a gamified personal habit tracker. Users earn XP by logging real-l
 ```
 src/
 ├── app/
-│   ├── page.tsx            # Homepage — stat cards, monthly XP summary, activity log
-│   ├── layout.tsx          # Root layout with global styles
-│   ├── globals.css         # Tailwind base + custom styles
-│   ├── calendar/           # Monthly calendar view showing daily XP breakdown
+│   ├── page.tsx            # Homepage — stat cards, overall level display, monthly XP, healthy habits, activity log
+│   ├── layout.tsx          # Root layout with Nunito font + global styles
+│   ├── globals.css         # Tailwind base + 6 custom keyframe animations
+│   ├── calendar/           # Monthly calendar view showing daily XP + habit icons
 │   └── settings/           # Customize stat names, descriptions, colors, icons
 ├── components/
-│   ├── StatCard.tsx         # One card per stat (icon, name, level, XP bar, + button)
-│   ├── MonthlyXPSummary.tsx # Monthly XP total with sparkline chart + trend vs last month
+│   ├── StatCard.tsx         # One card per stat (icon fill effect, level, XP bar, streak flame, dormant dimming)
+│   ├── MonthlyXPSummary.tsx # Monthly XP total with sparkline bar chart + trend vs last month
 │   ├── AddXPModal.tsx       # Modal to log an activity (pick stat, add note)
-│   ├── ActivityLog.tsx      # Scrollable list of recent activities
-│   ├── MonthCalendar.tsx    # Calendar grid with per-day XP breakdown
-│   └── StatIcons.tsx        # SVG icon components for each stat
+│   ├── ActivityLog.tsx      # Scrollable list of recent 20 activities
+│   ├── MonthCalendar.tsx    # Calendar grid with per-day XP breakdown + healthy habit icons
+│   ├── HealthyHabits.tsx    # Daily toggle cards for water, nails, brushing, no-sugar habits
+│   └── StatIcons.tsx        # 20 SVG icons (8 stat defaults + 12 extras for customization)
 └── lib/
-    ├── types.ts             # TypeScript types: StatKey, Activity, GameData, etc.
-    ├── stats.ts             # Stat definitions (names, colors, XP descriptions)
-    └── storage.ts           # All data logic: load/save, addXP, getActivitiesByDay, streaks, etc.
+    ├── types.ts             # TypeScript types: StatKey, HabitKey, Activity, GameData, etc.
+    ├── stats.ts             # Stat definitions, ColorPreset palettes, STAT_KEYS array
+    └── storage.ts           # All data logic: load/save, addXP, leveling, habits, streaks, export, etc.
 ```
 
 ## Data model (defined in `src/lib/types.ts`)
 
 - **StatKey** — one of 8 strings: `"strength"`, `"wisdom"`, `"vitality"`, etc.
+- **HabitKey** — one of 4 strings: `"water"`, `"nails"`, `"brush"`, `"nosugar"`
 - **Activity** — `{ id, stat, note, timestamp }` — one logged action = 1 XP
-- **GameData** — the root object stored in localStorage: `{ stats, activities, customDefinitions? }`
-- **Leveling:** XP thresholds grow per level. Logic lives in `storage.ts` (`addXP`, `getTotalLevel`)
+- **GameData** — the root object stored in localStorage: `{ stats, activities, customDefinitions?, healthyHabits? }`
+  - `healthyHabits` maps each `HabitKey` to an array of `"YYYY-MM-DD"` date strings (days the habit was completed)
+- **Per-stat leveling:** Fibonacci-ish XP thresholds per stat. Logic in `storage.ts` (`addXP`, `getXPForNextLevel`)
+- **Overall player level:** EQ-inspired curve (max level 60) with "hell levels" at 30/35/40/45/50/55/59. Logic in `storage.ts` (`getOverallLevel`). Rank titles (Novice → Transcendent) are defined in `page.tsx`
 
 ## Key patterns
 
 - All state flows through `GameData` loaded from localStorage on mount in `page.tsx`
-- Helper functions in `storage.ts` derive computed data (monthly totals, streaks, daily breakdowns)
+- Helper functions in `storage.ts` derive computed data (monthly totals, streaks, daily breakdowns, habit history)
 - Components receive data as props — no global state library, no context
 - Stat definitions (names, colors, icons) have defaults in `stats.ts` but can be overridden via `customDefinitions` in settings
+- **Stat card dormancy:** Cards dim (opacity + desaturation) if the stat has zero activity this month (`isActiveThisMonth` prop)
+- **Icon fill effect:** StatCard layers an unfilled ghost icon behind a filled icon that clips from bottom-up based on XP progress
+- **Healthy Habits:** A separate system from stat XP — boolean-per-day toggles that don't award XP. Stored as date strings in `healthyHabits`
+- **Data export:** `exportGameData()` in `storage.ts` downloads a full JSON backup. Button lives in the Activity Log section
+- **`LevelDisplay` component** lives inline in `page.tsx` (not a separate file) — shows overall level with SVG ring + parallax tilt effect
+
+## Key exports in `storage.ts`
+
+- `loadGameData()` / `saveGameData(data)` — localStorage read/write
+- `addXP(data, statKey, note)` — log 1 XP, handle level-up, save
+- `getXPForNextLevel(level)` — per-stat Fibonacci thresholds
+- `getOverallLevel(totalXP)` — overall player level (EQ curve, max 60)
+- `getTotalLevel(data)` — sum of all per-stat levels
+- `getEffectiveDefinitions(data)` — merge custom overrides with defaults
+- `saveCustomDefinitions(data, overrides)` / `resetCustomDefinitions(data)`
+- `getActivitiesByDay(activities, year, month)` — XP grouped by calendar day
+- `getStatStreaks(activities)` — consecutive-day streak per stat
+- `getMonthlyXPTotals(activities)` — current vs last month XP
+- `isHabitCompletedToday(data, habitKey)` / `toggleHabitForToday(data, habitKey)`
+- `getHabitsByDay(data, year, month)` — habits grouped by calendar day
+- `exportGameData(data)` — JSON file download
 
 ## ⚠ Using this context correctly
 
