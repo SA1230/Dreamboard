@@ -48,12 +48,16 @@ export function MonthlyXPSummary({
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const todayDate = now.getDate();
 
-  // Find the max total XP for any single day (for height scaling)
+  // Find the max total XP for any single day (for height scaling), capped at 10
+  const maxVisibleBlocksPerDay = 10;
   let maxDayXP = 1;
   for (let day = 1; day <= daysInMonth; day++) {
     const dayStats = activitiesByDay[day];
     if (dayStats) {
-      const total = Object.values(dayStats).reduce((sum, xp) => sum + (xp ?? 0), 0);
+      const total = Math.min(
+        maxVisibleBlocksPerDay,
+        Object.values(dayStats).reduce((sum, xp) => sum + (xp ?? 0), 0)
+      );
       if (total > maxDayXP) maxDayXP = total;
     }
   }
@@ -213,16 +217,49 @@ export function MonthlyXPSummary({
                 name: getStatName(stat),
               }));
 
+            const totalDayXP = statGroups.reduce((sum, g) => sum + g.xp, 0);
+            const maxVisibleBlocks = 10;
+            const overflow = totalDayXP > maxVisibleBlocks ? totalDayXP - maxVisibleBlocks : 0;
+
+            // Proportionally distribute capped blocks across stats
+            const cappedGroups = overflow > 0
+              ? (() => {
+                  const scaled = statGroups.map((g) => ({
+                    ...g,
+                    cappedXP: Math.max(1, Math.round((g.xp / totalDayXP) * maxVisibleBlocks)),
+                  }));
+                  // Adjust rounding so total equals maxVisibleBlocks exactly
+                  let scaledTotal = scaled.reduce((sum, g) => sum + g.cappedXP, 0);
+                  while (scaledTotal > maxVisibleBlocks) {
+                    const largest = scaled.reduce((a, b) => (a.cappedXP > b.cappedXP ? a : b));
+                    largest.cappedXP--;
+                    scaledTotal--;
+                  }
+                  while (scaledTotal < maxVisibleBlocks) {
+                    const largest = scaled.reduce((a, b) => (a.xp > b.xp ? a : b));
+                    largest.cappedXP++;
+                    scaledTotal++;
+                  }
+                  return scaled;
+                })()
+              : statGroups.map((g) => ({ ...g, cappedXP: g.xp }));
+
             return (
               <div
                 key={day}
                 className={`flex-1 flex flex-col-reverse items-stretch h-full justify-start ${todayHighlight}`}
               >
+                {/* +N overflow label */}
+                {overflow > 0 && (
+                  <div className="text-center mb-0.5">
+                    <span className="text-[8px] font-bold text-stone-400">+{overflow}</span>
+                  </div>
+                )}
                 <div
                   className="flex flex-col-reverse"
                   style={{ gap: 2 }}
                 >
-                  {statGroups.map((group) => (
+                  {cappedGroups.map((group) => (
                     <div
                       key={group.stat}
                       className="relative group/stat flex flex-col-reverse"
@@ -234,7 +271,7 @@ export function MonthlyXPSummary({
                         <span className="text-stone-300 ml-1">{group.xp} XP</span>
                       </div>
                       {/* Blocks — 3D cube with top + right faces */}
-                      {Array.from({ length: group.xp }, (_, blockIndex) => (
+                      {Array.from({ length: group.cappedXP }, (_, blockIndex) => (
                         <CubeBlock key={blockIndex} color={group.color} size={blockHeight} />
                       ))}
                     </div>
