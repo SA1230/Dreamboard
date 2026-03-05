@@ -804,20 +804,6 @@ export default function Home() {
         </h1>
         <p className="text-stone-400 text-sm">
           {gameData.activities.length} activit{gameData.activities.length === 1 ? "y" : "ies"} logged
-          {(() => {
-            const latestActivity = gameData.activities[0]?.timestamp;
-            const latestFeed = gameData.feedEvents?.[0]?.timestamp;
-            const mostRecent = latestActivity && latestFeed
-              ? (latestActivity > latestFeed ? latestActivity : latestFeed)
-              : latestActivity || latestFeed;
-            return mostRecent ? (
-              <span className="text-stone-300"> · {formatRelativeTime(mostRecent)}</span>
-            ) : null;
-          })()}
-          <span className="text-stone-300"> | Week {currentWeekNumber}/52</span>
-        </p>
-        <p className="text-stone-300 text-sm italic mt-0.5">
-          &ldquo;{weeklyQuote.text}&rdquo; — {weeklyQuote.author}
         </p>
       </header>
 
@@ -937,7 +923,7 @@ export default function Home() {
 
       {/* Activity Log */}
       <section>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center mb-4">
           <button
             onClick={() => setIsActivityExpanded(!isActivityExpanded)}
             className="flex items-center gap-2 group"
@@ -950,6 +936,18 @@ export default function Home() {
               ▶
             </span>
           </button>
+          <span className="text-xs text-stone-300 font-medium ml-2">
+            {gameData.activities.length} activit{gameData.activities.length === 1 ? "y" : "ies"}
+            {(() => {
+              const latestActivity = gameData.activities[0]?.timestamp;
+              const latestFeed = gameData.feedEvents?.[0]?.timestamp;
+              const mostRecent = latestActivity && latestFeed
+                ? (latestActivity > latestFeed ? latestActivity : latestFeed)
+                : latestActivity || latestFeed;
+              return mostRecent ? <> · {formatRelativeTime(mostRecent)}</> : null;
+            })()}
+          </span>
+          <div className="ml-auto" />
           {isActivityExpanded && (
             <button
               onClick={() => exportGameData(gameData)}
