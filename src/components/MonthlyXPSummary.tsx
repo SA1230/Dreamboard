@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from "react";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { StatDefinition, STAT_KEYS } from "@/lib/stats";
 import { StatKey, HabitKey } from "@/lib/types";
@@ -40,6 +41,7 @@ export function MonthlyXPSummary({
 
   const now = new Date();
   const currentMonthName = now.toLocaleString("default", { month: "long" });
+  const dayOfWeek = now.toLocaleString("default", { weekday: "short" });
   const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const lastMonthName = lastMonthDate.toLocaleString("default", { month: "short" });
 
@@ -56,8 +58,26 @@ export function MonthlyXPSummary({
     }
   }
 
-  const chartHeight = 64;
-  const blockGap = 1; // pixel gap between blocks
+  const blockGap = 2; // pixel gap between blocks
+
+  // Measure actual chart height so blocks scale to fill available space
+  const chartRef = useRef<HTMLDivElement>(null);
+  const [chartHeight, setChartHeight] = useState(80);
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setChartHeight(entry.contentRect.height);
+      }
+    });
+    observer.observe(chartRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // Scale blocks to fill the chart, but cap so they look like chunky squares, not tall strips
+  const maxBlockHeight = 18;
+  const blockHeight = Math.min(maxBlockHeight, Math.max(Math.floor((chartHeight - (maxDayXP - 1) * blockGap) / maxDayXP), 4));
 
   function getStatColor(stat: string): string {
     return statDefinitions?.[stat as StatKey]?.progressColor ?? "#a8a29e";
@@ -67,20 +87,24 @@ export function MonthlyXPSummary({
     return statDefinitions?.[stat as StatKey]?.name ?? stat;
   }
 
-
-  // Each 1 XP = 1 block. Block height scales so the tallest day fills the chart.
-  const blockHeight = Math.max(Math.floor((chartHeight - (maxDayXP - 1) * blockGap) / maxDayXP), 3);
-
   return (
-    <div className="rounded-2xl bg-stone-50 border border-stone-200 p-5 h-full">
+    <div className="rounded-2xl bg-stone-50 border border-stone-200 p-5 h-full flex flex-col">
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs font-medium text-stone-400 uppercase tracking-wide">
-            {currentMonthName} XP
-          </p>
-          <p className="text-3xl font-extrabold text-stone-700 mt-1">
-            {currentMonthXP}
-          </p>
+        <div className="flex items-baseline gap-2.5">
+          <div>
+            <p className="text-xs font-medium text-stone-400 uppercase tracking-wide">
+              {currentMonthName}
+            </p>
+            <p className="text-3xl font-extrabold text-stone-700 mt-0.5">
+              {todayDate}
+            </p>
+            <p className="text-xs font-medium text-stone-400 -mt-0.5">
+              {dayOfWeek}
+            </p>
+          </div>
+          <div className="self-center px-2 py-0.5 rounded-full bg-stone-100 border border-stone-200">
+            <span className="text-xs font-bold text-stone-500">{currentMonthXP} XP</span>
+          </div>
         </div>
 
         <div className="text-right">
@@ -111,12 +135,15 @@ export function MonthlyXPSummary({
       </div>
 
       {/* Stacked block chart — each 1 XP = 1 discrete block, consistent stat order */}
-      <div className="mt-4">
-        <div className="flex items-end gap-[2px]" style={{ height: chartHeight }}>
+      <div className="mt-3 flex-1 flex flex-col min-h-0">
+        <div ref={chartRef} className="flex items-end gap-[2px] flex-1 min-h-[60px]">
           {Array.from({ length: daysInMonth }, (_, index) => {
             const day = index + 1;
+            const isToday = day === todayDate;
             const isFutureDay = day > todayDate;
             const dayStats = activitiesByDay[day];
+
+            const todayHighlight = isToday ? "bg-amber-50 rounded-sm" : "";
 
             if (isFutureDay) {
               return (
@@ -128,7 +155,7 @@ export function MonthlyXPSummary({
 
             if (!dayStats || Object.keys(dayStats).length === 0) {
               return (
-                <div key={day} className="flex-1 flex items-end h-full">
+                <div key={day} className={`flex-1 flex items-end h-full ${todayHighlight}`}>
                   <div className="w-full h-[2px] bg-stone-200 rounded-sm" />
                 </div>
               );
@@ -148,7 +175,7 @@ export function MonthlyXPSummary({
             return (
               <div
                 key={day}
-                className="flex-1 flex flex-col-reverse items-stretch h-full justify-start"
+                className={`flex-1 flex flex-col-reverse items-stretch h-full justify-start ${todayHighlight}`}
               >
                 <div
                   className="flex flex-col-reverse"
@@ -165,14 +192,15 @@ export function MonthlyXPSummary({
                         <span style={{ color: group.color }}>{group.name}</span>
                         <span className="text-stone-300 ml-1">{group.xp} XP</span>
                       </div>
-                      {/* Blocks */}
+                      {/* Blocks — 3D raised tile effect via inset highlights + bottom shadow */}
                       {Array.from({ length: group.xp }, (_, blockIndex) => (
                         <div
                           key={blockIndex}
-                          className="w-full rounded-[1px]"
+                          className="w-full rounded-sm"
                           style={{
                             height: blockHeight,
                             backgroundColor: group.color,
+                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 rgba(0,0,0,0.2), 0 1px 1px rgba(0,0,0,0.1)`,
                           }}
                         />
                       ))}
@@ -184,15 +212,21 @@ export function MonthlyXPSummary({
           })}
         </div>
 
-        {/* Day labels */}
+        {/* Day labels — today always shown + highlighted */}
         <div className="flex gap-[2px] mt-1">
           {Array.from({ length: daysInMonth }, (_, index) => {
             const day = index + 1;
-            const showLabel = day === 1 || day % 5 === 0 || day === daysInMonth;
+            const isToday = day === todayDate;
+            const showLabel = isToday || day === 1 || day % 5 === 0 || day === daysInMonth;
             return (
-              <div key={day} className="flex-1 text-center">
+              <div key={day} className="flex-1 flex flex-col items-center">
                 {showLabel && (
-                  <span className="text-[9px] text-stone-300">{day}</span>
+                  <span className={`text-[9px] ${isToday ? "font-bold text-amber-600" : "text-stone-300"}`}>
+                    {day}
+                  </span>
+                )}
+                {isToday && (
+                  <div className="w-1 h-1 rounded-full bg-amber-500 mt-0.5" />
                 )}
               </div>
             );
