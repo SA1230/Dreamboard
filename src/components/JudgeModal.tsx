@@ -178,9 +178,16 @@ export function JudgeModal({
         {/* Header */}
         <div className="px-6 pt-5 pb-3 border-b border-stone-100">
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-lg text-stone-700">The XP Judge</h3>
-              <p className="text-xs text-stone-400">Describe what you did. Be honest.</p>
+            <div className="flex items-center gap-3">
+              <img
+                src="/mascots/judge-hero.svg"
+                alt="The Judge"
+                className="w-9 h-9 rounded-full bg-amber-50 border-2 border-amber-200 p-0.5 flex-shrink-0"
+              />
+              <div>
+                <h3 className="font-bold text-lg text-stone-700">The XP Judge</h3>
+                <p className="text-xs text-stone-400">Describe what you did. Be honest.</p>
+              </div>
             </div>
             <button
               onClick={onCancel}
@@ -202,10 +209,17 @@ export function JudgeModal({
           {messages.map((msg, index) => (
             <div
               key={index}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start items-end gap-2"}`}
             >
+              {msg.role === "assistant" && (
+                <img
+                  src="/mascots/judge-hero.svg"
+                  alt=""
+                  className="w-6 h-6 rounded-full bg-amber-50 border border-amber-200 p-0.5 flex-shrink-0"
+                />
+              )}
               <div
-                className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                   msg.role === "user"
                     ? "bg-stone-700 text-white rounded-br-md"
                     : "bg-stone-100 text-stone-700 rounded-bl-md"
@@ -217,7 +231,12 @@ export function JudgeModal({
           ))}
 
           {isLoading && (
-            <div className="flex justify-start">
+            <div className="flex justify-start items-end gap-2">
+              <img
+                src="/mascots/judge-hero.svg"
+                alt=""
+                className="w-6 h-6 rounded-full bg-amber-50 border border-amber-200 p-0.5 flex-shrink-0"
+              />
               <div className="bg-stone-100 rounded-2xl rounded-bl-md px-4 py-3">
                 <div className="flex gap-1">
                   <span className="w-2 h-2 bg-stone-300 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
