@@ -108,6 +108,8 @@ The sections above are a **map, not the source of truth.** They may be outdated.
 
 ## How to work with me
 
+0. **Never push to remote without my explicit approval.** After committing, always stop and ask "Ready to push?" before running `git push`. This applies every single time — no exceptions, no assumptions.
+
 1. **Explain your plan in plain English before writing any code.** Before touching a single file, tell me what you're going to do in 2-3 sentences. Say which files you'll change and why. Wait for my approval before proceeding.
 
 2. **Make the smallest possible change that solves the problem.** Do not refactor, reorganize, or "improve" anything beyond what I asked for. One task = one focused change. If you think something else should be fixed, mention it separately — don't just do it.
