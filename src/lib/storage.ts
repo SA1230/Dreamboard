@@ -505,8 +505,11 @@ export function formatRelativeTime(timestamp: string): string {
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
 
-  // Under 1 hour
-  if (diffMinutes < 60) return "Just now";
+  // Under 1 minute
+  if (diffMinutes < 1) return "Just now";
+
+  // 1-59 minutes
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
 
   // 1-23 hours — but check if it was yesterday first
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
