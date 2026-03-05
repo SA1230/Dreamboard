@@ -672,10 +672,35 @@ export default function Home() {
 
       {/* Points Balance */}
       {pointsBalance && (
-        <div className="flex items-center justify-center gap-3 mb-12 py-3 px-5 rounded-xl bg-stone-50 border border-stone-200 mx-auto w-fit">
-          <span className="text-xs font-medium text-stone-400 uppercase tracking-wide">Power Points</span>
-          <span className="text-2xl font-extrabold text-amber-600">{pointsBalance.balance}</span>
+        <section className="mb-12">
+        <h2 className="text-lg font-bold text-stone-600 mb-4 flex items-center gap-2">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M11.5 1L4 11h5.5L8.5 19 16 9h-5.5L11.5 1z" fill="#f59e0b" stroke="#d97706" strokeWidth="1.2" strokeLinejoin="round" />
+          </svg>
+          Power Points
+        </h2>
+        <div className="flex items-center justify-center gap-4 py-4 px-6 rounded-2xl bg-stone-50 border border-stone-200 mx-auto w-fit">
+          {/* Earned */}
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="text-lg font-bold text-emerald-600">+{pointsBalance.lifetimeEarned}</span>
+            <span className="text-[10px] font-medium text-stone-400 uppercase tracking-wide">earned</span>
+          </div>
+          {/* Divider */}
+          <div className="w-px h-8 bg-stone-200" />
+          {/* Balance (hero number) */}
+          <div className="flex flex-col items-center gap-0.5 px-3">
+            <span className="text-3xl font-extrabold text-amber-600">{pointsBalance.balance}</span>
+            <span className="text-[10px] font-medium text-stone-400 uppercase tracking-wide">balance</span>
+          </div>
+          {/* Divider */}
+          <div className="w-px h-8 bg-stone-200" />
+          {/* Damage */}
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="text-lg font-bold text-red-500">-{pointsBalance.lifetimeDamage}</span>
+            <span className="text-[10px] font-medium text-stone-400 uppercase tracking-wide">damage</span>
+          </div>
         </div>
+        </section>
       )}
 
       {/* Activity Log */}
