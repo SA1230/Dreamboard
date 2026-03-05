@@ -10,7 +10,8 @@ Dreamboard is a gamified personal habit tracker. Users earn XP by logging real-l
 - **Styling:** Tailwind CSS 4 — warm earth tones, stone backgrounds, rounded cards
 - **Icons:** lucide-react + 20 hand-drawn SVG icons in `StatIcons.tsx` (no other UI library)
 - **Font:** Nunito (Google Font) loaded via `next/font/google` in `layout.tsx`
-- **Storage:** Browser localStorage only — no database, no backend, no API
+- **Storage:** Browser localStorage only — no database, no backend API except `/api/judge`
+- **AI Judge:** Anthropic Claude Sonnet 4 (fallback: OpenAI GPT-4o) via `/api/judge` route — evaluates activities and awards variable XP
 - **Charts:** None — we build visualizations with plain CSS/SVG (no recharts, no d3)
 - **Animations:** 6 custom keyframe animations in `globals.css` (fadeIn, modalSlideUp, xpPop, levelUpGlow, levelUpText, particle)
 - **Run locally:** `npm run dev` (port 3000) / `npm run build` to check for errors
@@ -23,12 +24,14 @@ src/
 │   ├── page.tsx            # Homepage — stat cards, overall level display, monthly XP, healthy habits, activity log
 │   ├── layout.tsx          # Root layout with Nunito font + global styles
 │   ├── globals.css         # Tailwind base + 6 custom keyframe animations
+│   ├── api/judge/route.ts  # POST endpoint — sends activity to AI judge, returns XP verdict
 │   ├── calendar/           # Monthly calendar view showing daily XP + habit/damage icons
 │   └── settings/           # Customize stat names, descriptions, colors, icons + enable/disable habits & damage
 ├── components/
-│   ├── StatCard.tsx         # One card per stat (icon fill effect, level, XP bar, streak flame, dormant dimming)
+│   ├── StatCard.tsx         # One card per stat (icon fill effect, level, XP bar, streak flame, dormant dimming) — read-only, no + button
 │   ├── MonthlyXPSummary.tsx # Monthly XP total with sparkline bar chart + trend vs last month
-│   ├── AddXPModal.tsx       # Modal to log an activity (pick stat, add note)
+│   ├── JudgeModal.tsx       # Conversational AI judge — multi-turn chat, awards variable XP (1-10 per stat)
+│   ├── AddXPModal.tsx       # (Legacy) Manual XP entry modal — no longer wired up, Judge is the sole XP entry point
 │   ├── ActivityLog.tsx      # Unified feed of all events (XP gains, habits, damage, level-ups, rank-ups) with distinct visuals per type
 │   ├── MonthCalendar.tsx    # Calendar grid with per-day XP breakdown + habit/damage icons
 │   ├── HealthyHabits.tsx    # Daily toggle cards for 6 habits (water, nails, brush, nosugar, floss, steps) — filtered by enabledHabits
@@ -46,7 +49,7 @@ src/
 - **HabitKey** — one of 6 strings: `"water"`, `"nails"`, `"brush"`, `"nosugar"`, `"floss"`, `"steps"`
 - **DamageKey** — one of 4 strings: `"substance"`, `"screentime"`, `"junkfood"`, `"badsleep"`
 - **PointsWallet** — `{ lifetimeEarned, lifetimeSpent }` — tracks Power Points spending (earned is always derived from source data)
-- **Activity** — `{ id, stat, note, timestamp }` — one logged action = 1 XP
+- **Activity** — `{ id, stat, note, timestamp, amount? }` — one logged action. `amount` defaults to 1 for legacy entries; Judge awards variable amounts (1-10)
 - **FeedEvent** — discriminated union (`type` field) for the activity feed. Types: `xp_gain`, `habit_completed`, `habit_removed`, `damage_marked`, `damage_removed`, `level_up`, `rank_up`. Each has `id` + `timestamp` + type-specific fields
 - **GameData** — the root object stored in localStorage: `{ stats, activities, customDefinitions?, healthyHabits?, enabledHabits?, dailyDamage?, enabledDamage?, pointsWallet?, mascotOverrides?, feedEvents? }`
   - `healthyHabits` maps each `HabitKey` to an array of `"YYYY-MM-DD"` date strings (days the habit was completed)
@@ -73,11 +76,12 @@ src/
 - **Data export:** `exportGameData()` in `storage.ts` downloads a full JSON backup. Button lives in the Activity Log section
 - **`LevelDisplay` component** lives inline in `page.tsx` (not a separate file) — shows Skipper mascot inside an SVG progress ring, with level badge below and rank title above. Parallax tilt + shatter animation on level-up
 - **Mascot system:** Skipper the penguin SVGs live in `public/mascots/`. `getMascotForLevel()` in `storage.ts` picks the right image based on overall level + optional `mascotOverrides` in GameData. Currently one image (`skipper-default.svg`); ready for per-level variants
+- **XP Judge:** The sole way to earn XP. A conversational AI (via `/api/judge`) evaluates user-described activities, asks up to 3 follow-up questions, then awards 1-10 XP per stat. Triggered from a centered CTA card on the homepage (hero penguin avatar from `public/mascots/judge-hero.svg`). The hero avatar also appears in the JudgeModal header and next to each judge message. Stat cards no longer have `+` buttons — `AddXPModal` is disconnected
 
 ## Key exports in `storage.ts`
 
 - `loadGameData()` / `saveGameData(data)` — localStorage read/write
-- `addXP(data, statKey, note)` — log 1 XP, handle level-up, save
+- `addXP(data, statKey, note, amount?)` — log XP (default 1, Judge passes variable amounts), handle level-up, save
 - `getXPForNextLevel(level)` — per-stat Fibonacci thresholds
 - `getOverallLevel(totalXP)` — overall player level (EQ curve, max 60)
 - `getTotalLevel(data)` — sum of all per-stat levels
