@@ -9,6 +9,7 @@ interface MonthlyXPSummaryProps {
   activitiesByDay: Record<number, Partial<Record<StatKey, number>>>;
   habitsByDay: Record<number, HabitKey[]>;
   statDefinitions: Record<StatKey, StatDefinition> | null;
+  todayXP: number;
 }
 
 // Emoji representations of each habit — compact and recognizable at small sizes
@@ -27,6 +28,7 @@ export function MonthlyXPSummary({
   activitiesByDay,
   habitsByDay,
   statDefinitions,
+  todayXP,
 }: MonthlyXPSummaryProps) {
   // Calculate percentage change from last month to this month
   let percentChange = 0;
@@ -147,13 +149,16 @@ export function MonthlyXPSummary({
               {dayOfWeek}
             </p>
           </div>
-          <div className="self-center px-2 py-0.5 rounded-full bg-stone-100 border border-stone-200">
-            <span className="text-xs font-bold text-stone-500">{currentMonthXP} XP</span>
+          <div className="self-center px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200">
+            <span className="text-xs font-bold text-emerald-600">Today: {todayXP} XP</span>
           </div>
         </div>
 
         <div className="text-right">
-          <p className="text-xs font-medium text-stone-400">
+          <p className="text-sm font-bold text-stone-500">
+            {currentMonthXP} XP <span className="text-xs font-medium text-stone-400">this month</span>
+          </p>
+          <p className="text-xs font-medium text-stone-400 mt-0.5">
             vs {lastMonthName}: <span className="font-bold text-stone-500">{lastMonthXP} XP</span>
           </p>
           <div className="flex items-center justify-end gap-1.5 mt-1.5">
