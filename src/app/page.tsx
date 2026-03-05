@@ -744,6 +744,26 @@ export default function Home() {
         </h1>
       </header>
 
+      {/* Judge CTA */}
+      <div className="flex justify-center mt-2 mb-8">
+        <button
+          onClick={() => setShowJudge(true)}
+          className="relative flex flex-col items-center pt-14 pb-5 px-10 rounded-2xl bg-gradient-to-b from-amber-50 to-orange-50/80 border border-amber-200/60 hover:border-amber-300 hover:shadow-lg transition-all cursor-pointer group active:scale-[0.98]"
+          style={{ minWidth: "280px" }}
+        >
+          {/* Hero avatar — overlaps top edge */}
+          <div className="absolute -top-9">
+            <img
+              src="/mascots/judge-hero.svg"
+              alt="The Captain"
+              className="w-[72px] h-[72px] rounded-full bg-white border-2 border-amber-300 p-1.5 shadow-sm group-hover:scale-110 transition-transform"
+            />
+          </div>
+          <span className="text-base font-bold text-amber-800">What did you accomplish?</span>
+          <p className="text-sm text-amber-600/60 mt-0.5">Tell the Captain & earn XP</p>
+        </button>
+      </div>
+
       {/* Monthly XP Summary + Level Display — wider than card grid */}
       <div className="flex flex-col sm:flex-row sm:items-stretch gap-4 mb-8 sm:-mx-12">
         <div className="flex-1 min-w-0">
@@ -768,26 +788,6 @@ export default function Home() {
             mascotSrc={getMascotForLevel(overallLevel, gameData.mascotOverrides)}
           />
         </div>
-      </div>
-
-      {/* Judge CTA */}
-      <div className="flex justify-center mt-10 mb-8">
-        <button
-          onClick={() => setShowJudge(true)}
-          className="relative flex flex-col items-center pt-14 pb-5 px-10 rounded-2xl bg-gradient-to-b from-amber-50 to-orange-50/80 border border-amber-200/60 hover:border-amber-300 hover:shadow-lg transition-all cursor-pointer group active:scale-[0.98]"
-          style={{ minWidth: "280px" }}
-        >
-          {/* Hero avatar — overlaps top edge */}
-          <div className="absolute -top-9">
-            <img
-              src="/mascots/judge-hero.svg"
-              alt="The Captain"
-              className="w-[72px] h-[72px] rounded-full bg-white border-2 border-amber-300 p-1.5 shadow-sm group-hover:scale-110 transition-transform"
-            />
-          </div>
-          <span className="text-base font-bold text-amber-800">What did you accomplish?</span>
-          <p className="text-sm text-amber-600/60 mt-0.5">Tell the Captain & earn XP</p>
-        </button>
       </div>
 
       {/* Stat Card Grid */}
