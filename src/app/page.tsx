@@ -9,6 +9,7 @@ import { AddXPModal } from "@/components/AddXPModal";
 import { ActivityLog } from "@/components/ActivityLog";
 import { MonthlyXPSummary } from "@/components/MonthlyXPSummary";
 import { HealthyHabits } from "@/components/HealthyHabits";
+import { LevelUpCelebration } from "@/components/LevelUpCelebration";
 import { Download, Settings, CalendarDays } from "lucide-react";
 import Link from "next/link";
 
@@ -42,14 +43,83 @@ function LevelDisplay({
   progressPercent,
   xpIntoLevel,
   xpForNextLevel,
+  isLevelingUp,
+  previousOverallLevel,
 }: {
   level: number;
   progressPercent: number;
   xpIntoLevel: number;
   xpForNextLevel: number;
+  isLevelingUp?: boolean;
+  previousOverallLevel?: number;
 }) {
   const numberRef = useRef<HTMLSpanElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Phased animation state for overall level-up
+  const [animPhase, setAnimPhase] = useState<"idle" | "ring-fill" | "number-swap" | "done">("idle");
+  const [displayedLevel, setDisplayedLevel] = useState(level);
+  const [displayedRank, setDisplayedRank] = useState(getRankTitle(level));
+  const [rankChanging, setRankChanging] = useState(false);
+
+  // Orchestrate the overall level-up animation
+  // isLevelingUp is set immediately; this effect adds a 1400ms internal delay to align with Beat 4
+  useEffect(() => {
+    if (!isLevelingUp || !previousOverallLevel) {
+      // Don't reset to idle here — let the animation finish naturally
+      return;
+    }
+
+    // Show old level initially
+    setDisplayedLevel(previousOverallLevel);
+    setDisplayedRank(getRankTitle(previousOverallLevel));
+
+    // Wait 1400ms (Beat 4 timing) before starting the ring animation
+    const startTimer = setTimeout(() => {
+      // Phase 1: Ring fills to 100%
+      setAnimPhase("ring-fill");
+
+      // Phase 2: Swap the number with bounce (~600ms after ring starts)
+      setTimeout(() => {
+        setAnimPhase("number-swap");
+        setDisplayedLevel(level);
+
+        // Check if rank title changed
+        const oldRank = getRankTitle(previousOverallLevel);
+        const newRank = getRankTitle(level);
+        if (oldRank !== newRank) {
+          setRankChanging(true);
+          setTimeout(() => {
+            setDisplayedRank(newRank);
+            setTimeout(() => setRankChanging(false), 500);
+          }, 150);
+        }
+      }, 600);
+
+      // Phase 3: Done — settle back to normal
+      setTimeout(() => {
+        setAnimPhase("done");
+      }, 1400);
+
+      // Full cleanup
+      setTimeout(() => {
+        setAnimPhase("idle");
+        setRankChanging(false);
+      }, 2200);
+    }, 1400);
+
+    return () => {
+      clearTimeout(startTimer);
+    };
+  }, [isLevelingUp, previousOverallLevel, level]);
+
+  // Keep displayed values in sync when not animating
+  useEffect(() => {
+    if (!isLevelingUp) {
+      setDisplayedLevel(level);
+      setDisplayedRank(getRankTitle(level));
+    }
+  }, [level, isLevelingUp]);
 
   // Parallax tilt on hover (desktop) and scroll (mobile)
   useEffect(() => {
@@ -95,14 +165,20 @@ function LevelDisplay({
   }, []);
 
   const isMaxLevel = level >= 60;
-  const rank = getRankTitle(level);
 
   // SVG ring dimensions
   const ringSize = 160;
   const strokeWidth = 6;
   const radius = (ringSize - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (circumference * progressPercent) / 100;
+  const targetStrokeDashoffset = circumference - (circumference * progressPercent) / 100;
+
+  // During ring-fill phase, animate to full (offset 0), then after number-swap settle to new progress
+  const isAnimatingRing = animPhase === "ring-fill";
+  const effectiveStrokeDashoffset = isAnimatingRing ? 0 : targetStrokeDashoffset;
+
+  // Glow effect on the container during level-up
+  const isGlowing = animPhase === "ring-fill" || animPhase === "number-swap";
 
   return (
     <div
@@ -110,12 +186,20 @@ function LevelDisplay({
       className="flex flex-col items-center justify-center rounded-2xl px-8 py-6 relative cursor-default w-full"
       style={{
         background: "linear-gradient(135deg, #fefcf9 0%, #f5f0e8 50%, #ede4d6 100%)",
-        boxShadow: "0 2px 16px rgba(180, 150, 100, 0.12), inset 0 1px 0 rgba(255,255,255,0.7)",
+        boxShadow: isGlowing
+          ? "0 2px 16px rgba(180, 150, 100, 0.12), inset 0 1px 0 rgba(255,255,255,0.7), 0 0 24px rgba(245, 158, 11, 0.25)"
+          : "0 2px 16px rgba(180, 150, 100, 0.12), inset 0 1px 0 rgba(255,255,255,0.7)",
+        transition: "box-shadow 0.4s ease-out",
       }}
     >
       {/* Rank title */}
-      <span className="text-xs font-bold uppercase tracking-[0.2em] text-amber-600/70 mb-3">
-        {rank}
+      <span
+        className={`text-xs font-bold uppercase tracking-[0.2em] text-amber-600/70 mb-3 ${
+          rankChanging ? "animate-titleReveal" : ""
+        }`}
+        key={displayedRank}
+      >
+        {displayedRank}
       </span>
 
       {/* Ring + Number */}
@@ -153,8 +237,12 @@ function LevelDisplay({
               strokeWidth={strokeWidth}
               strokeLinecap="round"
               strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              className="transition-all duration-700 ease-out"
+              strokeDashoffset={effectiveStrokeDashoffset}
+              className={
+                isAnimatingRing
+                  ? "transition-[stroke-dashoffset] duration-500 ease-out"
+                  : "transition-all duration-700 ease-out"
+              }
             />
           )}
           {/* Full ring for max level */}
@@ -186,9 +274,18 @@ function LevelDisplay({
             filter: "drop-shadow(0 1px 0 rgba(120,80,30,0.4)) drop-shadow(0 2px 1px rgba(100,60,20,0.25)) drop-shadow(0 4px 3px rgba(80,50,15,0.15))",
           }}
         >
-          <span className="text-2xl font-bold mr-0.5" style={{ background: "inherit", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Lv.</span>{level}
+          <span className="text-2xl font-bold mr-0.5" style={{ background: "inherit", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Lv.</span>
+          <span
+            key={displayedLevel}
+            className={animPhase === "number-swap" ? "animate-levelIn inline-block" : "inline-block"}
+          >
+            {displayedLevel}
+          </span>
         </span>
       </div>
+
+      {/* Mascot slot — ready for Skipper the penguin */}
+      {/* <div className="absolute -top-6 -right-4 w-16 h-16">mascot image here</div> */}
 
       {/* XP text */}
       {!isMaxLevel ? (
@@ -209,6 +306,19 @@ export default function Home() {
   const [activeModal, setActiveModal] = useState<StatKey | null>(null);
   const [leveledUpStat, setLeveledUpStat] = useState<StatKey | null>(null);
   const [xpGainedStat, setXpGainedStat] = useState<StatKey | null>(null);
+  const [previousStatLevel, setPreviousStatLevel] = useState<number | undefined>(undefined);
+  // Overall level-up animation state for the LevelDisplay ring
+  const [isOverallLevelingUp, setIsOverallLevelingUp] = useState(false);
+  const [previousOverallLevel, setPreviousOverallLevel] = useState<number | undefined>(undefined);
+  // Celebration overlay state
+  const [celebrationInfo, setCelebrationInfo] = useState<{
+    statKey: StatKey;
+    newLevel: number;
+    statColor: string;
+    isOverallLevelUp: boolean;
+    overallNewLevel?: number;
+    overallNewRank?: string;
+  } | null>(null);
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -282,8 +392,12 @@ export default function Home() {
 
   const handleAddXP = useCallback(
     (statKey: StatKey, note: string) => {
-      if (!gameData) return;
-      const { newData, leveledUp } = addXP(gameData, statKey, note);
+      if (!gameData || !definitions) return;
+
+      // Capture overall level BEFORE the XP is added
+      const overallBefore = getOverallLevel(gameData.activities.length);
+
+      const { newData, leveledUp, previousLevel } = addXP(gameData, statKey, note);
       setGameData(newData);
       setActiveModal(null);
 
@@ -293,11 +407,34 @@ export default function Home() {
 
       // Trigger level-up animation
       if (leveledUp) {
+        setPreviousStatLevel(previousLevel);
         setLeveledUpStat(statKey);
         setTimeout(() => setLeveledUpStat(null), 2100);
+
+        // Check if overall level also went up
+        const overallAfter = getOverallLevel(newData.activities.length);
+        const isOverallLevelUp = overallAfter.level > overallBefore.level;
+
+        // Get the stat color for confetti
+        const statColor = definitions[statKey].color;
+
+        // Trigger LevelDisplay ring animation if overall level went up (immediately — LevelDisplay handles its own timing)
+        if (isOverallLevelUp) {
+          setPreviousOverallLevel(overallBefore.level);
+          setIsOverallLevelingUp(true);
+        }
+
+        setCelebrationInfo({
+          statKey,
+          newLevel: newData.stats[statKey].level,
+          statColor,
+          isOverallLevelUp,
+          overallNewLevel: isOverallLevelUp ? overallAfter.level : undefined,
+          overallNewRank: isOverallLevelUp ? getRankTitle(overallAfter.level) : undefined,
+        });
       }
     },
-    [gameData]
+    [gameData, definitions]
   );
 
   const handleToggleHabit = useCallback(
@@ -375,6 +512,8 @@ export default function Home() {
             progressPercent={overallProgressPercent}
             xpIntoLevel={xpIntoLevel}
             xpForNextLevel={xpForNextLevel}
+            isLevelingUp={isOverallLevelingUp}
+            previousOverallLevel={previousOverallLevel}
           />
         </div>
       </div>
@@ -392,6 +531,7 @@ export default function Home() {
             streak={streaks[key]}
             isActiveThisMonth={activeStatsThisMonth.has(key)}
             lastLoggedTimestamp={lastActivityTimestamps?.[key] ?? null}
+            previousLevel={leveledUpStat === key ? previousStatLevel : undefined}
           />
         ))}
       </div>
@@ -421,6 +561,23 @@ export default function Home() {
           definition={definitions[activeModal]}
           onConfirm={(note) => handleAddXP(activeModal, note)}
           onCancel={() => setActiveModal(null)}
+        />
+      )}
+
+      {/* Level-up celebration overlay (confetti + toast + overall level-up) */}
+      {celebrationInfo && (
+        <LevelUpCelebration
+          statKey={celebrationInfo.statKey}
+          newLevel={celebrationInfo.newLevel}
+          statColor={celebrationInfo.statColor}
+          isOverallLevelUp={celebrationInfo.isOverallLevelUp}
+          overallNewLevel={celebrationInfo.overallNewLevel}
+          overallNewRank={celebrationInfo.overallNewRank}
+          onComplete={() => {
+            setCelebrationInfo(null);
+            setIsOverallLevelingUp(false);
+            setPreviousOverallLevel(undefined);
+          }}
         />
       )}
     </main>

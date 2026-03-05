@@ -105,6 +105,141 @@
   }
 }
 
+/* === Level-Up Phased Celebration === */
+
+/* Beat 1: XP bar fills to 100%, flashes, then resets */
+.animate-barFill {
+  animation: barFill 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes barFill {
+  0% { width: var(--bar-from, 80%); }
+  60% { width: 100%; }
+  70% { width: 100%; filter: brightness(1.4); }
+  85% { width: 100%; filter: brightness(1); }
+  100% { width: var(--bar-to, 0%); }
+}
+
+/* Beat 1: Flash pulse on the progress bar at full */
+.animate-barFlash {
+  animation: barFlash 300ms ease-out forwards;
+}
+
+@keyframes barFlash {
+  0% { box-shadow: 0 0 0 0 var(--flash-color, #fff); }
+  40% { box-shadow: 0 0 12px 4px var(--flash-color, #fff); }
+  100% { box-shadow: 0 0 0 0 var(--flash-color, #fff); }
+}
+
+/* Beat 2: Old level number scales down and fades */
+.animate-levelOut {
+  animation: levelOut 200ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+@keyframes levelOut {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.6); }
+}
+
+/* Beat 2: New level number bounces in with overshoot */
+.animate-levelIn {
+  animation: levelIn 400ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes levelIn {
+  0% { opacity: 0; transform: scale(0); }
+  70% { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Beat 2: Glow ring around the level badge */
+.animate-badgeGlow {
+  animation: badgeGlow 600ms ease-out forwards;
+}
+
+@keyframes badgeGlow {
+  0% { box-shadow: 0 0 0 0 var(--glow-color, transparent); }
+  30% { box-shadow: 0 0 12px 3px var(--glow-color, transparent); }
+  100% { box-shadow: 0 0 0 0 var(--glow-color, transparent); }
+}
+
+/* Beat 3: Card lifts with increased shadow */
+.animate-cardLift {
+  animation: cardLift 800ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes cardLift {
+  0% { transform: translateY(0); box-shadow: none; }
+  30% { transform: translateY(-4px); box-shadow: 0 12px 32px var(--lift-shadow, rgba(0,0,0,0.12)); }
+  100% { transform: translateY(0); box-shadow: none; }
+}
+
+/* Beat 3: Radial glow pulse from the card */
+.animate-radialGlow {
+  animation: radialGlow 800ms ease-out forwards;
+}
+
+@keyframes radialGlow {
+  0% { opacity: 0; transform: scale(0.8); }
+  25% { opacity: 0.5; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.15); }
+}
+
+/* Beat 3: Saturation boost on the card */
+.animate-saturationBoost {
+  animation: saturationBoost 800ms ease-out forwards;
+}
+
+@keyframes saturationBoost {
+  0% { filter: saturate(1); }
+  30% { filter: saturate(1.5); }
+  100% { filter: saturate(1); }
+}
+
+/* Toast: fade in, hold, fade out */
+.animate-toastIn {
+  animation: toastIn 2800ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes toastIn {
+  0% { opacity: 0; transform: translateY(8px) scale(0.95); }
+  10% { opacity: 1; transform: translateY(0) scale(1); }
+  75% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-4px) scale(0.98); }
+}
+
+/* Beat 4: Overall level ring fill animation */
+.animate-ringFill {
+  animation: ringFill 600ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes ringFill {
+  0% { stroke-dashoffset: var(--ring-from, 0); }
+  100% { stroke-dashoffset: var(--ring-to, 0); }
+}
+
+/* Beat 4: Rank title text reveal */
+.animate-titleReveal {
+  animation: titleReveal 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes titleReveal {
+  0% { opacity: 0; transform: translateY(6px) scale(0.9); filter: blur(4px); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+/* Beat 4: Screen vignette flash */
+.animate-vignette {
+  animation: vignetteFlash 800ms ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes vignetteFlash {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 body {
   background: #FDF8F4;
 }
