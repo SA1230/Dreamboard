@@ -768,7 +768,7 @@ export default function Home() {
       onAnimationEnd={() => setIsScreenShaking(false)}
     >
       {/* Header */}
-      <header className="text-center mb-10 relative">
+      <header className="text-center mb-10 relative sticky top-0 z-50 bg-[#FDF8F4]/80 backdrop-blur-md -mx-4 px-4 py-3 border-b border-stone-200/50">
         <div className="absolute right-0 top-1 flex items-center gap-2">
           <button
             onClick={() => setShowJudge(true)}
