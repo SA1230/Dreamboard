@@ -67,7 +67,7 @@ function LevelDisplay({
 
   // Phased animation state for overall level-up
   // idle → ring-fill → shatter → number-swap → done → idle
-  const [animPhase, setAnimPhase] = useState<"idle" | "ring-fill" | "shatter" | "number-swap" | "done">("idle");
+  const [animPhase, setAnimPhase] = useState<"idle" | "anticipation" | "ring-fill" | "shatter" | "number-swap" | "done">("idle");
   const [displayedLevel, setDisplayedLevel] = useState(level);
   const [displayedRank, setDisplayedRank] = useState(getRankTitle(level));
   const [rankChanging, setRankChanging] = useState(false);
@@ -89,6 +89,11 @@ function LevelDisplay({
     setDisplayedRank(getRankTitle(previousOverallLevel));
 
     const timers: ReturnType<typeof setTimeout>[] = [];
+
+    // Phase 0: Anticipation — ring glows, mascot bounces (600ms before ring fills)
+    timers.push(setTimeout(() => {
+      setAnimPhase("anticipation");
+    }, 800));
 
     // Wait 1400ms (Beat 4 timing) before starting the ring animation
     timers.push(setTimeout(() => {
@@ -221,6 +226,7 @@ function LevelDisplay({
 
   // Glow effect on the container during level-up
   const isGlowing = animPhase === "ring-fill" || animPhase === "shatter" || animPhase === "number-swap";
+  const isAnticipating = animPhase === "anticipation";
 
   return (
     <div
@@ -230,6 +236,8 @@ function LevelDisplay({
         background: "linear-gradient(135deg, #fefcf9 0%, #f5f0e8 50%, #ede4d6 100%)",
         boxShadow: isGlowing
           ? "0 2px 16px rgba(180, 150, 100, 0.12), inset 0 1px 0 rgba(255,255,255,0.7), 0 0 24px rgba(245, 158, 11, 0.25)"
+          : isAnticipating
+          ? "0 2px 16px rgba(180, 150, 100, 0.12), inset 0 1px 0 rgba(255,255,255,0.7), 0 0 12px rgba(245, 158, 11, 0.12)"
           : "0 2px 16px rgba(180, 150, 100, 0.12), inset 0 1px 0 rgba(255,255,255,0.7)",
         transition: "box-shadow 0.4s ease-out",
       }}
@@ -246,6 +254,13 @@ function LevelDisplay({
 
       {/* Ring + Number */}
       <div className="relative" style={{ width: ringSize, height: ringSize }}>
+        {/* Anticipation glow — warm pulse around the ring before level-up */}
+        {animPhase === "anticipation" && (
+          <div
+            className="absolute rounded-full animate-anticipationGlow"
+            style={{ inset: "-12px" }}
+          />
+        )}
         {/* SVG progress ring — hidden during shatter so fragments take over */}
         <svg
           width={ringSize}
@@ -362,7 +377,7 @@ function LevelDisplay({
             key={mascotSrc}
             src={mascotSrc}
             alt={`Level ${displayedLevel} mascot`}
-            className={`w-[108px] h-[108px] object-contain ${animPhase === "number-swap" ? "animate-levelIn" : ""}`}
+            className={`w-[108px] h-[108px] object-contain ${animPhase === "number-swap" ? "animate-levelIn" : animPhase === "anticipation" ? "animate-mascotAnticipate" : ""}`}
             style={{ filter: "drop-shadow(0 2px 4px rgba(80,50,15,0.2))" }}
             draggable={false}
           />
@@ -509,24 +524,18 @@ export default function Home() {
       setXpGainedStat(statKey);
       setTimeout(() => setXpGainedStat(null), 900);
 
-      // Trigger level-up animation
+      // Check if overall level went up (independent of stat level-up)
+      const overallAfter = getOverallLevel(newData.activities.length);
+      const isOverallLevelUp = overallAfter.level > overallBefore.level;
+
+      // Trigger stat level-up animation
       if (leveledUp) {
         setPreviousStatLevel(previousLevel);
         setLeveledUpStat(statKey);
         setTimeout(() => setLeveledUpStat(null), 2100);
 
-        // Check if overall level also went up
-        const overallAfter = getOverallLevel(newData.activities.length);
-        const isOverallLevelUp = overallAfter.level > overallBefore.level;
-
         // Get the stat color for confetti
         const statColor = definitions[statKey].color;
-
-        // Trigger LevelDisplay ring animation if overall level went up (immediately — LevelDisplay handles its own timing)
-        if (isOverallLevelUp) {
-          setPreviousOverallLevel(overallBefore.level);
-          setIsOverallLevelingUp(true);
-        }
 
         setCelebrationInfo({
           statKey,
@@ -536,6 +545,20 @@ export default function Home() {
           overallNewLevel: isOverallLevelUp ? overallAfter.level : undefined,
           overallNewRank: isOverallLevelUp ? getRankTitle(overallAfter.level) : undefined,
         });
+      }
+
+      // Trigger LevelDisplay ring animation if overall level went up (fires even without stat level-up)
+      if (isOverallLevelUp) {
+        setPreviousOverallLevel(overallBefore.level);
+        setIsOverallLevelingUp(true);
+
+        // If no stat celebration to handle cleanup, auto-cleanup after animation completes
+        if (!leveledUp) {
+          setTimeout(() => {
+            setIsOverallLevelingUp(false);
+            setPreviousOverallLevel(undefined);
+          }, 4000);
+        }
       }
     },
     [gameData, definitions]
