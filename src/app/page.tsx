@@ -354,14 +354,14 @@ function LevelDisplay({
         {/* Skipper mascot inside the ring */}
         <div
           ref={numberRef}
-          className="absolute inset-0 flex items-center justify-center select-none"
+          className="absolute inset-0 flex items-center justify-center select-none overflow-visible"
           style={{ transition: "transform 0.2s ease-out" }}
         >
           <img
             key={mascotSrc}
             src={mascotSrc}
             alt={`Level ${displayedLevel} mascot`}
-            className={`w-[100px] h-[100px] object-contain ${animPhase === "number-swap" ? "animate-levelIn" : ""}`}
+            className={`w-[108px] h-[108px] object-contain ${animPhase === "number-swap" ? "animate-levelIn" : ""}`}
             style={{ filter: "drop-shadow(0 2px 4px rgba(80,50,15,0.2))" }}
             draggable={false}
           />
@@ -585,8 +585,12 @@ export default function Home() {
             <Settings size={18} />
           </Link>
         </div>
-        <h1 className="text-3xl font-extrabold text-stone-700 mb-1">
-          Dreamboard
+        <h1 className="mb-1">
+          <img
+            src="/logos/dreambound-wordmark-black.svg"
+            alt="Dreambound"
+            className="h-8 inline-block"
+          />
         </h1>
         <p className="text-stone-400 text-sm">
           {gameData.activities.length} activit{gameData.activities.length === 1 ? "y" : "ies"} logged
