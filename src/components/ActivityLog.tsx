@@ -162,9 +162,8 @@ function LevelUpRow({ event, definitions }: { event: Extract<FeedEvent, { type: 
     <div
       className="flex items-center gap-3 px-4 py-3 rounded-xl border-2"
       style={{
-        backgroundColor: "rgba(254, 243, 199, 0.5)",
-        borderColor: "#fbbf24",
-        borderStyle: "solid",
+        backgroundColor: definition.color + "12",
+        borderColor: definition.color + "60",
       }}
     >
       <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: definition.color + "20", color: definition.color }}>
@@ -172,17 +171,17 @@ function LevelUpRow({ event, definitions }: { event: Extract<FeedEvent, { type: 
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-amber-700">Level Up!</span>
+          <span className="text-xs font-bold" style={{ color: definition.color }}>Level Up!</span>
           <span className="text-xs font-semibold" style={{ color: definition.color }}>
             {definition.name}
           </span>
         </div>
-        <p className="text-xs text-amber-600/70">
+        <p className="text-xs" style={{ color: definition.color + "90" }}>
           Reached level {event.newLevel}
         </p>
       </div>
       <div className="flex-shrink-0 flex items-center gap-1">
-        <span className="text-lg font-black text-amber-500">{event.newLevel}</span>
+        <span className="text-lg font-black" style={{ color: definition.color }}>{event.newLevel}</span>
       </div>
     </div>
   );
@@ -190,27 +189,39 @@ function LevelUpRow({ event, definitions }: { event: Extract<FeedEvent, { type: 
 
 function OverallLevelUpRow({ event }: { event: Extract<FeedEvent, { type: "overall_level_up" }> }) {
   return (
-    <div
-      className="flex items-center gap-3 px-4 py-3 rounded-xl border-2"
-      style={{
-        background: "linear-gradient(135deg, rgba(180, 150, 100, 0.08) 0%, rgba(200, 170, 110, 0.12) 100%)",
-        borderColor: "#c4a265",
-      }}
-    >
-      <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-stone-100 border border-stone-300 overflow-hidden">
-        <img src="/mascots/skipper-default.svg" alt="Skipper" className="w-6 h-6" />
+    <div className="overall-levelup-border relative rounded-xl overflow-hidden">
+      {/* Pulsing corner sparkle */}
+      <div
+        className="absolute top-2 left-2.5 pointer-events-none"
+        style={{ animation: "sparkle 2.4s ease-in-out infinite" }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M12 0 L14.5 9.5 L24 12 L14.5 14.5 L12 24 L9.5 14.5 L0 12 L9.5 9.5 Z" fill="#d4a017" opacity="0.7" />
+        </svg>
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold" style={{ color: "#8b6914" }}>Overall Level Up!</span>
+      {/* Second sparkle, offset timing */}
+      <div
+        className="absolute top-3.5 left-8 pointer-events-none"
+        style={{ animation: "sparkle 2.4s ease-in-out infinite 1.2s" }}
+      >
+        <svg width="8" height="8" viewBox="0 0 24 24" fill="none">
+          <path d="M12 0 L14.5 9.5 L24 12 L14.5 14.5 L12 24 L9.5 14.5 L0 12 L9.5 9.5 Z" fill="#f5c842" opacity="0.5" />
+        </svg>
+      </div>
+      <div className="relative flex items-center gap-3 px-5 py-4">
+        <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-amber-50 border-2 border-amber-300/60 overflow-hidden">
+          <img src="/mascots/skipper-default.svg" alt="Skipper" className="w-7 h-7" />
         </div>
-        <p className="text-xs text-stone-400">
-          Level {event.previousLevel} → <span className="font-semibold text-stone-600">{event.newLevel}</span>
-        </p>
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-extrabold tracking-wide" style={{ color: "#8b6914" }}>Level Up!</span>
+          <p className="text-xs text-stone-400 mt-0.5">
+            Level {event.previousLevel} <span className="text-stone-300">&rarr;</span> <span className="font-bold text-amber-700">{event.newLevel}</span>
+          </p>
+        </div>
+        <span className="text-xs text-stone-300 flex-shrink-0">
+          {formatTimestamp(event.timestamp)}
+        </span>
       </div>
-      <span className="text-xs text-stone-300 flex-shrink-0">
-        {formatTimestamp(event.timestamp)}
-      </span>
     </div>
   );
 }
