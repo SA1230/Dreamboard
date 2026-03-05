@@ -142,7 +142,7 @@ export function JudgeModal({
           setMessages([...newMessages, { role: "assistant", content: data.message }]);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "The judge is unavailable.");
+        setError(err instanceof Error ? err.message : "The Captain is unavailable.");
       } finally {
         setIsLoading(false);
       }
@@ -183,11 +183,11 @@ export function JudgeModal({
             <div className="flex items-center gap-3">
               <img
                 src="/mascots/judge-hero.svg"
-                alt="The Judge"
+                alt="The Captain"
                 className="w-9 h-9 rounded-full bg-amber-50 border-2 border-amber-200 p-0.5 flex-shrink-0"
               />
               <div>
-                <h3 className="font-bold text-lg text-stone-700">The XP Judge</h3>
+                <h3 className="font-bold text-lg text-stone-700">The Captain</h3>
                 <p className="text-xs text-stone-400">Describe what you did. Be honest.</p>
               </div>
             </div>
@@ -204,7 +204,7 @@ export function JudgeModal({
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3" style={{ minHeight: "200px" }}>
           {messages.length === 0 && !isLoading && (
             <p className="text-sm text-stone-300 text-center italic pt-8">
-              Tell the judge what you accomplished...
+              Tell the Captain what you accomplished...
             </p>
           )}
 
@@ -314,7 +314,7 @@ export function JudgeModal({
                 ref={inputRef}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder={messages.length === 0 ? "I went for a 5-mile run today..." : "Answer the judge..."}
+                placeholder={messages.length === 0 ? "I went for a 5-mile run today..." : "Answer the Captain..."}
                 className="flex-1 px-4 py-2.5 rounded-xl border-2 border-stone-200 text-sm bg-stone-50 text-stone-700 placeholder:text-stone-300 outline-none focus:border-stone-400 transition-colors resize-none"
                 rows={1}
                 disabled={isLoading}

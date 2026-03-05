@@ -246,7 +246,7 @@ export default function SettingsPage() {
           {/* Upload controls */}
           <div className="flex-1">
             <p className="text-sm font-bold text-stone-600 mb-1">Profile Picture</p>
-            <p className="text-xs text-stone-400 mb-3">Shows next to your messages in the Judge chat.</p>
+            <p className="text-xs text-stone-400 mb-3">Shows next to your messages in the Captain chat.</p>
             <input
               ref={fileInputRef}
               type="file"

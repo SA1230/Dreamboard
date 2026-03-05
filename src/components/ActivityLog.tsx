@@ -210,7 +210,7 @@ function OverallLevelUpRow({ event }: { event: Extract<FeedEvent, { type: "overa
       </div>
       <div className="relative flex items-center gap-3 px-5 py-4">
         <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-amber-50 border-2 border-amber-300/60 overflow-hidden">
-          <img src="/mascots/skipper-default.svg" alt="Skipper" className="w-7 h-7" />
+          <img src="/mascots/level-up-hero.svg" alt="Skipper" className="w-7 h-7" />
         </div>
         <div className="flex-1 min-w-0">
           <span className="text-sm font-extrabold tracking-wide" style={{ color: "#8b6914" }}>Level Up!</span>
