@@ -131,6 +131,17 @@
   100% { box-shadow: 0 0 0 0 var(--flash-color, #fff); }
 }
 
+/* Beat 1: Ring glow flash during stat card level-up fill */
+.animate-ringFlash {
+  animation: ringFlash 300ms ease-out forwards;
+}
+
+@keyframes ringFlash {
+  0% { filter: drop-shadow(0 0 0px var(--flash-color, transparent)); }
+  40% { filter: drop-shadow(0 0 8px var(--flash-color, transparent)); }
+  100% { filter: drop-shadow(0 0 0px var(--flash-color, transparent)); }
+}
+
 /* Beat 2: Old level number scales down and fades */
 .animate-levelOut {
   animation: levelOut 200ms cubic-bezier(0.4, 0, 1, 1) forwards;
