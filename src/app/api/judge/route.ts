@@ -32,6 +32,7 @@ interface JudgeRequest {
 interface JudgeResult {
   type: "verdict" | "question";
   message: string;
+  summary?: string;
   awards?: { stat: string; amount: number }[];
 }
 
@@ -49,6 +50,11 @@ const AWARD_XP_TOOL_ANTHROPIC: Anthropic.Tool = {
         type: "string",
         description:
           "Your verdict message — the flavor text the player sees. Keep it in-character (2-4 sentences). Include what impressed you or why you scored it this way.",
+      },
+      summary: {
+        type: "string",
+        description:
+          "A 2-5 word label summarizing what the player did. Examples: 'Morning 5k run', 'Read 3 chapters', 'Cooked healthy dinner', 'Led team meeting'. No period at the end.",
       },
       awards: {
         type: "array",
@@ -79,7 +85,7 @@ const AWARD_XP_TOOL_ANTHROPIC: Anthropic.Tool = {
         },
       },
     },
-    required: ["message", "awards"],
+    required: ["message", "summary", "awards"],
   },
 };
 
@@ -97,6 +103,11 @@ const AWARD_XP_TOOL_OPENAI: OpenAI.Chat.Completions.ChatCompletionTool = {
           type: "string",
           description:
             "Your verdict message — the flavor text the player sees. Keep it in-character (2-4 sentences). Include what impressed you or why you scored it this way.",
+        },
+        summary: {
+          type: "string",
+          description:
+            "A 2-5 word label summarizing what the player did. Examples: 'Morning 5k run', 'Read 3 chapters', 'Cooked healthy dinner', 'Led team meeting'. No period at the end.",
         },
         awards: {
           type: "array",
@@ -127,7 +138,7 @@ const AWARD_XP_TOOL_OPENAI: OpenAI.Chat.Completions.ChatCompletionTool = {
           },
         },
       },
-      required: ["message", "awards"],
+      required: ["message", "summary", "awards"],
     },
   },
 };
@@ -235,8 +246,8 @@ async function callAnthropic(
   const textBlock = response.content.find((block) => block.type === "text");
 
   if (toolUseBlock && toolUseBlock.type === "tool_use") {
-    const input = toolUseBlock.input as { message: string; awards: { stat: string; amount: number }[] };
-    return { type: "verdict", message: input.message, awards: input.awards };
+    const input = toolUseBlock.input as { message: string; summary?: string; awards: { stat: string; amount: number }[] };
+    return { type: "verdict", message: input.message, summary: input.summary, awards: input.awards };
   }
 
   if (textBlock && textBlock.type === "text") {
@@ -270,8 +281,8 @@ async function callOpenAI(
   // Check for tool call (verdict)
   if (message.tool_calls && message.tool_calls.length > 0) {
     const toolCall = message.tool_calls[0];
-    const input = JSON.parse(toolCall.function.arguments) as { message: string; awards: { stat: string; amount: number }[] };
-    return { type: "verdict", message: input.message, awards: input.awards };
+    const input = JSON.parse(toolCall.function.arguments) as { message: string; summary?: string; awards: { stat: string; amount: number }[] };
+    return { type: "verdict", message: input.message, summary: input.summary, awards: input.awards };
   }
 
   // Text response (follow-up question)

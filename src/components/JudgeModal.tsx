@@ -20,6 +20,7 @@ interface Award {
 
 interface JudgeVerdict {
   message: string;
+  summary: string;
   awards: Award[];
 }
 
@@ -29,7 +30,7 @@ interface JudgeModalProps {
   overallLevel: number;
   rank: string;
   profilePicture: string | null;
-  onAcceptVerdict: (awards: Award[]) => void;
+  onAcceptVerdict: (awards: Award[], summary: string) => void;
   onCancel: () => void;
 }
 
@@ -136,7 +137,7 @@ export function JudgeModal({
         if (data.type === "verdict") {
           // Judge rendered a verdict
           setMessages([...newMessages, { role: "assistant", content: data.message }]);
-          setVerdict({ message: data.message, awards: data.awards });
+          setVerdict({ message: data.message, summary: data.summary || "Judged activity", awards: data.awards });
         } else {
           // Judge asked a follow-up question
           setMessages([...newMessages, { role: "assistant", content: data.message }]);
@@ -298,7 +299,7 @@ export function JudgeModal({
               })}
             </div>
             <button
-              onClick={() => onAcceptVerdict(verdict.awards)}
+              onClick={() => onAcceptVerdict(verdict.awards, verdict.summary)}
               className="w-full py-2.5 rounded-xl text-sm font-bold text-white bg-stone-700 hover:bg-stone-800 transition-colors active:scale-[0.98]"
             >
               Accept Verdict (+{totalXP} XP)
