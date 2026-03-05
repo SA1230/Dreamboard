@@ -399,6 +399,60 @@ export function saveEnabledHabits(data: GameData, enabledHabits: HabitKey[]): Ga
   return newData;
 }
 
+// Get the most recent activity timestamp per stat
+// Returns null for stats that have never been logged
+export function getLastActivityTimestamps(
+  activities: Activity[]
+): Record<StatKey, string | null> {
+  const result = {} as Record<StatKey, string | null>;
+  for (const key of STAT_KEYS) {
+    result[key] = null;
+  }
+  // Activities are stored newest-first, so the first match per stat is the most recent
+  for (const activity of activities) {
+    if (result[activity.stat] === null) {
+      result[activity.stat] = activity.timestamp;
+    }
+  }
+  return result;
+}
+
+// Format a timestamp as relative time for display
+export function formatRelativeTime(timestamp: string): string {
+  const now = new Date();
+  const then = new Date(timestamp);
+  const diffMs = now.getTime() - then.getTime();
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+
+  // Under 1 hour
+  if (diffMinutes < 60) return "Just now";
+
+  // 1-23 hours — but check if it was yesterday first
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterdayStart = new Date(todayStart);
+  yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+
+  if (then >= todayStart) {
+    // Same calendar day
+    return `${diffHours}h ago`;
+  }
+
+  if (then >= yesterdayStart) {
+    return "Yesterday";
+  }
+
+  const diffDays = Math.floor((todayStart.getTime() - new Date(then.getFullYear(), then.getMonth(), then.getDate()).getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays <= 6) return `${diffDays} days ago`;
+  if (diffDays <= 13) return "1 week ago";
+  if (diffDays <= 27) return `${Math.floor(diffDays / 7)} weeks ago`;
+
+  const diffMonths = (now.getFullYear() - then.getFullYear()) * 12 + (now.getMonth() - then.getMonth());
+  if (diffMonths <= 1) return "1 month ago";
+  return `${diffMonths} months ago`;
+}
+
 export function exportGameData(data: GameData): void {
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: "application/json" });

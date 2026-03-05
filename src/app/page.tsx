@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { GameData, StatKey, HabitKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getOverallLevel, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, toggleHabitForToday } from "@/lib/storage";
+import { loadGameData, addXP, getOverallLevel, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, toggleHabitForToday, getLastActivityTimestamps, formatRelativeTime } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
 import { AddXPModal } from "@/components/AddXPModal";
 import { ActivityLog } from "@/components/ActivityLog";
@@ -267,6 +267,19 @@ export default function Home() {
     });
   }, [gameData]);
 
+  // Last activity timestamp per stat (for "2h ago" display on cards)
+  const lastActivityTimestamps = useMemo(() => {
+    if (!gameData) return null;
+    return getLastActivityTimestamps(gameData.activities);
+  }, [gameData]);
+
+  // Tick every 60 seconds to keep relative timestamps fresh
+  const [, setTimeTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTimeTick((tick) => tick + 1), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleAddXP = useCallback(
     (statKey: StatKey, note: string) => {
       if (!gameData) return;
@@ -334,6 +347,9 @@ export default function Home() {
         </h1>
         <p className="text-stone-400 text-sm">
           {gameData.activities.length} activit{gameData.activities.length === 1 ? "y" : "ies"} logged
+          {gameData.activities.length > 0 && (
+            <span className="text-stone-300"> · {formatRelativeTime(gameData.activities[0].timestamp)}</span>
+          )}
         </p>
       </header>
 
@@ -375,6 +391,7 @@ export default function Home() {
             justGainedXP={xpGainedStat === key}
             streak={streaks[key]}
             isActiveThisMonth={activeStatsThisMonth.has(key)}
+            lastLoggedTimestamp={lastActivityTimestamps?.[key] ?? null}
           />
         ))}
       </div>
