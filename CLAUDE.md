@@ -44,9 +44,10 @@ src/
 - **StatKey** — one of 8 strings: `"strength"`, `"wisdom"`, `"vitality"`, etc.
 - **HabitKey** — one of 6 strings: `"water"`, `"nails"`, `"brush"`, `"nosugar"`, `"floss"`, `"steps"`
 - **Activity** — `{ id, stat, note, timestamp }` — one logged action = 1 XP
-- **GameData** — the root object stored in localStorage: `{ stats, activities, customDefinitions?, healthyHabits?, enabledHabits? }`
+- **GameData** — the root object stored in localStorage: `{ stats, activities, customDefinitions?, healthyHabits?, enabledHabits?, mascotOverrides? }`
   - `healthyHabits` maps each `HabitKey` to an array of `"YYYY-MM-DD"` date strings (days the habit was completed)
   - `enabledHabits` is an array of `HabitKey` values that should be visible on the dashboard (defaults to the original 4 if not set)
+  - `mascotOverrides` maps level thresholds to mascot image filenames in `public/mascots/` (e.g. `{ 1: "skipper-default.svg", 10: "skipper-cool.svg" }`). Uses threshold logic — picks highest key ≤ current level. Defaults to `skipper-default.svg`
 - **Per-stat leveling:** Fibonacci-ish XP thresholds per stat. Logic in `storage.ts` (`addXP`, `getXPForNextLevel`)
 - **Overall player level:** EQ-inspired curve (max level 60) with "hell levels" at 30/35/40/45/50/55/59. Logic in `storage.ts` (`getOverallLevel`). Rank titles (Novice → Transcendent) are defined in `page.tsx`
 
@@ -60,7 +61,8 @@ src/
 - **Icon fill effect:** StatCard layers an unfilled ghost icon behind a filled icon that clips from bottom-up based on XP progress
 - **Healthy Habits:** A separate system from stat XP — boolean-per-day toggles that don't award XP. Stored as date strings in `healthyHabits`. Users can enable/disable which habits appear via settings (`enabledHabits`)
 - **Data export:** `exportGameData()` in `storage.ts` downloads a full JSON backup. Button lives in the Activity Log section
-- **`LevelDisplay` component** lives inline in `page.tsx` (not a separate file) — shows overall level with SVG ring + parallax tilt effect
+- **`LevelDisplay` component** lives inline in `page.tsx` (not a separate file) — shows Skipper mascot inside an SVG progress ring, with level badge below and rank title above. Parallax tilt + shatter animation on level-up
+- **Mascot system:** Skipper the penguin SVGs live in `public/mascots/`. `getMascotForLevel()` in `storage.ts` picks the right image based on overall level + optional `mascotOverrides` in GameData. Currently one image (`skipper-default.svg`); ready for per-level variants
 
 ## Key exports in `storage.ts`
 
@@ -77,6 +79,7 @@ src/
 - `isHabitCompletedToday(data, habitKey)` / `toggleHabitForToday(data, habitKey)`
 - `getHabitsByDay(data, year, month)` — habits grouped by calendar day
 - `getEnabledHabits(data)` / `saveEnabledHabits(data, habits)` — which habits are visible on dashboard
+- `getMascotForLevel(level, overrides?)` — returns mascot image path for a given overall level (threshold logic)
 - `exportGameData(data)` — JSON file download
 
 ## ⚠ Using this context correctly

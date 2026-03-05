@@ -36,4 +36,6 @@ export interface GameData {
   customDefinitions?: Partial<Record<StatKey, CustomStatOverride>>;
   healthyHabits?: Partial<Record<HabitKey, string[]>>;
   enabledHabits?: HabitKey[];
+  /** Maps level thresholds to mascot image filenames in /mascots/ (e.g. { 1: "skipper-default.svg", 10: "skipper-cool.svg" }) */
+  mascotOverrides?: Record<number, string>;
 }

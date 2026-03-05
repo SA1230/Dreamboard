@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { GameData, StatKey, HabitKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getOverallLevel, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, toggleHabitForToday, getLastActivityTimestamps, formatRelativeTime } from "@/lib/storage";
+import { loadGameData, addXP, getOverallLevel, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, toggleHabitForToday, getLastActivityTimestamps, formatRelativeTime, getMascotForLevel } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
 import { AddXPModal } from "@/components/AddXPModal";
 import { ActivityLog } from "@/components/ActivityLog";
@@ -46,6 +46,7 @@ function LevelDisplay({
   isLevelingUp,
   previousOverallLevel,
   onShake,
+  mascotSrc,
 }: {
   level: number;
   progressPercent: number;
@@ -54,8 +55,9 @@ function LevelDisplay({
   isLevelingUp?: boolean;
   previousOverallLevel?: number;
   onShake?: () => void;
+  mascotSrc: string;
 }) {
-  const numberRef = useRef<HTMLSpanElement>(null);
+  const numberRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Stabilize onShake callback so it doesn't re-trigger the animation effect
@@ -349,32 +351,42 @@ function LevelDisplay({
           </div>
         )}
 
-        {/* Level number with 3D effect */}
-        <span
+        {/* Skipper mascot inside the ring */}
+        <div
           ref={numberRef}
-          className="absolute inset-0 flex items-center justify-center text-6xl font-black select-none"
-          style={{
-            transition: "transform 0.2s ease-out",
-            background: "linear-gradient(180deg, #c47a20 0%, #8b5a1a 60%, #6b4215 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-            textShadow: "none",
-            filter: "drop-shadow(0 1px 0 rgba(120,80,30,0.4)) drop-shadow(0 2px 1px rgba(100,60,20,0.25)) drop-shadow(0 4px 3px rgba(80,50,15,0.15))",
-          }}
+          className="absolute inset-0 flex items-center justify-center select-none"
+          style={{ transition: "transform 0.2s ease-out" }}
         >
-          <span className="text-2xl font-bold mr-0.5" style={{ background: "inherit", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Lv.</span>
-          <span
-            key={displayedLevel}
-            className={animPhase === "number-swap" ? "animate-levelIn inline-block" : "inline-block"}
-          >
-            {displayedLevel}
-          </span>
-        </span>
+          <img
+            key={mascotSrc}
+            src={mascotSrc}
+            alt={`Level ${displayedLevel} mascot`}
+            className={`w-[100px] h-[100px] object-contain ${animPhase === "number-swap" ? "animate-levelIn" : ""}`}
+            style={{ filter: "drop-shadow(0 2px 4px rgba(80,50,15,0.2))" }}
+            draggable={false}
+          />
+        </div>
       </div>
 
-      {/* Mascot slot — ready for Skipper the penguin */}
-      {/* <div className="absolute -top-6 -right-4 w-16 h-16">mascot image here</div> */}
+      {/* Level badge below the ring */}
+      <span
+        className="text-lg font-black mt-2 select-none"
+        style={{
+          background: "linear-gradient(180deg, #c47a20 0%, #8b5a1a 60%, #6b4215 100%)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          backgroundClip: "text",
+          filter: "drop-shadow(0 1px 0 rgba(120,80,30,0.3))",
+        }}
+      >
+        <span className="text-sm font-bold mr-0.5" style={{ background: "inherit", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Lv.</span>
+        <span
+          key={displayedLevel}
+          className={animPhase === "number-swap" ? "animate-levelIn inline-block" : "inline-block"}
+        >
+          {displayedLevel}
+        </span>
+      </span>
 
       {/* XP text */}
       {!isMaxLevel ? (
@@ -609,6 +621,7 @@ export default function Home() {
             isLevelingUp={isOverallLevelingUp}
             previousOverallLevel={previousOverallLevel}
             onShake={() => setIsScreenShaking(true)}
+            mascotSrc={getMascotForLevel(overallLevel, gameData.mascotOverrides)}
           />
         </div>
       </div>

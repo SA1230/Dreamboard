@@ -454,6 +454,24 @@ export function formatRelativeTime(timestamp: string): string {
   return `${diffMonths} months ago`;
 }
 
+/** Returns the mascot image path for a given overall level.
+ *  Uses threshold logic (like rank titles): picks the highest level key ≤ current level.
+ *  Falls back to the default Skipper if no overrides match. */
+export function getMascotForLevel(level: number, overrides?: Record<number, string>): string {
+  const defaultImage = "/mascots/skipper-default.svg";
+  if (!overrides || Object.keys(overrides).length === 0) return defaultImage;
+
+  const thresholds = Object.keys(overrides)
+    .map(Number)
+    .sort((a, b) => b - a); // highest first
+
+  for (const threshold of thresholds) {
+    if (level >= threshold) return `/mascots/${overrides[threshold]}`;
+  }
+
+  return defaultImage;
+}
+
 export function exportGameData(data: GameData): void {
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: "application/json" });
