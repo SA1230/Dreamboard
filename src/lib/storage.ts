@@ -83,7 +83,8 @@ export function addXP(
   data: GameData,
   statKey: StatKey,
   note: string
-): { newData: GameData; leveledUp: boolean } {
+): { newData: GameData; leveledUp: boolean; previousLevel: number } {
+  const previousLevel = data.stats[statKey].level;
   const stat = { ...data.stats[statKey] };
   stat.xp += 1;
 
@@ -110,7 +111,7 @@ export function addXP(
   };
 
   saveGameData(newData);
-  return { newData, leveledUp };
+  return { newData, leveledUp, previousLevel };
 }
 
 export function getTotalLevel(data: GameData): number {

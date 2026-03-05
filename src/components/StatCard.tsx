@@ -5,19 +5,7 @@ import { StatDefinition } from "@/lib/stats";
 import { getXPForNextLevel, formatRelativeTime } from "@/lib/storage";
 import { StatIcon } from "./StatIcons";
 import { Plus, Flame } from "lucide-react";
-import { useState, useEffect } from "react";
-
-// Pre-generated particle positions for the level-up celebration
-const PARTICLE_POSITIONS = [
-  { left: 25, top: 30, tx: -30, ty: -40 },
-  { left: 50, top: 20, tx: 10, ty: -50 },
-  { left: 75, top: 30, tx: 35, ty: -35 },
-  { left: 80, top: 50, tx: 40, ty: 10 },
-  { left: 70, top: 70, tx: 30, ty: 40 },
-  { left: 40, top: 75, tx: -10, ty: 45 },
-  { left: 20, top: 60, tx: -40, ty: 20 },
-  { left: 30, top: 45, tx: -35, ty: -15 },
-];
+import { useState, useEffect, useRef } from "react";
 
 interface StatCardProps {
   definition: StatDefinition;
@@ -28,6 +16,7 @@ interface StatCardProps {
   streak: number;
   isActiveThisMonth: boolean;
   lastLoggedTimestamp: string | null;
+  previousLevel?: number;
 }
 
 export function StatCard({
@@ -39,19 +28,69 @@ export function StatCard({
   streak,
   isActiveThisMonth,
   lastLoggedTimestamp,
+  previousLevel,
 }: StatCardProps) {
   const xpNeeded = getXPForNextLevel(progress.level);
   const progressPercent = Math.min((progress.xp / xpNeeded) * 100, 100);
-  const [showLevelUp, setShowLevelUp] = useState(false);
   const [showXPPop, setShowXPPop] = useState(false);
 
+  // Phased level-up animation state
+  const [beat, setBeat] = useState<0 | 1 | 2 | 3>(0); // 0 = no animation
+  const [displayedLevel, setDisplayedLevel] = useState(progress.level);
+  const [barOverridePercent, setBarOverridePercent] = useState<number | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // Beat 1-3 orchestration
   useEffect(() => {
-    if (leveledUp) {
-      setShowLevelUp(true);
-      const timer = setTimeout(() => setShowLevelUp(false), 2000);
-      return () => clearTimeout(timer);
+    if (!leveledUp) {
+      setBeat(0);
+      setBarOverridePercent(null);
+      return;
     }
-  }, [leveledUp]);
+
+    // Show the OLD level initially
+    if (previousLevel) {
+      setDisplayedLevel(previousLevel);
+    }
+
+    // Beat 1: Bar fills to 100% (starts immediately)
+    setBeat(1);
+    setBarOverridePercent(100);
+
+    // Beat 1→2 transition: bar resets, badge transforms (~300ms)
+    const beat2Timer = setTimeout(() => {
+      setBarOverridePercent(null); // reset to real XP
+      setBeat(2);
+      // Swap to the new level number during the badge animation
+      setTimeout(() => {
+        setDisplayedLevel(progress.level);
+      }, 200);
+    }, 300);
+
+    // Beat 2→3 transition: card celebrates (~700ms)
+    const beat3Timer = setTimeout(() => {
+      setBeat(3);
+    }, 700);
+
+    // End all animations (~1800ms)
+    const endTimer = setTimeout(() => {
+      setBeat(0);
+      setBarOverridePercent(null);
+    }, 1800);
+
+    return () => {
+      clearTimeout(beat2Timer);
+      clearTimeout(beat3Timer);
+      clearTimeout(endTimer);
+    };
+  }, [leveledUp, previousLevel, progress.level]);
+
+  // Keep displayed level in sync when not animating
+  useEffect(() => {
+    if (!leveledUp) {
+      setDisplayedLevel(progress.level);
+    }
+  }, [progress.level, leveledUp]);
 
   useEffect(() => {
     if (justGainedXP) {
@@ -61,44 +100,28 @@ export function StatCard({
     }
   }, [justGainedXP]);
 
+  // The effective bar width: during beat 1 it overflows to 100%, otherwise real percent
+  const effectiveBarPercent = barOverridePercent !== null ? barOverridePercent : progressPercent;
+
   return (
     <div
+      ref={cardRef}
       className={`relative rounded-2xl p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${
         !isActiveThisMonth ? "opacity-50 saturate-[0.3]" : ""
-      }`}
-      style={{ backgroundColor: definition.backgroundColor }}
+      } ${beat === 3 ? "animate-cardLift" : ""} ${beat === 3 ? "animate-saturationBoost" : ""}`}
+      style={{
+        backgroundColor: definition.backgroundColor,
+        "--lift-shadow": `${definition.color}25`,
+      } as React.CSSProperties}
     >
-      {/* Level-up celebration overlay */}
-      {showLevelUp && (
-        <div className="absolute inset-0 rounded-2xl pointer-events-none z-10 animate-levelUpGlow">
-          <div className="absolute inset-0 rounded-2xl" style={{
-            boxShadow: `0 0 30px ${definition.color}40, 0 0 60px ${definition.color}20`,
-          }} />
-          {/* Particles */}
-          {PARTICLE_POSITIONS.map((pos, i) => (
-            <div
-              key={i}
-              className="absolute w-2 h-2 rounded-full animate-particle"
-              style={{
-                backgroundColor: definition.color,
-                left: `${pos.left}%`,
-                top: `${pos.top}%`,
-                "--tx": `${pos.tx}px`,
-                "--ty": `${pos.ty}px`,
-                animationDelay: `${i * 0.1}s`,
-                opacity: 0.6,
-              } as React.CSSProperties}
-            />
-          ))}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span
-              className="text-lg font-bold animate-levelUpText"
-              style={{ color: definition.color }}
-            >
-              Level Up!
-            </span>
-          </div>
-        </div>
+      {/* Beat 3: Radial glow pulse */}
+      {beat === 3 && (
+        <div
+          className="absolute inset-0 rounded-2xl pointer-events-none z-0 animate-radialGlow"
+          style={{
+            background: `radial-gradient(circle at center, ${definition.color}20, transparent 70%)`,
+          }}
+        />
       )}
 
       {/* XP pop animation */}
@@ -155,13 +178,24 @@ export function StatCard({
       {/* Level badge + streak */}
       <div className="flex items-center gap-2 mb-2">
         <span
-          className="text-xs font-semibold px-2 py-0.5 rounded-full"
+          className={`text-xs font-semibold px-2 py-0.5 rounded-full inline-flex items-center ${
+            beat === 2 ? "animate-badgeGlow" : ""
+          }`}
           style={{
             backgroundColor: `${definition.color}18`,
             color: definition.color,
-          }}
+            "--glow-color": `${definition.color}50`,
+          } as React.CSSProperties}
         >
-          Lv. {progress.level}
+          <span className="mr-0.5">Lv.</span>
+          <span
+            key={displayedLevel}
+            className={
+              beat === 2 ? "animate-levelIn" : ""
+            }
+          >
+            {displayedLevel}
+          </span>
         </span>
         <span className="text-xs opacity-50" style={{ color: definition.color }}>
           {progress.xp} / {xpNeeded} XP
@@ -182,15 +216,22 @@ export function StatCard({
 
       {/* Progress bar */}
       <div
-        className="h-2.5 rounded-full overflow-hidden"
-        style={{ backgroundColor: `${definition.color}15` }}
+        className={`h-2.5 rounded-full overflow-hidden ${beat === 1 ? "animate-barFlash" : ""}`}
+        style={{
+          backgroundColor: `${definition.color}15`,
+          "--flash-color": `${definition.color}60`,
+        } as React.CSSProperties}
       >
         <div
-          className="h-full rounded-full transition-all duration-700 ease-out"
+          className={`h-full rounded-full ${
+            beat === 1 ? "animate-barFill" : "transition-all duration-700 ease-out"
+          }`}
           style={{
-            width: `${progressPercent}%`,
+            width: beat === 1 ? undefined : `${effectiveBarPercent}%`,
             backgroundColor: definition.progressColor,
-          }}
+            "--bar-from": "85%",
+            "--bar-to": `${progressPercent}%`,
+          } as React.CSSProperties}
         />
       </div>
 
