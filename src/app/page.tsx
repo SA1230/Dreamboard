@@ -780,13 +780,22 @@ export default function Home() {
             style={{ animation: "captainBob 3s ease-in-out infinite" }}
           >
             <div
-              className="rounded-full"
+              className="relative flex items-center justify-center rounded-full"
               style={{ animation: "captainGlow 2.5s ease-in-out infinite" }}
             >
+              {/* Sonar ripple rings */}
+              <div
+                className="absolute w-20 h-20 rounded-full border-2 border-amber-400/40"
+                style={{ animation: "captainRipple 2.5s ease-out infinite" }}
+              />
+              <div
+                className="absolute w-20 h-20 rounded-full border-2 border-amber-400/40"
+                style={{ animation: "captainRipple 2.5s ease-out 1.25s infinite" }}
+              />
               <img
                 src="/mascots/judge-hero.svg"
                 alt="The Captain"
-                className="w-20 h-20 rounded-full bg-white border-2 border-amber-300 p-1.5 shadow-sm group-hover:scale-110 transition-transform"
+                className="w-20 h-20 rounded-full bg-white border-2 border-amber-300 p-1.5 shadow-sm group-hover:scale-110 transition-transform relative"
               />
             </div>
           </div>
