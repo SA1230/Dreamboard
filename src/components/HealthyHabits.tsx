@@ -1,7 +1,7 @@
 "use client";
 
 import { GameData, HabitKey } from "@/lib/types";
-import { isHabitCompletedToday } from "@/lib/storage";
+import { isHabitCompletedToday, getEnabledHabits } from "@/lib/storage";
 
 interface HealthyHabitsProps {
   gameData: GameData;
@@ -402,11 +402,152 @@ function NoSugarIcon({ completed }: { completed: boolean }) {
   );
 }
 
+function FlossIcon({ completed }: { completed: boolean }) {
+  return (
+    <svg
+      width="48"
+      height="48"
+      viewBox="0 0 48 48"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="transition-all duration-500 ease-out"
+      style={{
+        filter: completed
+          ? "drop-shadow(0 2px 8px rgba(139, 92, 246, 0.4))"
+          : "none",
+      }}
+    >
+      {/* Floss container (rounded rectangle) */}
+      <rect
+        x="12"
+        y="6"
+        width="24"
+        height="28"
+        rx="5"
+        fill={completed ? "#ede9fe" : "#f3f4f6"}
+        stroke={completed ? "#8b5cf6" : "#d1d5db"}
+        strokeWidth="1.5"
+        className="transition-all duration-500"
+      />
+      {/* Spool window */}
+      <circle
+        cx="24"
+        cy="18"
+        r="6"
+        fill={completed ? "#f5f3ff" : "#fafaf9"}
+        stroke={completed ? "#8b5cf6" : "#d1d5db"}
+        strokeWidth="1.2"
+        className="transition-all duration-500"
+      />
+      {/* Spool inner */}
+      <circle
+        cx="24"
+        cy="18"
+        r="2.5"
+        fill={completed ? "#8b5cf6" : "#d1d5db"}
+        className="transition-colors duration-500"
+      />
+      {/* Label area */}
+      <rect
+        x="16"
+        y="27"
+        width="16"
+        height="4"
+        rx="1"
+        fill={completed ? "#8b5cf6" : "#d1d5db"}
+        opacity={completed ? 0.3 : 0.2}
+        className="transition-all duration-500"
+      />
+      {/* Floss string coming out */}
+      <path
+        d="M24 34 Q24 38 20 40 Q16 42 14 44"
+        stroke={completed ? "#8b5cf6" : "#d1d5db"}
+        strokeWidth="1.5"
+        fill="none"
+        strokeLinecap="round"
+        className="transition-colors duration-500"
+      />
+      {/* Sparkle when completed */}
+      {completed && (
+        <>
+          <circle cx="36" cy="10" r="1.5" fill="#8b5cf6" opacity="0.7" />
+          <circle cx="38" cy="14" r="1" fill="#8b5cf6" opacity="0.5" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+function StepsIcon({ completed }: { completed: boolean }) {
+  return (
+    <svg
+      width="48"
+      height="48"
+      viewBox="0 0 48 48"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="transition-all duration-500 ease-out"
+      style={{
+        filter: completed
+          ? "drop-shadow(0 2px 8px rgba(16, 185, 129, 0.4))"
+          : "none",
+      }}
+    >
+      {/* Left footprint */}
+      <ellipse
+        cx="17"
+        cy="28"
+        rx="5"
+        ry="8"
+        fill={completed ? "#d1fae5" : "#f3f4f6"}
+        stroke={completed ? "#10b981" : "#d1d5db"}
+        strokeWidth="1.5"
+        className="transition-all duration-500"
+        transform="rotate(-10 17 28)"
+      />
+      {/* Left toes */}
+      <circle cx="13" cy="19" r="2" fill={completed ? "#10b981" : "#d1d5db"} className="transition-colors duration-500" />
+      <circle cx="16" cy="18" r="2" fill={completed ? "#10b981" : "#d1d5db"} className="transition-colors duration-500" />
+      <circle cx="19.5" cy="18.5" r="1.8" fill={completed ? "#10b981" : "#d1d5db"} className="transition-colors duration-500" />
+      {/* Right footprint */}
+      <ellipse
+        cx="31"
+        cy="20"
+        rx="5"
+        ry="8"
+        fill={completed ? "#d1fae5" : "#f3f4f6"}
+        stroke={completed ? "#10b981" : "#d1d5db"}
+        strokeWidth="1.5"
+        className="transition-all duration-500"
+        transform="rotate(10 31 20)"
+      />
+      {/* Right toes */}
+      <circle cx="28" cy="11" r="1.8" fill={completed ? "#10b981" : "#d1d5db"} className="transition-colors duration-500" />
+      <circle cx="31" cy="10" r="2" fill={completed ? "#10b981" : "#d1d5db"} className="transition-colors duration-500" />
+      <circle cx="34.5" cy="11" r="2" fill={completed ? "#10b981" : "#d1d5db"} className="transition-colors duration-500" />
+      {/* 10k text */}
+      <text
+        x="24"
+        y="44"
+        textAnchor="middle"
+        fontSize="7"
+        fontWeight="bold"
+        fill={completed ? "#059669" : "#9ca3af"}
+        className="transition-colors duration-500"
+      >
+        10k
+      </text>
+    </svg>
+  );
+}
+
 const HABIT_CONFIG: Record<HabitKey, { label: string; completedLabel: string }> = {
   water: { label: "Drink 64oz", completedLabel: "64oz done!" },
   nails: { label: "No nail biting", completedLabel: "Nails safe!" },
   brush: { label: "Brush 2x", completedLabel: "Brushed!" },
   nosugar: { label: "No sugar", completedLabel: "Sugar free!" },
+  floss: { label: "Floss teeth", completedLabel: "Flossed!" },
+  steps: { label: "10k steps", completedLabel: "10k done!" },
 };
 
 const HABIT_STYLES: Record<HabitKey, { activeBackground: string; activeBorder: string; activeText: string }> = {
@@ -414,6 +555,8 @@ const HABIT_STYLES: Record<HabitKey, { activeBackground: string; activeBorder: s
   nails: { activeBackground: "#fdf2f8", activeBorder: "#ec4899", activeText: "#db2777" },
   brush: { activeBackground: "#f0fdfa", activeBorder: "#14b8a6", activeText: "#0d9488" },
   nosugar: { activeBackground: "#fffbeb", activeBorder: "#f59e0b", activeText: "#d97706" },
+  floss: { activeBackground: "#f5f3ff", activeBorder: "#8b5cf6", activeText: "#7c3aed" },
+  steps: { activeBackground: "#ecfdf5", activeBorder: "#10b981", activeText: "#059669" },
 };
 
 const HABIT_ICONS: Record<HabitKey, React.ComponentType<{ completed: boolean }>> = {
@@ -421,11 +564,18 @@ const HABIT_ICONS: Record<HabitKey, React.ComponentType<{ completed: boolean }>>
   nails: NailsIcon,
   brush: ToothbrushIcon,
   nosugar: NoSugarIcon,
+  floss: FlossIcon,
+  steps: StepsIcon,
 };
 
-const HABIT_ORDER: HabitKey[] = ["water", "nails", "brush", "nosugar"];
+const HABIT_ORDER: HabitKey[] = ["water", "nails", "brush", "nosugar", "floss", "steps"];
 
 export function HealthyHabits({ gameData, onToggleHabit }: HealthyHabitsProps) {
+  const enabledHabits = getEnabledHabits(gameData);
+  const visibleHabits = HABIT_ORDER.filter((key) => enabledHabits.includes(key));
+
+  if (visibleHabits.length === 0) return null;
+
   return (
     <section className="mb-12">
       <h2 className="text-lg font-bold text-stone-600 mb-4">
@@ -439,7 +589,7 @@ export function HealthyHabits({ gameData, onToggleHabit }: HealthyHabitsProps) {
         </span>
       </h2>
       <div className="grid grid-cols-2 gap-4">
-        {HABIT_ORDER.map((habitKey) => {
+        {visibleHabits.map((habitKey) => {
           const completed = isHabitCompletedToday(gameData, habitKey);
           const styles = HABIT_STYLES[habitKey];
           const config = HABIT_CONFIG[habitKey];

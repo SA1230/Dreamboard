@@ -49,6 +49,25 @@ export function loadGameData(): GameData {
         parsed.stats[key] = { xp: 0, level: 1 };
       }
     }
+
+    // Migration: remove future-dated habit entries caused by old UTC bug
+    if (parsed.healthyHabits) {
+      const todayStr = getTodayString();
+      let hadFutureDates = false;
+      for (const habitKey of Object.keys(parsed.healthyHabits) as HabitKey[]) {
+        const dates = parsed.healthyHabits[habitKey];
+        if (!dates) continue;
+        const filtered = dates.filter((d) => d <= todayStr);
+        if (filtered.length !== dates.length) {
+          parsed.healthyHabits[habitKey] = filtered;
+          hadFutureDates = true;
+        }
+      }
+      if (hadFutureDates) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+      }
+    }
+
     return parsed;
   } catch {
     return createDefaultGameData();
@@ -299,7 +318,11 @@ export function getMonthlyXPTotals(activities: Activity[]): {
 // --- Healthy Habits ---
 
 function getTodayString(): string {
-  return new Date().toISOString().split("T")[0];
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 export function isHabitCompletedToday(data: GameData, habitKey: HabitKey): boolean {
@@ -340,7 +363,7 @@ export function getHabitsByDay(
   const habits = data.healthyHabits;
   if (!habits) return result;
 
-  const habitKeys: HabitKey[] = ["water", "nails", "brush", "nosugar"];
+  const habitKeys: HabitKey[] = ["water", "nails", "brush", "nosugar", "floss", "steps"];
 
   for (const habitKey of habitKeys) {
     const dates = habits[habitKey];
@@ -357,6 +380,23 @@ export function getHabitsByDay(
   }
 
   return result;
+}
+
+// --- Enabled Habits (which habits appear on the dashboard) ---
+
+const DEFAULT_ENABLED_HABITS: HabitKey[] = ["water", "nails", "brush", "nosugar"];
+
+export function getEnabledHabits(data: GameData): HabitKey[] {
+  return data.enabledHabits ?? DEFAULT_ENABLED_HABITS;
+}
+
+export function saveEnabledHabits(data: GameData, enabledHabits: HabitKey[]): GameData {
+  const newData: GameData = {
+    ...data,
+    enabledHabits,
+  };
+  saveGameData(newData);
+  return newData;
 }
 
 export function exportGameData(data: GameData): void {
