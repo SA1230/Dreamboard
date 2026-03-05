@@ -1,18 +1,30 @@
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { StatDefinition, STAT_KEYS } from "@/lib/stats";
-import { StatKey } from "@/lib/types";
+import { StatKey, HabitKey } from "@/lib/types";
 
 interface MonthlyXPSummaryProps {
   currentMonthXP: number;
   lastMonthXP: number;
   activitiesByDay: Record<number, Partial<Record<StatKey, number>>>;
+  habitsByDay: Record<number, HabitKey[]>;
   statDefinitions: Record<StatKey, StatDefinition> | null;
 }
+
+// Emoji representations of each habit — compact and recognizable at small sizes
+const HABIT_EMOJI: Record<HabitKey, string> = {
+  water: "\u{1F4A7}",
+  nails: "\u{1F485}",
+  brush: "\u{1FAA5}",
+  nosugar: "\u{1F6AB}",
+  floss: "\u{1F9B7}",
+  steps: "\u{1F6B6}",
+};
 
 export function MonthlyXPSummary({
   currentMonthXP,
   lastMonthXP,
   activitiesByDay,
+  habitsByDay,
   statDefinitions,
 }: MonthlyXPSummaryProps) {
   // Calculate percentage change from last month to this month
@@ -54,6 +66,7 @@ export function MonthlyXPSummary({
   function getStatName(stat: string): string {
     return statDefinitions?.[stat as StatKey]?.name ?? stat;
   }
+
 
   // Each 1 XP = 1 block. Block height scales so the tallest day fills the chart.
   const blockHeight = Math.max(Math.floor((chartHeight - (maxDayXP - 1) * blockGap) / maxDayXP), 3);
@@ -181,6 +194,28 @@ export function MonthlyXPSummary({
                 {showLabel && (
                   <span className="text-[9px] text-stone-300">{day}</span>
                 )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Healthy habit icons below each day */}
+        <div className="flex gap-[2px] mt-0.5">
+          {Array.from({ length: daysInMonth }, (_, index) => {
+            const day = index + 1;
+            const habits = habitsByDay[day];
+
+            if (!habits || habits.length === 0) {
+              return <div key={day} className="flex-1" />;
+            }
+
+            return (
+              <div key={day} className="flex-1 flex flex-col items-center">
+                {habits.map((habitKey) => (
+                  <span key={habitKey} className="text-[8px] leading-none">
+                    {HABIT_EMOJI[habitKey]}
+                  </span>
+                ))}
               </div>
             );
           })}
