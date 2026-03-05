@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { GameData, StatKey, HabitKey, CustomStatOverride } from "@/lib/types";
+import { GameData, StatKey, HabitKey, DamageKey, CustomStatOverride } from "@/lib/types";
 import { STAT_DEFINITIONS, STAT_KEYS, COLOR_PRESETS, StatDefinition } from "@/lib/stats";
-import { loadGameData, saveCustomDefinitions, getEnabledHabits, saveEnabledHabits, resetAllData } from "@/lib/storage";
+import { loadGameData, saveCustomDefinitions, getEnabledHabits, saveEnabledHabits, getEnabledDamage, saveEnabledDamage, resetAllData } from "@/lib/storage";
 import { StatIcon, ICON_OPTIONS } from "@/components/StatIcons";
 import { ArrowLeft, RotateCcw, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -18,10 +18,18 @@ const ALL_HABITS: { key: HabitKey; label: string; description: string; emoji: st
   { key: "steps", label: "10k steps", description: "Walk 10,000 steps", emoji: "👟", color: "#10b981", enabledBackground: "#ecfdf5" },
 ];
 
+const ALL_DAMAGE: { key: DamageKey; label: string; description: string; emoji: string; color: string; enabledBackground: string }[] = [
+  { key: "substance", label: "Substance Abuse", description: "Alcohol, nicotine, or other substances", emoji: "🍺", color: "#ef4444", enabledBackground: "#fef2f2" },
+  { key: "screentime", label: "Excess Screen Time", description: "Doomscrolling or binge-watching", emoji: "📱", color: "#ef4444", enabledBackground: "#fef2f2" },
+  { key: "junkfood", label: "Junk Food", description: "Fast food, snacks, or processed food", emoji: "🍔", color: "#ef4444", enabledBackground: "#fef2f2" },
+  { key: "badsleep", label: "Bad Sleep Hygiene", description: "Late nights or disrupted sleep", emoji: "🌙", color: "#ef4444", enabledBackground: "#fef2f2" },
+];
+
 export default function SettingsPage() {
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [overrides, setOverrides] = useState<Partial<Record<StatKey, CustomStatOverride>>>({});
   const [enabledHabits, setEnabledHabits] = useState<HabitKey[]>([]);
+  const [enabledDamage, setEnabledDamage] = useState<DamageKey[]>([]);
   const [editingStat, setEditingStat] = useState<StatKey | null>(null);
   const [saved, setSaved] = useState(false);
   const [showResetDataConfirm, setShowResetDataConfirm] = useState(false);
@@ -32,6 +40,7 @@ export default function SettingsPage() {
     setGameData(data);
     setOverrides(data.customDefinitions ?? {});
     setEnabledHabits(getEnabledHabits(data));
+    setEnabledDamage(getEnabledDamage(data));
   }, []);
 
   if (!gameData) {
@@ -110,10 +119,21 @@ export default function SettingsPage() {
     setGameData(newData);
   }
 
+  function toggleDamageItem(damageKey: DamageKey) {
+    if (!gameData) return;
+    const updated = enabledDamage.includes(damageKey)
+      ? enabledDamage.filter((k) => k !== damageKey)
+      : [...enabledDamage, damageKey];
+    setEnabledDamage(updated);
+    const newData = saveEnabledDamage(gameData, updated);
+    setGameData(newData);
+  }
+
   function handleSave() {
     if (!gameData) return;
     let newData = saveCustomDefinitions(gameData, overrides);
     newData = saveEnabledHabits(newData, enabledHabits);
+    newData = saveEnabledDamage(newData, enabledDamage);
     setGameData(newData);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -349,6 +369,53 @@ export default function SettingsPage() {
               <div
                 className="w-11 h-6 rounded-full relative transition-colors duration-200 shrink-0"
                 style={{ backgroundColor: isEnabled ? habit.color : "#d6d3d1" }}
+              >
+                <div
+                  className="w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all duration-200 shadow-sm"
+                  style={{ left: isEnabled ? "22px" : "2px" }}
+                />
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Section: Daily Damage */}
+      <h2 className="text-lg font-bold text-stone-500 mt-12 mb-2">Daily Damage</h2>
+      <p className="text-xs text-stone-400 mb-4">Choose which damage items appear on your dashboard.</p>
+      <div className="space-y-2">
+        {ALL_DAMAGE.map((damage) => {
+          const isEnabled = enabledDamage.includes(damage.key);
+          return (
+            <button
+              key={damage.key}
+              onClick={() => toggleDamageItem(damage.key)}
+              className="w-full flex items-center gap-3 p-4 rounded-2xl transition-all duration-200"
+              style={{
+                backgroundColor: isEnabled ? damage.enabledBackground : "#fafaf9",
+                border: isEnabled ? `2px solid ${damage.color}30` : "2px solid #e7e5e4",
+              }}
+            >
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
+                style={{
+                  backgroundColor: isEnabled ? `${damage.color}20` : "#f5f5f4",
+                }}
+              >
+                {damage.emoji}
+              </div>
+              <div className="flex-1 text-left">
+                <div className="font-bold text-sm" style={{ color: isEnabled ? damage.color : "#a8a29e" }}>
+                  {damage.label}
+                </div>
+                <div className="text-xs" style={{ color: isEnabled ? `${damage.color}99` : "#d6d3d1" }}>
+                  {damage.description}
+                </div>
+              </div>
+              {/* Toggle switch */}
+              <div
+                className="w-11 h-6 rounded-full relative transition-colors duration-200 shrink-0"
+                style={{ backgroundColor: isEnabled ? damage.color : "#d6d3d1" }}
               >
                 <div
                   className="w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all duration-200 shadow-sm"

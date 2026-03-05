@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { GameData, StatKey, HabitKey } from "@/lib/types";
+import { GameData, StatKey, HabitKey, DamageKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getOverallLevel, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, toggleHabitForToday, getLastActivityTimestamps, formatRelativeTime, getMascotForLevel } from "@/lib/storage";
+import { loadGameData, addXP, getOverallLevel, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, toggleHabitForToday, toggleDamageForToday, getPointsBalance, getLastActivityTimestamps, formatRelativeTime, getMascotForLevel } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
 import { AddXPModal } from "@/components/AddXPModal";
 import { ActivityLog } from "@/components/ActivityLog";
 import { MonthlyXPSummary } from "@/components/MonthlyXPSummary";
 import { HealthyHabits } from "@/components/HealthyHabits";
+import { DailyDamage } from "@/components/DailyDamage";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
 import { Download, Settings, CalendarDays } from "lucide-react";
 import Link from "next/link";
@@ -549,6 +550,21 @@ export default function Home() {
     [gameData]
   );
 
+  const handleToggleDamage = useCallback(
+    (damageKey: DamageKey) => {
+      if (!gameData) return;
+      const newData = toggleDamageForToday(gameData, damageKey);
+      setGameData(newData);
+    },
+    [gameData]
+  );
+
+  // AA points balance derived from habits vs damage
+  const pointsBalance = useMemo(() => {
+    if (!gameData) return null;
+    return getPointsBalance(gameData);
+  }, [gameData]);
+
   // Show nothing while loading from localStorage (prevents hydration flash)
   if (!gameData || !definitions || !streaks || !monthlyXP) {
     return (
@@ -650,6 +666,17 @@ export default function Home() {
 
       {/* Healthy Habits */}
       <HealthyHabits gameData={gameData} onToggleHabit={handleToggleHabit} />
+
+      {/* Daily Damage */}
+      <DailyDamage gameData={gameData} onToggleDamage={handleToggleDamage} />
+
+      {/* Points Balance */}
+      {pointsBalance && (
+        <div className="flex items-center justify-center gap-3 mb-12 py-3 px-5 rounded-xl bg-stone-50 border border-stone-200 mx-auto w-fit">
+          <span className="text-xs font-medium text-stone-400 uppercase tracking-wide">Power Points</span>
+          <span className="text-2xl font-extrabold text-amber-600">{pointsBalance.balance}</span>
+        </div>
+      )}
 
       {/* Activity Log */}
       <section>
