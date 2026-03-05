@@ -208,6 +208,35 @@
   100% { opacity: 0; transform: translateY(-4px) scale(0.98); }
 }
 
+/* Anticipation: warm glow builds around ring before level-up shatter */
+.animate-anticipationGlow {
+  animation: anticipationGlow 600ms ease-in-out forwards;
+}
+
+@keyframes anticipationGlow {
+  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0), inset 0 0 0 0 rgba(245, 158, 11, 0); }
+  30% { box-shadow: 0 0 20px 4px rgba(245, 158, 11, 0.25), inset 0 0 12px 2px rgba(245, 158, 11, 0.08); }
+  55% { box-shadow: 0 0 12px 2px rgba(245, 158, 11, 0.15), inset 0 0 8px 1px rgba(245, 158, 11, 0.05); }
+  80% { box-shadow: 0 0 28px 6px rgba(245, 158, 11, 0.35), inset 0 0 16px 3px rgba(245, 158, 11, 0.1); }
+  100% { box-shadow: 0 0 32px 8px rgba(245, 158, 11, 0.4), inset 0 0 20px 4px rgba(245, 158, 11, 0.12); }
+}
+
+/* Anticipation: mascot excited double-hop before level-up */
+.animate-mascotAnticipate {
+  animation: mascotAnticipate 600ms cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+}
+
+@keyframes mascotAnticipate {
+  0% { transform: translateY(0) scale(1); }
+  12% { transform: translateY(3px) scale(0.97, 1.03); }
+  24% { transform: translateY(-10px) scale(1.03, 0.97); }
+  36% { transform: translateY(0) scale(1); }
+  48% { transform: translateY(2px) scale(0.98, 1.02); }
+  60% { transform: translateY(-6px) scale(1.02, 0.98); }
+  72% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-2px) scale(1); }
+}
+
 /* Beat 4: Overall level ring fill animation */
 .animate-ringFill {
   animation: ringFill 600ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
