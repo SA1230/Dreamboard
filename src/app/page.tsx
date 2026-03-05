@@ -524,6 +524,21 @@ export default function Home() {
   const [isScreenShaking, setIsScreenShaking] = useState(false);
   const [isActivityExpanded, setIsActivityExpanded] = useState(true);
   const [showJudge, setShowJudge] = useState(false);
+  const [captainCtaVisible, setCaptainCtaVisible] = useState(true);
+  const captainCtaRef = useRef<HTMLDivElement>(null);
+
+  // Show floating FAB when the main CTA scrolls out of view
+  useEffect(() => {
+    const element = captainCtaRef.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setCaptainCtaVisible(entry.isIntersecting),
+      { threshold: 0.1 }
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [gameData]);
+
   // Celebration overlay state
   const [celebrationInfo, setCelebrationInfo] = useState<{
     statKey: StatKey;
@@ -744,23 +759,45 @@ export default function Home() {
         </h1>
       </header>
 
-      {/* Judge CTA */}
-      <div className="flex justify-center mt-2 mb-8">
+      {/* Captain CTA */}
+      <div ref={captainCtaRef} className="mt-14 mb-6">
         <button
           onClick={() => setShowJudge(true)}
-          className="relative flex flex-col items-center pt-14 pb-5 px-10 rounded-2xl bg-gradient-to-b from-amber-50 to-orange-50/80 border border-amber-200/60 hover:border-amber-300 hover:shadow-lg transition-all cursor-pointer group active:scale-[0.98]"
-          style={{ minWidth: "280px" }}
+          className="relative w-full flex flex-col items-center pt-12 pb-4 px-8 rounded-2xl border border-amber-200/60 hover:border-amber-300 transition-all cursor-pointer group active:scale-[0.98]"
+          style={{
+            background: "radial-gradient(ellipse at 50% -10%, rgba(252, 211, 77, 0.15) 0%, transparent 60%), linear-gradient(to bottom, #FFF8EB, #FFF0D4)",
+            boxShadow: "0 2px 12px rgba(180, 130, 50, 0.08), inset 0 1px 0 rgba(255,255,255,0.6)",
+          }}
         >
-          {/* Hero avatar — overlaps top edge */}
-          <div className="absolute -top-9">
-            <img
-              src="/mascots/judge-hero.svg"
-              alt="The Captain"
-              className="w-[72px] h-[72px] rounded-full bg-white border-2 border-amber-300 p-1.5 shadow-sm group-hover:scale-110 transition-transform"
-            />
+          {/* Hero avatar with glow ring + bob */}
+          <div
+            className="absolute -top-8"
+            style={{ animation: "captainBob 3s ease-in-out infinite" }}
+          >
+            <div
+              className="rounded-full"
+              style={{ animation: "captainGlow 2.5s ease-in-out infinite" }}
+            >
+              <img
+                src="/mascots/judge-hero.svg"
+                alt="The Captain"
+                className="w-20 h-20 rounded-full bg-white border-2 border-amber-300 p-1.5 shadow-sm group-hover:scale-110 transition-transform"
+              />
+            </div>
           </div>
-          <span className="text-base font-bold text-amber-800">What did you accomplish?</span>
-          <p className="text-sm text-amber-600/60 mt-0.5">Tell the Captain & earn XP</p>
+          <span className="text-lg font-bold text-amber-800">What did you accomplish?</span>
+          <p
+            className="text-sm font-semibold mt-1"
+            style={{
+              background: "linear-gradient(90deg, #B4722A 0%, #D4A44A 30%, #F5D680 50%, #D4A44A 70%, #B4722A 100%)",
+              backgroundSize: "200% 100%",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              animation: "ctaShimmer 4s ease-in-out infinite",
+            }}
+          >
+            Tell the Captain &amp; earn XP
+          </p>
         </button>
       </div>
 
@@ -913,6 +950,27 @@ export default function Home() {
           onAcceptVerdict={handleJudgeVerdict}
           onCancel={() => setShowJudge(false)}
         />
+      )}
+
+      {/* Floating Captain FAB — appears when main CTA scrolls out of view */}
+      {!captainCtaVisible && !showJudge && (
+        <button
+          onClick={() => setShowJudge(true)}
+          className="fixed bottom-6 right-6 z-40 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-transform"
+          style={{ animation: "fadeIn 0.2s ease-out" }}
+          aria-label="Tell the Captain what you accomplished"
+        >
+          <div
+            className="rounded-full"
+            style={{ animation: "captainGlow 2.5s ease-in-out infinite" }}
+          >
+            <img
+              src="/mascots/judge-hero.svg"
+              alt="The Captain"
+              className="w-14 h-14 rounded-full bg-white border-2 border-amber-300 p-1 shadow-md"
+            />
+          </div>
+        </button>
       )}
 
       {/* Level-up celebration overlay (confetti + toast + overall level-up) */}
