@@ -247,6 +247,15 @@
   100% { stroke-dashoffset: var(--ring-to, 0); }
 }
 
+/* Rank title shimmer — golden highlight sweeps across text as player nears next rank */
+.animate-rankShimmer {
+  animation: rankShimmer 3s ease-in-out infinite;
+}
+@keyframes rankShimmer {
+  0% { background-position: 150% center; }
+  100% { background-position: -50% center; }
+}
+
 /* Beat 4: Rank title text reveal */
 .animate-titleReveal {
   animation: titleReveal 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
