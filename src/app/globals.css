@@ -377,6 +377,12 @@
   50% { box-shadow: 0 0 16px 6px rgba(245, 178, 50, 0.35), 0 0 24px 8px rgba(245, 178, 50, 0.1); }
 }
 
+/* Captain FAB: sonar ripple expanding outward */
+@keyframes captainRipple {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
 /* Captain CTA: golden shimmer sweep across text */
 @keyframes ctaShimmer {
   0% { background-position: 200% center; }
