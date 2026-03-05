@@ -51,6 +51,10 @@ export function MonthlyXPSummary({
     return statDefinitions?.[stat as StatKey]?.progressColor ?? "#a8a29e";
   }
 
+  function getStatName(stat: string): string {
+    return statDefinitions?.[stat as StatKey]?.name ?? stat;
+  }
+
   // Each 1 XP = 1 block. Block height scales so the tallest day fills the chart.
   const blockHeight = Math.max(Math.floor((chartHeight - (maxDayXP - 1) * blockGap) / maxDayXP), 3);
 
@@ -117,19 +121,16 @@ export function MonthlyXPSummary({
               );
             }
 
-            // Build individual blocks sorted by XP count descending (most at bottom).
-            // Each XP point for a stat = one block of that stat's color.
-            const statEntries = STAT_KEYS
+            // Group blocks by stat, sorted by XP count descending (most at bottom).
+            const statGroups = STAT_KEYS
               .filter((stat) => (dayStats[stat] ?? 0) > 0)
-              .sort((a, b) => (dayStats[b] ?? 0) - (dayStats[a] ?? 0));
-
-            const blocks: { stat: string; color: string }[] = [];
-            for (const stat of statEntries) {
-              const xp = dayStats[stat] ?? 0;
-              for (let i = 0; i < xp; i++) {
-                blocks.push({ stat, color: getStatColor(stat) });
-              }
-            }
+              .sort((a, b) => (dayStats[b] ?? 0) - (dayStats[a] ?? 0))
+              .map((stat) => ({
+                stat,
+                xp: dayStats[stat] ?? 0,
+                color: getStatColor(stat),
+                name: getStatName(stat),
+              }));
 
             return (
               <div
@@ -140,15 +141,29 @@ export function MonthlyXPSummary({
                   className="flex flex-col-reverse"
                   style={{ gap: blockGap }}
                 >
-                  {blocks.map((block, blockIndex) => (
+                  {statGroups.map((group) => (
                     <div
-                      key={`${block.stat}-${blockIndex}`}
-                      className="w-full rounded-[1px]"
-                      style={{
-                        height: blockHeight,
-                        backgroundColor: block.color,
-                      }}
-                    />
+                      key={group.stat}
+                      className="relative group/stat flex flex-col-reverse"
+                      style={{ gap: blockGap }}
+                    >
+                      {/* Tooltip */}
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 rounded-md bg-stone-700 text-white text-[10px] font-semibold whitespace-nowrap opacity-0 group-hover/stat:opacity-100 pointer-events-none transition-opacity z-10 shadow-md">
+                        <span style={{ color: group.color }}>{group.name}</span>
+                        <span className="text-stone-300 ml-1">{group.xp} XP</span>
+                      </div>
+                      {/* Blocks */}
+                      {Array.from({ length: group.xp }, (_, blockIndex) => (
+                        <div
+                          key={blockIndex}
+                          className="w-full rounded-[1px]"
+                          style={{
+                            height: blockHeight,
+                            backgroundColor: group.color,
+                          }}
+                        />
+                      ))}
+                    </div>
                   ))}
                 </div>
               </div>
