@@ -836,6 +836,16 @@ export default function Home() {
       {/* Header */}
       <header className="text-center mb-10 relative">
         <div className="absolute right-0 top-1 flex items-center gap-2">
+          <button
+            onClick={() => setShowJudge(true)}
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
+            title="Ask the Judge"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
           <Link
             href="/calendar"
             className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
@@ -877,7 +887,7 @@ export default function Home() {
         </p>
       </header>
 
-      {/* Monthly XP Summary + Today's XP + Level Display — wider than card grid */}
+      {/* Monthly XP Summary + Level Display — wider than card grid */}
       <div className="flex flex-col sm:flex-row sm:items-stretch gap-4 mb-8 sm:-mx-12">
         <div className="flex-1 min-w-0">
           <MonthlyXPSummary
@@ -886,14 +896,8 @@ export default function Home() {
             activitiesByDay={activitiesByDayForMonth}
             habitsByDay={habitsByDayForMonth}
             statDefinitions={definitions}
+            todayXP={dailyXPForMonth[new Date().getDate() - 1] ?? 0}
           />
-        </div>
-        <div className="flex flex-col items-center justify-center rounded-2xl bg-stone-50 border border-stone-200 px-16 py-5 shrink-0">
-          <p className="text-xs font-medium text-stone-400 uppercase tracking-wide">Today</p>
-          <p className="text-6xl font-extrabold text-emerald-500 mt-3">
-            {dailyXPForMonth[new Date().getDate() - 1] ?? 0}
-          </p>
-          <p className="text-[10px] font-medium text-stone-400 mt-2">XP earned</p>
         </div>
         <div className="flex" style={{ transform: "scale(1.05)", transformOrigin: "center center" }}>
           <LevelDisplay
@@ -908,19 +912,6 @@ export default function Home() {
           />
         </div>
       </div>
-
-      {/* Ask the Judge Button */}
-      <button
-        onClick={() => setShowJudge(true)}
-        className="w-full mb-6 py-3 px-6 rounded-2xl bg-stone-700 hover:bg-stone-800 text-white font-bold text-sm transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10" />
-          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-          <path d="M12 17h.01" />
-        </svg>
-        Ask the Judge
-      </button>
 
       {/* Stat Card Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
