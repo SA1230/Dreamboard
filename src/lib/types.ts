@@ -18,6 +18,8 @@ export interface Activity {
   stat: StatKey;
   note: string;
   timestamp: string;
+  /** XP amount awarded (defaults to 1 for backward compat with pre-judge activities) */
+  amount?: number;
 }
 
 export interface CustomStatOverride {
@@ -39,7 +41,7 @@ export interface PointsWallet {
 
 // Discriminated union for all events that appear in the activity feed
 export type FeedEvent =
-  | { type: "xp_gain"; id: string; timestamp: string; stat: StatKey; note: string }
+  | { type: "xp_gain"; id: string; timestamp: string; stat: StatKey; note: string; amount?: number }
   | { type: "habit_completed"; id: string; timestamp: string; habitKey: HabitKey }
   | { type: "habit_removed"; id: string; timestamp: string; habitKey: HabitKey }
   | { type: "damage_marked"; id: string; timestamp: string; damageKey: DamageKey }

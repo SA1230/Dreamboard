@@ -3,9 +3,10 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { GameData, StatKey, HabitKey, DamageKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getOverallLevel, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForToday, toggleDamageForToday, getPointsBalance, getLastActivityTimestamps, formatRelativeTime, getMascotForLevel } from "@/lib/storage";
+import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForToday, toggleDamageForToday, getPointsBalance, getLastActivityTimestamps, formatRelativeTime, getMascotForLevel } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
 import { AddXPModal } from "@/components/AddXPModal";
+import { JudgeModal } from "@/components/JudgeModal";
 import { ActivityLog } from "@/components/ActivityLog";
 import { MonthlyXPSummary } from "@/components/MonthlyXPSummary";
 import { HealthyHabits } from "@/components/HealthyHabits";
@@ -533,6 +534,7 @@ export default function Home() {
   // Page-wide screen shake on overall level-up
   const [isScreenShaking, setIsScreenShaking] = useState(false);
   const [isActivityExpanded, setIsActivityExpanded] = useState(true);
+  const [showJudge, setShowJudge] = useState(false);
   // Celebration overlay state
   const [celebrationInfo, setCelebrationInfo] = useState<{
     statKey: StatKey;
@@ -632,7 +634,7 @@ export default function Home() {
       if (!gameData || !definitions) return;
 
       // Capture overall level BEFORE the XP is added
-      const overallBefore = getOverallLevel(gameData.activities.length);
+      const overallBefore = getOverallLevel(getTotalLifetimeXP(gameData));
 
       const { newData, leveledUp, previousLevel } = addXP(gameData, statKey, note);
       setGameData(newData);
@@ -643,7 +645,7 @@ export default function Home() {
       setTimeout(() => setXpGainedStat(null), 900);
 
       // Check if overall level went up (independent of stat level-up)
-      const overallAfter = getOverallLevel(newData.activities.length);
+      const overallAfter = getOverallLevel(getTotalLifetimeXP(newData));
       const isOverallLevelUp = overallAfter.level > overallBefore.level;
 
       // Trigger stat level-up animation
@@ -682,6 +684,50 @@ export default function Home() {
     [gameData, definitions]
   );
 
+  const handleJudgeVerdict = useCallback(
+    (awards: { stat: StatKey; amount: number }[]) => {
+      if (!gameData || !definitions) return;
+
+      // Apply each award sequentially — each addXP call updates the data
+      let currentData = gameData;
+      for (const award of awards) {
+        const { newData, leveledUp } = addXP(currentData, award.stat, "Judged activity", award.amount);
+        currentData = newData;
+
+        // Trigger XP animation for the last award's stat
+        if (award === awards[awards.length - 1]) {
+          setXpGainedStat(award.stat);
+          setTimeout(() => setXpGainedStat(null), 900);
+        }
+
+        // Handle level-up celebration for the first stat that levels up
+        if (leveledUp && !celebrationInfo) {
+          const overallBefore = getOverallLevel(getTotalLifetimeXP(gameData));
+          const overallAfter = getOverallLevel(getTotalLifetimeXP(currentData));
+          const isOverallLevelUp = overallAfter.level > overallBefore.level;
+
+          setCelebrationInfo({
+            statKey: award.stat,
+            newLevel: currentData.stats[award.stat].level,
+            statColor: definitions[award.stat].color,
+            isOverallLevelUp,
+            overallNewLevel: isOverallLevelUp ? overallAfter.level : undefined,
+            overallNewRank: isOverallLevelUp ? getRankTitle(overallAfter.level) : undefined,
+          });
+
+          if (isOverallLevelUp) {
+            setPreviousOverallLevel(overallBefore.level);
+            setIsOverallLevelingUp(true);
+          }
+        }
+      }
+
+      setGameData(currentData);
+      setShowJudge(false);
+    },
+    [gameData, definitions, celebrationInfo]
+  );
+
   const handleToggleHabit = useCallback(
     (habitKey: HabitKey) => {
       if (!gameData) return;
@@ -716,7 +762,7 @@ export default function Home() {
   }
 
   // Overall player level based on total lifetime XP (activities logged)
-  const { level: overallLevel, xpIntoLevel, xpForNextLevel } = getOverallLevel(gameData.activities.length);
+  const { level: overallLevel, xpIntoLevel, xpForNextLevel } = getOverallLevel(getTotalLifetimeXP(gameData));
   const overallProgressPercent = xpForNextLevel > 0 ? Math.round((xpIntoLevel / xpForNextLevel) * 100) : 100;
 
   // Weekly quote — one per week of the year, rotates by week number
@@ -863,6 +909,19 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Ask the Judge Button */}
+      <button
+        onClick={() => setShowJudge(true)}
+        className="w-full mb-6 py-3 px-6 rounded-2xl bg-stone-700 hover:bg-stone-800 text-white font-bold text-sm transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+          <path d="M12 17h.01" />
+        </svg>
+        Ask the Judge
+      </button>
+
       {/* Stat Card Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
         {STAT_KEYS.map((key) => (
@@ -969,6 +1028,18 @@ export default function Home() {
           definition={definitions[activeModal]}
           onConfirm={(note) => handleAddXP(activeModal, note)}
           onCancel={() => setActiveModal(null)}
+        />
+      )}
+
+      {/* Judge Modal */}
+      {showJudge && (
+        <JudgeModal
+          gameData={gameData}
+          definitions={definitions}
+          overallLevel={overallLevel}
+          rank={getRankTitle(overallLevel)}
+          onAcceptVerdict={handleJudgeVerdict}
+          onCancel={() => setShowJudge(false)}
         />
       )}
 
