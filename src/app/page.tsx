@@ -39,6 +39,22 @@ function getRankTitle(level: number): string {
   return title;
 }
 
+// Returns 0–1 representing how far the player is between the current rank threshold and the next one
+function getRankProgress(level: number): number {
+  let currentThreshold = 1;
+  let nextThreshold: number | null = null;
+  for (let i = 0; i < RANK_TITLES.length; i++) {
+    if (level >= RANK_TITLES[i][0]) {
+      currentThreshold = RANK_TITLES[i][0];
+      nextThreshold = i + 1 < RANK_TITLES.length ? RANK_TITLES[i + 1][0] : null;
+    }
+  }
+  if (nextThreshold === null) return 1; // max rank reached
+  const range = nextThreshold - currentThreshold;
+  if (range <= 0) return 1;
+  return Math.min(1, (level - currentThreshold) / range);
+}
+
 function LevelDisplay({
   level,
   progressPercent,
@@ -242,15 +258,58 @@ function LevelDisplay({
         transition: "box-shadow 0.4s ease-out",
       }}
     >
-      {/* Rank title */}
-      <span
-        className={`text-xs font-bold uppercase tracking-[0.2em] text-amber-600/70 mb-3 ${
-          rankChanging ? "animate-titleReveal" : ""
-        }`}
-        key={displayedRank}
-      >
-        {displayedRank}
-      </span>
+      {/* Rank title — glow intensifies as player approaches next rank */}
+      {(() => {
+        const rankProgress = getRankProgress(displayedLevel);
+        // Glow opacity ramps from 0 at 0% to 0.7 at 100%, with a quadratic curve for dramatic late-stage glow
+        const glowIntensity = rankProgress * rankProgress;
+        // Text color transitions from muted amber to bright gold
+        const r = Math.round(217 + (245 - 217) * rankProgress);
+        const g = Math.round(142 + (158 - 142) * rankProgress);
+        const b = Math.round(56 + (11 - 56) * rankProgress);
+        const textColor = `rgb(${r}, ${g}, ${b})`;
+        // Shadow grows with progress
+        const glowRadius = 4 + glowIntensity * 16;
+        const glowAlpha = 0.15 + glowIntensity * 0.55;
+        const textShadow = glowIntensity > 0.05
+          ? `0 0 ${glowRadius}px rgba(245, 158, 11, ${glowAlpha})`
+          : "none";
+        // Enable shimmer animation when past 40% progress
+        const shimmerClass = rankProgress > 0.4 ? "animate-rankShimmer" : "";
+        return (
+          <span
+            className={`text-sm font-extrabold uppercase tracking-[0.25em] mb-3 ${
+              rankChanging ? "animate-titleReveal" : ""
+            } ${shimmerClass}`}
+            key={displayedRank}
+            style={{
+              color: textColor,
+              textShadow,
+              // For the shimmer: use a gradient background-clip on text when active
+              ...(rankProgress > 0.4
+                ? {
+                    backgroundImage: `linear-gradient(
+                      110deg,
+                      ${textColor} 0%,
+                      ${textColor} 35%,
+                      rgba(255, 248, 220, ${0.6 + glowIntensity * 0.4}) 50%,
+                      ${textColor} 65%,
+                      ${textColor} 100%
+                    )`,
+                    backgroundSize: "250% 100%",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }
+                : {}),
+              transition: "color 0.3s, text-shadow 0.3s",
+            }}
+          >
+            {displayedRank}
+          </span>
+        );
+      })()}
+
 
       {/* Ring + Number */}
       <div className="relative" style={{ width: ringSize, height: ringSize }}>
