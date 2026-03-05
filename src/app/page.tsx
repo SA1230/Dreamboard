@@ -39,8 +39,9 @@ function getRankTitle(level: number): string {
   return title;
 }
 
-// Returns 0–1 representing how far the player is between the current rank threshold and the next one
-function getRankProgress(level: number): number {
+// Returns 0–1 representing fine-grained progress through the current rank bracket.
+// levelFraction (0–1) is XP progress within the current level, so the color shifts smoothly per XP.
+function getRankProgress(level: number, levelFraction: number = 0): number {
   let currentThreshold = 1;
   let nextThreshold: number | null = null;
   for (let i = 0; i < RANK_TITLES.length; i++) {
@@ -52,7 +53,50 @@ function getRankProgress(level: number): number {
   if (nextThreshold === null) return 1; // max rank reached
   const range = nextThreshold - currentThreshold;
   if (range <= 0) return 1;
-  return Math.min(1, (level - currentThreshold) / range);
+  return Math.min(1, (level - currentThreshold + levelFraction) / range);
+}
+
+// Each rank has a unique [startColor, endColor] gradient — high contrast pairs so the shift is visible
+const RANK_COLORS: Record<number, [string, string]> = {
+  1:  ["#c07858", "#d4a030"],  // Novice: warm clay → golden amber
+  5:  ["#48a870", "#2078a0"],  // Apprentice: emerald → ocean blue
+  10: ["#5088c0", "#8050d0"],  // Journeyman: sky blue → violet
+  15: ["#e06848", "#c03080"],  // Adept: coral → magenta
+  20: ["#c89810", "#d04810"],  // Expert: gold → burnt red
+  25: ["#388880", "#30b868"],  // Veteran: teal → bright green
+  30: ["#4858c8", "#a038c8"],  // Elite: royal blue → purple
+  35: ["#d03838", "#e8a008"],  // Master: red → golden amber
+  40: ["#7840c0", "#e03078"],  // Grandmaster: purple → hot pink
+  45: ["#2070d0", "#18c0c8"],  // Champion: blue → cyan
+  50: ["#189060", "#c8a818"],  // Legend: emerald → gold
+  55: ["#7018a8", "#e028e0"],  // Mythic: deep purple → bright magenta
+  60: ["#c89820", "#f0c030"],  // Transcendent: rich gold → brilliant gold
+};
+
+// Get the color pair for the player's current rank
+function getRankColorPair(level: number): [string, string] {
+  let colors: [string, string] = RANK_COLORS[1];
+  for (const [threshold] of RANK_TITLES) {
+    if (level >= threshold && RANK_COLORS[threshold]) {
+      colors = RANK_COLORS[threshold];
+    }
+  }
+  return colors;
+}
+
+// Linearly interpolate between two hex colors (e.g. "#ff0000", "#00ff00", 0.5 → "#808000")
+function interpolateHexColor(hexA: string, hexB: string, t: number): string {
+  const parse = (hex: string) => [
+    parseInt(hex.slice(1, 3), 16),
+    parseInt(hex.slice(3, 5), 16),
+    parseInt(hex.slice(5, 7), 16),
+  ];
+  const a = parse(hexA);
+  const b = parse(hexB);
+  const r = Math.round(a[0] + (b[0] - a[0]) * t);
+  const g = Math.round(a[1] + (b[1] - a[1]) * t);
+  const bl = Math.round(a[2] + (b[2] - a[2]) * t);
+  return `rgb(${r}, ${g}, ${bl})`;
 }
 
 function LevelDisplay({
@@ -227,6 +271,13 @@ function LevelDisplay({
 
   const isMaxLevel = level >= 60;
 
+  // Rank-specific colors — ring gradient + title color
+  // rankProgress (slow): tracks position across the full rank bracket, used for shimmer/glow thresholds
+  const rankProgress = getRankProgress(displayedLevel, progressPercent / 100);
+  const [rankStartColor, rankEndColor] = getRankColorPair(displayedLevel);
+  // Title color tracks the ring fill directly — full gradient sweep every level for maximum dynamism
+  const rankEdgeColor = interpolateHexColor(rankStartColor, rankEndColor, progressPercent / 100);
+
   // SVG ring dimensions
   const ringSize = 160;
   const strokeWidth = 6;
@@ -258,24 +309,18 @@ function LevelDisplay({
         transition: "box-shadow 0.4s ease-out",
       }}
     >
-      {/* Rank title — glow intensifies as player approaches next rank */}
+      {/* Rank title — color matches the leading edge of the ring gradient */}
       {(() => {
-        const rankProgress = getRankProgress(displayedLevel);
-        // Glow opacity ramps from 0 at 0% to 0.7 at 100%, with a quadratic curve for dramatic late-stage glow
+        // Glow intensifies quadratically as player nears next rank
         const glowIntensity = rankProgress * rankProgress;
-        // Text color transitions from muted amber to bright gold
-        const r = Math.round(217 + (245 - 217) * rankProgress);
-        const g = Math.round(142 + (158 - 142) * rankProgress);
-        const b = Math.round(56 + (11 - 56) * rankProgress);
-        const textColor = `rgb(${r}, ${g}, ${b})`;
-        // Shadow grows with progress
-        const glowRadius = 4 + glowIntensity * 16;
-        const glowAlpha = 0.15 + glowIntensity * 0.55;
+        const glowRadius = 4 + glowIntensity * 14;
+        const glowAlpha = 0.1 + glowIntensity * 0.4;
         const textShadow = glowIntensity > 0.05
-          ? `0 0 ${glowRadius}px rgba(245, 158, 11, ${glowAlpha})`
+          ? `0 0 ${glowRadius}px ${rankEdgeColor.replace("rgb", "rgba").replace(")", `, ${glowAlpha})`)}`
           : "none";
-        // Enable shimmer animation when past 40% progress
-        const shimmerClass = rankProgress > 0.4 ? "animate-rankShimmer" : "";
+        // Shimmer kicks in past 50% rank progress — uses a lighter tint of the end color, not white
+        const shimmerHighlight = interpolateHexColor(rankEndColor, "#ffffff", 0.5);
+        const shimmerClass = rankProgress > 0.5 ? "animate-rankShimmer" : "";
         return (
           <span
             className={`text-sm font-extrabold uppercase tracking-[0.25em] mb-3 ${
@@ -283,18 +328,18 @@ function LevelDisplay({
             } ${shimmerClass}`}
             key={displayedRank}
             style={{
-              color: textColor,
+              color: rankEdgeColor,
               textShadow,
-              // For the shimmer: use a gradient background-clip on text when active
-              ...(rankProgress > 0.4
+              // Shimmer: a tinted highlight sweeps across, using a light version of the rank end color
+              ...(rankProgress > 0.5
                 ? {
                     backgroundImage: `linear-gradient(
                       110deg,
-                      ${textColor} 0%,
-                      ${textColor} 35%,
-                      rgba(255, 248, 220, ${0.6 + glowIntensity * 0.4}) 50%,
-                      ${textColor} 65%,
-                      ${textColor} 100%
+                      ${rankEdgeColor} 0%,
+                      ${rankEdgeColor} 38%,
+                      ${shimmerHighlight} 50%,
+                      ${rankEdgeColor} 62%,
+                      ${rankEdgeColor} 100%
                     )`,
                     backgroundSize: "250% 100%",
                     WebkitBackgroundClip: "text",
@@ -332,9 +377,8 @@ function LevelDisplay({
         >
           <defs>
             <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#f59e0b" />
-              <stop offset="50%" stopColor="#d97706" />
-              <stop offset="100%" stopColor="#b45309" />
+              <stop offset="0%" stopColor={rankStartColor} />
+              <stop offset="100%" stopColor={rankEndColor} />
             </linearGradient>
           </defs>
           {/* Background track */}
