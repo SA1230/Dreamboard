@@ -742,9 +742,6 @@ export default function Home() {
             className="h-8 inline-block"
           />
         </h1>
-        <p className="text-stone-400 text-sm">
-          {gameData.activities.length} activit{gameData.activities.length === 1 ? "y" : "ies"} logged
-        </p>
       </header>
 
       {/* Monthly XP Summary + Level Display — wider than card grid */}
