@@ -18,6 +18,12 @@ interface StatCardProps {
   previousLevel?: number;
 }
 
+// SVG ring constants
+const RING_SIZE = 56;
+const STROKE_WIDTH = 4;
+const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2; // 26
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS; // ~163.36
+
 export function StatCard({
   definition,
   progress,
@@ -32,17 +38,25 @@ export function StatCard({
   const progressPercent = Math.min((progress.xp / xpNeeded) * 100, 100);
   const [showXPPop, setShowXPPop] = useState(false);
 
+  // Ring offset for current progress
+  const targetStrokeDashoffset = CIRCUMFERENCE - (CIRCUMFERENCE * progressPercent) / 100;
+
   // Phased level-up animation state
   const [beat, setBeat] = useState<0 | 1 | 2 | 3>(0); // 0 = no animation
   const [displayedLevel, setDisplayedLevel] = useState(progress.level);
-  const [barOverridePercent, setBarOverridePercent] = useState<number | null>(null);
+  const [ringOverridePercent, setRingOverridePercent] = useState<number | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // During beat 1, override ring to full (offset 0), otherwise use real progress
+  const effectiveOffset = ringOverridePercent !== null
+    ? CIRCUMFERENCE - (CIRCUMFERENCE * ringOverridePercent) / 100
+    : targetStrokeDashoffset;
 
   // Beat 1-3 orchestration
   useEffect(() => {
     if (!leveledUp) {
       setBeat(0);
-      setBarOverridePercent(null);
+      setRingOverridePercent(null);
       return;
     }
 
@@ -51,13 +65,13 @@ export function StatCard({
       setDisplayedLevel(previousLevel);
     }
 
-    // Beat 1: Bar fills to 100% (starts immediately)
+    // Beat 1: Ring fills to 100% (starts immediately)
     setBeat(1);
-    setBarOverridePercent(100);
+    setRingOverridePercent(100);
 
-    // Beat 1→2 transition: bar resets, badge transforms (~300ms)
+    // Beat 1→2 transition: ring resets, badge transforms (~300ms)
     const beat2Timer = setTimeout(() => {
-      setBarOverridePercent(null); // reset to real XP
+      setRingOverridePercent(null); // reset to real XP
       setBeat(2);
       // Swap to the new level number during the badge animation
       setTimeout(() => {
@@ -73,7 +87,7 @@ export function StatCard({
     // End all animations (~1800ms)
     const endTimer = setTimeout(() => {
       setBeat(0);
-      setBarOverridePercent(null);
+      setRingOverridePercent(null);
     }, 1800);
 
     return () => {
@@ -98,8 +112,7 @@ export function StatCard({
     }
   }, [justGainedXP]);
 
-  // The effective bar width: during beat 1 it overflows to 100%, otherwise real percent
-  const effectiveBarPercent = barOverridePercent !== null ? barOverridePercent : progressPercent;
+  const gradientId = `statRing-${definition.key}`;
 
   return (
     <div
@@ -132,100 +145,130 @@ export function StatCard({
         </div>
       )}
 
-      {/* Icon and stat name */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div className="relative w-10 h-10">
-            {/* Empty (unfilled) icon layer */}
-            <div style={{ color: `${definition.color}30` }} className="absolute inset-0">
-              <StatIcon iconKey={definition.iconKey} className="w-10 h-10" />
-            </div>
-            {/* Filled icon layer — clips from bottom up based on XP progress */}
-            <div
-              className="absolute inset-0 transition-[clip-path] duration-700 ease-out"
-              style={{
-                color: definition.color,
-                clipPath: `inset(${100 - progressPercent}% 0 0 0)`,
-              }}
-            >
-              <StatIcon iconKey={definition.iconKey} className="w-10 h-10" />
+      {/* Ring + Icon + Text row */}
+      <div className="flex items-center gap-3">
+        {/* Ring container */}
+        <div className="relative flex-shrink-0" style={{ width: RING_SIZE, height: RING_SIZE }}>
+          <svg
+            width={RING_SIZE}
+            height={RING_SIZE}
+            className={`absolute inset-0 -rotate-90 ${beat === 1 ? "animate-ringFlash" : ""}`}
+            style={{
+              "--flash-color": `${definition.color}60`,
+            } as React.CSSProperties}
+          >
+            <defs>
+              <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor={definition.color} />
+                <stop offset="100%" stopColor={definition.progressColor} />
+              </linearGradient>
+            </defs>
+            {/* Background track */}
+            <circle
+              cx={RING_SIZE / 2}
+              cy={RING_SIZE / 2}
+              r={RADIUS}
+              fill="none"
+              stroke={`${definition.color}20`}
+              strokeWidth={STROKE_WIDTH}
+            />
+            {/* Progress arc */}
+            <circle
+              cx={RING_SIZE / 2}
+              cy={RING_SIZE / 2}
+              r={RADIUS}
+              fill="none"
+              stroke={`url(#${gradientId})`}
+              strokeWidth={STROKE_WIDTH}
+              strokeLinecap="round"
+              strokeDasharray={CIRCUMFERENCE}
+              strokeDashoffset={effectiveOffset}
+              className={
+                beat === 1
+                  ? "animate-ringFill"
+                  : "transition-all duration-700 ease-out"
+              }
+              style={
+                beat === 1
+                  ? ({
+                      "--ring-from": `${CIRCUMFERENCE - (CIRCUMFERENCE * 85) / 100}`,
+                      "--ring-to": `${targetStrokeDashoffset}`,
+                    } as React.CSSProperties)
+                  : undefined
+              }
+            />
+          </svg>
+
+          {/* Icon centered inside ring */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="relative w-8 h-8">
+              {/* Ghost icon layer */}
+              <div style={{ color: `${definition.color}30` }} className="absolute inset-0">
+                <StatIcon iconKey={definition.iconKey} className="w-8 h-8" />
+              </div>
+              {/* Filled icon layer — clips from bottom up based on XP progress */}
+              <div
+                className="absolute inset-0 transition-[clip-path] duration-700 ease-out"
+                style={{
+                  color: definition.color,
+                  clipPath: `inset(${100 - progressPercent}% 0 0 0)`,
+                }}
+              >
+                <StatIcon iconKey={definition.iconKey} className="w-8 h-8" />
+              </div>
             </div>
           </div>
-          <div>
-            <h3 className="font-bold text-base" style={{ color: definition.color }}>
-              {definition.name}
-            </h3>
-            <p className="text-xs opacity-60" style={{ color: definition.color }}>
-              {definition.description}
-            </p>
+
+          {/* Level badge overlapping ring bottom-right */}
+          <span
+            className={`absolute -bottom-1 -right-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full z-10 ${
+              beat === 2 ? "animate-badgeGlow" : ""
+            }`}
+            style={{
+              backgroundColor: definition.backgroundColor,
+              color: definition.color,
+              border: `1.5px solid ${definition.color}30`,
+              "--glow-color": `${definition.color}50`,
+            } as React.CSSProperties}
+          >
+            <span
+              key={displayedLevel}
+              className={beat === 2 ? "animate-levelIn inline-block" : "inline-block"}
+            >
+              Lv.{displayedLevel}
+            </span>
+          </span>
+        </div>
+
+        {/* Stat name, description, XP, streak */}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-base" style={{ color: definition.color }}>
+            {definition.name}
+          </h3>
+          <p className="text-xs opacity-60" style={{ color: definition.color }}>
+            {definition.description}
+          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs opacity-50" style={{ color: definition.color }}>
+              {progress.xp} / {xpNeeded} XP
+            </span>
+            {streak >= 2 && (
+              <span
+                className="flex items-center gap-0.5 text-xs font-semibold"
+                style={{ color: definition.color }}
+              >
+                <Flame size={10} />
+                {streak}d
+              </span>
+            )}
           </div>
         </div>
-      </div>
-
-      {/* Level badge + streak */}
-      <div className="flex items-center gap-2 mb-2">
-        <span
-          className={`text-xs font-semibold px-2 py-0.5 rounded-full inline-flex items-center ${
-            beat === 2 ? "animate-badgeGlow" : ""
-          }`}
-          style={{
-            backgroundColor: `${definition.color}18`,
-            color: definition.color,
-            "--glow-color": `${definition.color}50`,
-          } as React.CSSProperties}
-        >
-          <span className="mr-0.5">Lv.</span>
-          <span
-            key={displayedLevel}
-            className={
-              beat === 2 ? "animate-levelIn" : ""
-            }
-          >
-            {displayedLevel}
-          </span>
-        </span>
-        <span className="text-xs opacity-50" style={{ color: definition.color }}>
-          {progress.xp} / {xpNeeded} XP
-        </span>
-        {streak >= 2 && (
-          <span
-            className="flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full ml-auto"
-            style={{
-              backgroundColor: `${definition.color}18`,
-              color: definition.color,
-            }}
-          >
-            <Flame size={12} />
-            {streak}d
-          </span>
-        )}
-      </div>
-
-      {/* Progress bar */}
-      <div
-        className={`h-2.5 rounded-full overflow-hidden ${beat === 1 ? "animate-barFlash" : ""}`}
-        style={{
-          backgroundColor: `${definition.color}15`,
-          "--flash-color": `${definition.color}60`,
-        } as React.CSSProperties}
-      >
-        <div
-          className={`h-full rounded-full ${
-            beat === 1 ? "animate-barFill" : "transition-all duration-700 ease-out"
-          }`}
-          style={{
-            width: beat === 1 ? undefined : `${effectiveBarPercent}%`,
-            backgroundColor: definition.progressColor,
-            "--bar-from": "85%",
-            "--bar-to": `${progressPercent}%`,
-          } as React.CSSProperties}
-        />
       </div>
 
       {/* Last logged timestamp */}
       {lastLoggedTimestamp && (
         <p
-          className="text-[10px] mt-1.5 text-right"
+          className="text-[10px] mt-2 text-right"
           style={{ color: `${definition.color}50` }}
         >
           {formatRelativeTime(lastLoggedTimestamp)}
