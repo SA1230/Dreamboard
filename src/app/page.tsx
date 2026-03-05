@@ -800,18 +800,16 @@ export default function Home() {
             </div>
           </div>
           <span className="text-lg font-bold text-amber-800">What did you accomplish?</span>
-          <p
-            className="text-sm font-semibold mt-1"
+          <span
+            className="inline-block mt-2 px-5 py-1.5 text-sm font-bold text-white rounded-full shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all"
             style={{
               background: "linear-gradient(90deg, #B4722A 0%, #D4A44A 30%, #F5D680 50%, #D4A44A 70%, #B4722A 100%)",
               backgroundSize: "200% 100%",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
               animation: "ctaShimmer 4s ease-in-out infinite",
             }}
           >
             Tell the Captain &amp; earn XP
-          </p>
+          </span>
         </button>
       </div>
 
