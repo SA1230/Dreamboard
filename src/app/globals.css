@@ -316,6 +316,33 @@
   100% { background-position: -200% 0; }
 }
 
+/* Overall level-up feed row: rotating ombre border */
+@keyframes borderRotate {
+  0% { --border-angle: 0deg; }
+  100% { --border-angle: 360deg; }
+}
+
+@property --border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.overall-levelup-border {
+  --border-angle: 0deg;
+  animation: borderRotate 4s linear infinite;
+  border: 2px solid transparent;
+  background:
+    linear-gradient(135deg, rgba(255, 248, 230, 0.95) 0%, rgba(255, 243, 210, 0.95) 100%) padding-box,
+    conic-gradient(from var(--border-angle), #d4a017, #f5c842, #e8a820, #fcd668, #c4922a, #f5c842, #d4a017) border-box;
+}
+
+/* Overall level-up feed row: pulsing corner sparkle */
+@keyframes sparkle {
+  0%, 100% { opacity: 0.4; transform: scale(0.8) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.1) rotate(15deg); }
+}
+
 body {
   background: #FDF8F4;
 }
