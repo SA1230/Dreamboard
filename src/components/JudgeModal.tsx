@@ -28,6 +28,7 @@ interface JudgeModalProps {
   definitions: Record<StatKey, StatDefinition>;
   overallLevel: number;
   rank: string;
+  profilePicture: string | null;
   onAcceptVerdict: (awards: Award[]) => void;
   onCancel: () => void;
 }
@@ -84,6 +85,7 @@ export function JudgeModal({
   definitions,
   overallLevel,
   rank,
+  profilePicture,
   onAcceptVerdict,
   onCancel,
 }: JudgeModalProps) {
@@ -209,7 +211,7 @@ export function JudgeModal({
           {messages.map((msg, index) => (
             <div
               key={index}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start items-end gap-2"}`}
+              className={`flex items-end gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               {msg.role === "assistant" && (
                 <img
@@ -227,6 +229,13 @@ export function JudgeModal({
               >
                 {msg.content}
               </div>
+              {msg.role === "user" && profilePicture && (
+                <img
+                  src={profilePicture}
+                  alt=""
+                  className="w-6 h-6 rounded-full object-cover border border-stone-300 flex-shrink-0"
+                />
+              )}
             </div>
           ))}
 

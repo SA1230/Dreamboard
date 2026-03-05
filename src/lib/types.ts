@@ -66,4 +66,6 @@ export interface GameData {
   pointsWallet?: PointsWallet;
   /** Timestamped feed of all actions (XP gains, habits, damage, level-ups, rank changes) — newest first */
   feedEvents?: FeedEvent[];
+  /** Base64 data URL of the user's profile picture (shown in Judge chat) */
+  profilePicture?: string;
 }

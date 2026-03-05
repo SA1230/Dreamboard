@@ -981,6 +981,7 @@ export default function Home() {
           definitions={definitions}
           overallLevel={overallLevel}
           rank={getRankTitle(overallLevel)}
+          profilePicture={gameData.profilePicture ?? null}
           onAcceptVerdict={handleJudgeVerdict}
           onCancel={() => setShowJudge(false)}
         />

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { GameData, StatKey, HabitKey, DamageKey, CustomStatOverride } from "@/lib/types";
 import { STAT_DEFINITIONS, STAT_KEYS, COLOR_PRESETS, StatDefinition } from "@/lib/stats";
-import { loadGameData, saveCustomDefinitions, getEnabledHabits, saveEnabledHabits, getEnabledDamage, saveEnabledDamage, resetAllData } from "@/lib/storage";
+import { loadGameData, saveCustomDefinitions, getEnabledHabits, saveEnabledHabits, getEnabledDamage, saveEnabledDamage, resetAllData, saveProfilePicture, getProfilePicture } from "@/lib/storage";
 import { StatIcon, ICON_OPTIONS } from "@/components/StatIcons";
-import { ArrowLeft, RotateCcw, Trash2 } from "lucide-react";
+import { ArrowLeft, RotateCcw, Trash2, Camera, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -33,6 +33,8 @@ export default function SettingsPage() {
   const [editingStat, setEditingStat] = useState<StatKey | null>(null);
   const [saved, setSaved] = useState(false);
   const [showResetDataConfirm, setShowResetDataConfirm] = useState(false);
+  const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -41,6 +43,7 @@ export default function SettingsPage() {
     setOverrides(data.customDefinitions ?? {});
     setEnabledHabits(getEnabledHabits(data));
     setEnabledDamage(getEnabledDamage(data));
+    setProfilePicture(getProfilePicture(data));
   }, []);
 
   if (!gameData) {
@@ -129,6 +132,47 @@ export default function SettingsPage() {
     setGameData(newData);
   }
 
+  function handleProfilePictureUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    if (!gameData) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Resize to 128x128 and compress to JPEG to keep localStorage usage small
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 128;
+        canvas.height = 128;
+        const ctx = canvas.getContext("2d")!;
+
+        // Crop to center square
+        const size = Math.min(img.width, img.height);
+        const offsetX = (img.width - size) / 2;
+        const offsetY = (img.height - size) / 2;
+        ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, 128, 128);
+
+        const base64 = canvas.toDataURL("image/jpeg", 0.7);
+        setProfilePicture(base64);
+        const newData = saveProfilePicture(gameData, base64);
+        setGameData(newData);
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+
+    // Reset file input so re-uploading the same file works
+    event.target.value = "";
+  }
+
+  function removeProfilePicture() {
+    if (!gameData) return;
+    setProfilePicture(null);
+    const newData = saveProfilePicture(gameData, null);
+    setGameData(newData);
+  }
+
   function handleSave() {
     if (!gameData) return;
     let newData = saveCustomDefinitions(gameData, overrides);
@@ -168,6 +212,58 @@ export default function SettingsPage() {
           </button>
         </div>
       </header>
+
+      {/* Section: Profile Picture */}
+      <h2 className="text-lg font-bold text-stone-500 mb-4">Profile</h2>
+      <div className="rounded-2xl bg-stone-50 border-2 border-stone-200 p-5 mb-8">
+        <div className="flex items-center gap-5">
+          {/* Avatar preview */}
+          <div className="relative group">
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-stone-200 flex items-center justify-center border-2 border-stone-300">
+              {profilePicture ? (
+                <img
+                  src={profilePicture}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <svg className="w-10 h-10 text-stone-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M20 21a8 8 0 1 0-16 0" />
+                </svg>
+              )}
+            </div>
+            {profilePicture && (
+              <button
+                onClick={removeProfilePicture}
+                className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md hover:bg-red-600 transition-colors"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+
+          {/* Upload controls */}
+          <div className="flex-1">
+            <p className="text-sm font-bold text-stone-600 mb-1">Profile Picture</p>
+            <p className="text-xs text-stone-400 mb-3">Shows next to your messages in the Judge chat.</p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleProfilePictureUpload}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-stone-600 bg-white border-2 border-stone-200 hover:border-stone-300 hover:bg-stone-50 transition-colors"
+            >
+              <Camera size={14} />
+              {profilePicture ? "Change Photo" : "Upload Photo"}
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Section: Stats */}
       <h2 className="text-lg font-bold text-stone-500 mb-4">Stats</h2>
