@@ -634,13 +634,13 @@ export default function Home() {
   }, []);
 
   const handleJudgeVerdict = useCallback(
-    (awards: { stat: StatKey; amount: number }[]) => {
+    (awards: { stat: StatKey; amount: number }[], summary: string) => {
       if (!gameData || !definitions) return;
 
       // Apply each award sequentially — each addXP call updates the data
       let currentData = gameData;
       for (const award of awards) {
-        const { newData, leveledUp } = addXP(currentData, award.stat, "Judged activity", award.amount);
+        const { newData, leveledUp } = addXP(currentData, award.stat, summary, award.amount);
         currentData = newData;
 
         // Trigger XP animation for the last award's stat
