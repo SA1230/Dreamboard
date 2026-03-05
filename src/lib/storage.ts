@@ -724,3 +724,22 @@ export function spendPoints(data: GameData, amount: number): GameData | null {
   saveGameData(newData);
   return newData;
 }
+
+// --- Profile Picture ---
+
+/** Save a base64 profile picture to game data. Pass null to remove it. */
+export function saveProfilePicture(data: GameData, base64DataUrl: string | null): GameData {
+  const newData: GameData = { ...data };
+  if (base64DataUrl) {
+    newData.profilePicture = base64DataUrl;
+  } else {
+    delete newData.profilePicture;
+  }
+  saveGameData(newData);
+  return newData;
+}
+
+/** Get the profile picture data URL, or null if none is set. */
+export function getProfilePicture(data: GameData): string | null {
+  return data.profilePicture ?? null;
+}
