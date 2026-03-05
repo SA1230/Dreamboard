@@ -8,8 +8,18 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "Life Stats Board",
-  description: "Your personal RPG-style stat board for real life",
+  title: "Dreamboard",
+  description: "Level up your real life — track habits, earn XP, and grow your character",
+  openGraph: {
+    title: "Dreamboard",
+    description: "Level up your real life — track habits, earn XP, and grow your character",
+    siteName: "Dreamboard",
+  },
+  twitter: {
+    card: "summary",
+    title: "Dreamboard",
+    description: "Level up your real life — track habits, earn XP, and grow your character",
+  },
 };
 
 export default function RootLayout({
