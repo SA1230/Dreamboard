@@ -1,7 +1,8 @@
 "use client";
 
-import { StatKey, HabitKey } from "@/lib/types";
+import { StatKey, HabitKey, GameData } from "@/lib/types";
 import { StatDefinition } from "@/lib/stats";
+import { getEnabledHabits } from "@/lib/storage";
 import { StatIcon } from "./StatIcons";
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -67,12 +68,48 @@ function TinyNoSugarIcon() {
   );
 }
 
+function TinyFlossIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 48 48" fill="none">
+      <rect x="12" y="6" width="24" height="28" rx="5" fill="#ede9fe" stroke="#8b5cf6" strokeWidth="2" />
+      <circle cx="24" cy="18" r="6" fill="#f5f3ff" stroke="#8b5cf6" strokeWidth="2" />
+      <circle cx="24" cy="18" r="2.5" fill="#8b5cf6" />
+      <path d="M24 34 Q24 38 20 40 Q16 42 14 44" stroke="#8b5cf6" strokeWidth="2" fill="none" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function TinyStepsIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 48 48" fill="none">
+      <ellipse cx="17" cy="28" rx="5" ry="8" fill="#d1fae5" stroke="#10b981" strokeWidth="2" transform="rotate(-10 17 28)" />
+      <circle cx="13" cy="19" r="2" fill="#10b981" />
+      <circle cx="16" cy="18" r="2" fill="#10b981" />
+      <circle cx="19.5" cy="18.5" r="1.8" fill="#10b981" />
+      <ellipse cx="31" cy="20" rx="5" ry="8" fill="#d1fae5" stroke="#10b981" strokeWidth="2" transform="rotate(10 31 20)" />
+      <circle cx="28" cy="11" r="1.8" fill="#10b981" />
+      <circle cx="31" cy="10" r="2" fill="#10b981" />
+      <circle cx="34.5" cy="11" r="2" fill="#10b981" />
+    </svg>
+  );
+}
+
+const TINY_HABIT_ICONS: Record<HabitKey, { component: React.ComponentType; title: string }> = {
+  water: { component: TinyWaterIcon, title: "Drank 64oz water" },
+  nails: { component: TinyNailsIcon, title: "No nail biting" },
+  brush: { component: TinyBrushIcon, title: "Brushed 2x" },
+  nosugar: { component: TinyNoSugarIcon, title: "No sugar" },
+  floss: { component: TinyFlossIcon, title: "Flossed teeth" },
+  steps: { component: TinyStepsIcon, title: "10k steps" },
+};
+
 interface MonthCalendarProps {
   year: number;
   month: number; // 0-indexed (0 = January)
   activitiesByDay: Record<number, Partial<Record<StatKey, number>>>;
   habitsByDay: Record<number, HabitKey[]>;
   definitions: Record<StatKey, StatDefinition>;
+  gameData: GameData;
 }
 
 export function MonthCalendar({
@@ -81,7 +118,9 @@ export function MonthCalendar({
   activitiesByDay,
   habitsByDay,
   definitions,
+  gameData,
 }: MonthCalendarProps) {
+  const enabledHabits = getEnabledHabits(gameData);
   const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Sunday
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = new Date();
@@ -182,30 +221,23 @@ export function MonthCalendar({
               )}
 
               {/* Healthy habit icons */}
-              {habitsByDay[day] && habitsByDay[day].length > 0 && (
-                <div className="flex gap-1 mt-auto pt-1">
-                  {habitsByDay[day].includes("water") && (
-                    <div title="Drank 64oz water">
-                      <TinyWaterIcon />
-                    </div>
-                  )}
-                  {habitsByDay[day].includes("nails") && (
-                    <div title="No nail biting">
-                      <TinyNailsIcon />
-                    </div>
-                  )}
-                  {habitsByDay[day].includes("brush") && (
-                    <div title="Brushed 2x">
-                      <TinyBrushIcon />
-                    </div>
-                  )}
-                  {habitsByDay[day].includes("nosugar") && (
-                    <div title="No sugar">
-                      <TinyNoSugarIcon />
-                    </div>
-                  )}
-                </div>
-              )}
+              {habitsByDay[day] && habitsByDay[day].length > 0 && (() => {
+                const visibleHabits = habitsByDay[day].filter((h) => enabledHabits.includes(h));
+                if (visibleHabits.length === 0) return null;
+                return (
+                  <div className="flex gap-1 mt-auto pt-1">
+                    {visibleHabits.map((habitKey) => {
+                      const habit = TINY_HABIT_ICONS[habitKey];
+                      const IconComponent = habit.component;
+                      return (
+                        <div key={habitKey} title={habit.title}>
+                          <IconComponent />
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
 
             </div>
           );

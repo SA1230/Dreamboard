@@ -133,6 +133,7 @@ export default function CalendarPage() {
         activitiesByDay={activitiesByDay}
         habitsByDay={habitsByDay}
         definitions={definitions}
+        gameData={gameData}
       />
     </main>
   );

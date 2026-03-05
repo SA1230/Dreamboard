@@ -1,16 +1,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { GameData, StatKey, CustomStatOverride } from "@/lib/types";
+import { GameData, StatKey, HabitKey, CustomStatOverride } from "@/lib/types";
 import { STAT_DEFINITIONS, STAT_KEYS, COLOR_PRESETS, StatDefinition } from "@/lib/stats";
-import { loadGameData, saveCustomDefinitions } from "@/lib/storage";
+import { loadGameData, saveCustomDefinitions, getEnabledHabits, saveEnabledHabits } from "@/lib/storage";
 import { StatIcon, ICON_OPTIONS } from "@/components/StatIcons";
 import { ArrowLeft, RotateCcw } from "lucide-react";
 import Link from "next/link";
 
+const ALL_HABITS: { key: HabitKey; label: string; description: string; emoji: string; color: string; enabledBackground: string }[] = [
+  { key: "water", label: "Drink 64oz", description: "Track daily water intake", emoji: "💧", color: "#3b82f6", enabledBackground: "#eff6ff" },
+  { key: "nails", label: "No nail biting", description: "Keep nails healthy", emoji: "💅", color: "#ec4899", enabledBackground: "#fdf2f8" },
+  { key: "brush", label: "Brush 2x", description: "Brush teeth morning & night", emoji: "🪥", color: "#14b8a6", enabledBackground: "#f0fdfa" },
+  { key: "nosugar", label: "No sugar", description: "Avoid added sugars", emoji: "🍩", color: "#f59e0b", enabledBackground: "#fffbeb" },
+  { key: "floss", label: "Floss teeth", description: "Floss at least once daily", emoji: "🦷", color: "#8b5cf6", enabledBackground: "#f5f3ff" },
+  { key: "steps", label: "10k steps", description: "Walk 10,000 steps", emoji: "👟", color: "#10b981", enabledBackground: "#ecfdf5" },
+];
+
 export default function SettingsPage() {
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [overrides, setOverrides] = useState<Partial<Record<StatKey, CustomStatOverride>>>({});
+  const [enabledHabits, setEnabledHabits] = useState<HabitKey[]>([]);
   const [editingStat, setEditingStat] = useState<StatKey | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -18,6 +28,7 @@ export default function SettingsPage() {
     const data = loadGameData();
     setGameData(data);
     setOverrides(data.customDefinitions ?? {});
+    setEnabledHabits(getEnabledHabits(data));
   }, []);
 
   if (!gameData) {
@@ -86,9 +97,20 @@ export default function SettingsPage() {
     setSaved(false);
   }
 
+  function toggleHabit(habitKey: HabitKey) {
+    if (!gameData) return;
+    const updated = enabledHabits.includes(habitKey)
+      ? enabledHabits.filter((k) => k !== habitKey)
+      : [...enabledHabits, habitKey];
+    setEnabledHabits(updated);
+    const newData = saveEnabledHabits(gameData, updated);
+    setGameData(newData);
+  }
+
   function handleSave() {
     if (!gameData) return;
-    const newData = saveCustomDefinitions(gameData, overrides);
+    let newData = saveCustomDefinitions(gameData, overrides);
+    newData = saveEnabledHabits(newData, enabledHabits);
     setGameData(newData);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -105,7 +127,7 @@ export default function SettingsPage() {
           >
             <ArrowLeft size={18} />
           </Link>
-          <h1 className="text-2xl font-extrabold text-stone-700">Customize Stats</h1>
+          <h1 className="text-2xl font-extrabold text-stone-700">Settings</h1>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -124,7 +146,8 @@ export default function SettingsPage() {
         </div>
       </header>
 
-      {/* Stat Editor Grid */}
+      {/* Section: Stats */}
+      <h2 className="text-lg font-bold text-stone-500 mb-4">Stats</h2>
       <div className="space-y-4">
         {STAT_KEYS.map((key) => {
           const definition = getEffectiveDefinition(key);
@@ -283,6 +306,53 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
+          );
+        })}
+      </div>
+
+      {/* Section: Daily Habits */}
+      <h2 className="text-lg font-bold text-stone-500 mt-12 mb-2">Daily Habits</h2>
+      <p className="text-xs text-stone-400 mb-4">Choose which habits appear on your dashboard and calendar.</p>
+      <div className="space-y-2">
+        {ALL_HABITS.map((habit) => {
+          const isEnabled = enabledHabits.includes(habit.key);
+          return (
+            <button
+              key={habit.key}
+              onClick={() => toggleHabit(habit.key)}
+              className="w-full flex items-center gap-3 p-4 rounded-2xl transition-all duration-200"
+              style={{
+                backgroundColor: isEnabled ? habit.enabledBackground : "#fafaf9",
+                border: isEnabled ? `2px solid ${habit.color}30` : "2px solid #e7e5e4",
+              }}
+            >
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
+                style={{
+                  backgroundColor: isEnabled ? `${habit.color}20` : "#f5f5f4",
+                }}
+              >
+                {habit.emoji}
+              </div>
+              <div className="flex-1 text-left">
+                <div className="font-bold text-sm" style={{ color: isEnabled ? habit.color : "#a8a29e" }}>
+                  {habit.label}
+                </div>
+                <div className="text-xs" style={{ color: isEnabled ? `${habit.color}99` : "#d6d3d1" }}>
+                  {habit.description}
+                </div>
+              </div>
+              {/* Toggle switch */}
+              <div
+                className="w-11 h-6 rounded-full relative transition-colors duration-200 shrink-0"
+                style={{ backgroundColor: isEnabled ? habit.color : "#d6d3d1" }}
+              >
+                <div
+                  className="w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all duration-200 shadow-sm"
+                  style={{ left: isEnabled ? "22px" : "2px" }}
+                />
+              </div>
+            </button>
           );
         })}
       </div>

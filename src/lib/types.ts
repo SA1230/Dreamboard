@@ -28,11 +28,12 @@ export interface CustomStatOverride {
   iconKey?: string;
 }
 
-export type HabitKey = "water" | "nails" | "brush" | "nosugar";
+export type HabitKey = "water" | "nails" | "brush" | "nosugar" | "floss" | "steps";
 
 export interface GameData {
   stats: Record<StatKey, StatProgress>;
   activities: Activity[];
   customDefinitions?: Partial<Record<StatKey, CustomStatOverride>>;
   healthyHabits?: Partial<Record<HabitKey, string[]>>;
+  enabledHabits?: HabitKey[];
 }
