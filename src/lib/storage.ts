@@ -472,6 +472,10 @@ export function getMascotForLevel(level: number, overrides?: Record<number, stri
   return defaultImage;
 }
 
+export function resetAllData(): void {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
 export function exportGameData(data: GameData): void {
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: "application/json" });
