@@ -489,16 +489,9 @@ function LevelDisplay({
 
       {/* Level badge below the ring */}
       <span
-        className="text-lg font-black mt-2 select-none"
-        style={{
-          background: "linear-gradient(180deg, #c47a20 0%, #8b5a1a 60%, #6b4215 100%)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          backgroundClip: "text",
-          filter: "drop-shadow(0 1px 0 rgba(120,80,30,0.3))",
-        }}
+        className="text-lg font-black mt-2 select-none text-black"
       >
-        <span className="text-sm font-bold mr-0.5" style={{ background: "inherit", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Lv.</span>
+        <span className="text-sm font-bold mr-0.5">Lv.</span>
         <span
           key={displayedLevel}
           className={animPhase === "number-swap" ? "animate-levelIn inline-block" : "inline-block"}
