@@ -800,9 +800,16 @@ export default function Home() {
         </h1>
         <p className="text-stone-400 text-sm">
           {gameData.activities.length} activit{gameData.activities.length === 1 ? "y" : "ies"} logged
-          {gameData.activities.length > 0 && (
-            <span className="text-stone-300"> · {formatRelativeTime(gameData.activities[0].timestamp)}</span>
-          )}
+          {(() => {
+            const latestActivity = gameData.activities[0]?.timestamp;
+            const latestFeed = gameData.feedEvents?.[0]?.timestamp;
+            const mostRecent = latestActivity && latestFeed
+              ? (latestActivity > latestFeed ? latestActivity : latestFeed)
+              : latestActivity || latestFeed;
+            return mostRecent ? (
+              <span className="text-stone-300"> · {formatRelativeTime(mostRecent)}</span>
+            ) : null;
+          })()}
           <span className="text-stone-300"> | Week {currentWeekNumber}/52</span>
         </p>
         <p className="text-stone-300 text-sm italic mt-0.5">
