@@ -197,8 +197,8 @@ function OverallLevelUpRow({ event }: { event: Extract<FeedEvent, { type: "overa
         borderColor: "#c4a265",
       }}
     >
-      <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-stone-100 border border-stone-300">
-        <span className="text-sm">&#x1F427;</span>
+      <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-stone-100 border border-stone-300 overflow-hidden">
+        <img src="/mascots/skipper-default.svg" alt="Skipper" className="w-6 h-6" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
