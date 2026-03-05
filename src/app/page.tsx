@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { GameData, StatKey, HabitKey, DamageKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getOverallLevel, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, toggleHabitForToday, toggleDamageForToday, getPointsBalance, getLastActivityTimestamps, formatRelativeTime, getMascotForLevel } from "@/lib/storage";
+import { loadGameData, addXP, getOverallLevel, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForToday, toggleDamageForToday, getPointsBalance, getLastActivityTimestamps, formatRelativeTime, getMascotForLevel } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
 import { AddXPModal } from "@/components/AddXPModal";
 import { ActivityLog } from "@/components/ActivityLog";
@@ -607,6 +607,13 @@ export default function Home() {
     return getActivitiesByDay(gameData.activities, now.getFullYear(), now.getMonth());
   }, [gameData]);
 
+  // Per-day completed habits for the monthly chart icons
+  const habitsByDayForMonth = useMemo(() => {
+    if (!gameData) return {} as Record<number, import("@/lib/types").HabitKey[]>;
+    const now = new Date();
+    return getHabitsByDay(gameData, now.getFullYear(), now.getMonth());
+  }, [gameData]);
+
   // Last activity timestamp per stat (for "2h ago" display on cards)
   const lastActivityTimestamps = useMemo(() => {
     if (!gameData) return null;
@@ -831,6 +838,7 @@ export default function Home() {
             currentMonthXP={monthlyXP.currentMonthXP}
             lastMonthXP={monthlyXP.lastMonthXP}
             activitiesByDay={activitiesByDayForMonth}
+            habitsByDay={habitsByDayForMonth}
             statDefinitions={definitions}
           />
         </div>
