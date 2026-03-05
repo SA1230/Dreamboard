@@ -73,7 +73,7 @@ function XPGainRow({ event, definitions }: { event: Extract<FeedEvent, { type: "
           <span className="text-xs font-semibold" style={{ color: definition.color }}>
             {definition.name}
           </span>
-          <span className="text-xs text-stone-300">+1 XP</span>
+          <span className="text-xs text-stone-300">+{event.amount ?? 1} XP</span>
         </div>
         {event.note && (
           <p className="text-xs text-stone-400 truncate">{event.note}</p>
