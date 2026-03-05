@@ -82,19 +82,21 @@ export function saveGameData(data: GameData): void {
 export function addXP(
   data: GameData,
   statKey: StatKey,
-  note: string
+  note: string,
+  amount: number = 1
 ): { newData: GameData; leveledUp: boolean; previousLevel: number } {
   const previousLevel = data.stats[statKey].level;
   const stat = { ...data.stats[statKey] };
-  stat.xp += 1;
+  stat.xp += amount;
 
   let leveledUp = false;
-  const xpNeeded = getXPForNextLevel(stat.level);
-
-  if (stat.xp >= xpNeeded) {
+  // Loop to handle multi-level gains from large XP awards
+  let xpNeeded = getXPForNextLevel(stat.level);
+  while (stat.xp >= xpNeeded) {
     stat.level += 1;
     stat.xp = stat.xp - xpNeeded;
     leveledUp = true;
+    xpNeeded = getXPForNextLevel(stat.level);
   }
 
   const now = new Date().toISOString();
@@ -103,6 +105,7 @@ export function addXP(
     id: crypto.randomUUID(),
     stat: statKey,
     note,
+    amount,
     timestamp: now,
   };
 
@@ -119,6 +122,7 @@ export function addXP(
     timestamp: now,
     stat: statKey,
     note,
+    amount,
   });
 
   // Push level-up feed event if stat leveled up
@@ -133,8 +137,8 @@ export function addXP(
   }
 
   // Check if overall level changed (can happen on any XP gain, not just stat level-ups)
-  const overallBefore = getOverallLevel(data.activities.length);
-  const overallAfter = getOverallLevel(newData.activities.length);
+  const overallBefore = getOverallLevel(getTotalLifetimeXP(data));
+  const overallAfter = getOverallLevel(getTotalLifetimeXP(newData));
 
   if (overallAfter.level > overallBefore.level) {
     newData = pushFeedEvent(newData, {
@@ -165,6 +169,11 @@ export function addXP(
 
 export function getTotalLevel(data: GameData): number {
   return STAT_KEYS.reduce((sum, key) => sum + data.stats[key].level, 0);
+}
+
+/** Sum all XP ever earned across all activities (respects variable amounts from judge) */
+export function getTotalLifetimeXP(data: GameData): number {
+  return data.activities.reduce((sum, activity) => sum + (activity.amount ?? 1), 0);
 }
 
 // --- Overall player level (based on total lifetime XP, EQ-inspired curve) ---
@@ -300,7 +309,7 @@ export function getActivitiesByDay(
 
     const day = date.getDate();
     if (!result[day]) result[day] = {};
-    result[day][activity.stat] = (result[day][activity.stat] ?? 0) + 1;
+    result[day][activity.stat] = (result[day][activity.stat] ?? 0) + (activity.amount ?? 1);
   }
 
   return result;
@@ -378,9 +387,9 @@ export function getMonthlyXPTotals(activities: Activity[]): {
     const activityMonth = date.getMonth();
 
     if (activityYear === currentYear && activityMonth === currentMonth) {
-      currentMonthXP++;
+      currentMonthXP += activity.amount ?? 1;
     } else if (activityYear === lastMonthYear && activityMonth === lastMonth) {
-      lastMonthXP++;
+      lastMonthXP += activity.amount ?? 1;
     }
   }
 
