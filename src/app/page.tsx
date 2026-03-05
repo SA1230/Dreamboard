@@ -965,14 +965,20 @@ export default function Home() {
           style={{ animation: "fadeIn 0.2s ease-out" }}
           aria-label="Tell the Captain what you accomplished"
         >
-          <div
-            className="rounded-full"
-            style={{ animation: "captainGlow 2.5s ease-in-out infinite" }}
-          >
+          <div className="relative flex items-center justify-center">
+            {/* Sonar ripple rings */}
+            <div
+              className="absolute w-14 h-14 rounded-full border-2 border-amber-400/40"
+              style={{ animation: "captainRipple 2.5s ease-out infinite" }}
+            />
+            <div
+              className="absolute w-14 h-14 rounded-full border-2 border-amber-400/40"
+              style={{ animation: "captainRipple 2.5s ease-out 1.25s infinite" }}
+            />
             <img
               src="/mascots/judge-hero.svg"
               alt="The Captain"
-              className="w-14 h-14 rounded-full bg-white border-2 border-amber-300 p-1 shadow-md"
+              className="w-14 h-14 rounded-full bg-white border-2 border-amber-300 p-1 shadow-md relative"
             />
           </div>
         </button>
