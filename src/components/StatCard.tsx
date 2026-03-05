@@ -2,7 +2,7 @@
 
 import { StatProgress } from "@/lib/types";
 import { StatDefinition } from "@/lib/stats";
-import { getXPForNextLevel } from "@/lib/storage";
+import { getXPForNextLevel, formatRelativeTime } from "@/lib/storage";
 import { StatIcon } from "./StatIcons";
 import { Plus, Flame } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -27,6 +27,7 @@ interface StatCardProps {
   justGainedXP: boolean;
   streak: number;
   isActiveThisMonth: boolean;
+  lastLoggedTimestamp: string | null;
 }
 
 export function StatCard({
@@ -37,6 +38,7 @@ export function StatCard({
   justGainedXP,
   streak,
   isActiveThisMonth,
+  lastLoggedTimestamp,
 }: StatCardProps) {
   const xpNeeded = getXPForNextLevel(progress.level);
   const progressPercent = Math.min((progress.xp / xpNeeded) * 100, 100);
@@ -191,6 +193,16 @@ export function StatCard({
           }}
         />
       </div>
+
+      {/* Last logged timestamp */}
+      {lastLoggedTimestamp && (
+        <p
+          className="text-[10px] mt-1.5 text-right"
+          style={{ color: `${definition.color}50` }}
+        >
+          {formatRelativeTime(lastLoggedTimestamp)}
+        </p>
+      )}
     </div>
   );
 }
