@@ -523,9 +523,7 @@ function LevelDisplay({
 
 export default function Home() {
   const [gameData, setGameData] = useState<GameData | null>(null);
-  const [leveledUpStat, _setLeveledUpStat] = useState<StatKey | null>(null);
   const [xpGainedStat, setXpGainedStat] = useState<StatKey | null>(null);
-  const [previousStatLevel, _setPreviousStatLevel] = useState<number | undefined>(undefined);
   // Overall level-up animation state for the LevelDisplay ring
   const [isOverallLevelingUp, setIsOverallLevelingUp] = useState(false);
   const [previousOverallLevel, setPreviousOverallLevel] = useState<number | undefined>(undefined);
@@ -863,12 +861,12 @@ export default function Home() {
             key={key}
             definition={definitions[key]}
             progress={gameData.stats[key]}
-            leveledUp={leveledUpStat === key}
+            leveledUp={false}
             justGainedXP={xpGainedStat === key}
             streak={streaks[key]}
             isActiveThisMonth={activeStatsThisMonth.has(key)}
             lastLoggedTimestamp={lastActivityTimestamps?.[key] ?? null}
-            previousLevel={leveledUpStat === key ? previousStatLevel : undefined}
+            previousLevel={undefined}
           />
         ))}
       </div>
