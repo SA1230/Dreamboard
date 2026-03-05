@@ -727,7 +727,7 @@ export default function Home() {
         <div className="absolute right-0 top-1 flex items-center gap-2">
           <button
             onClick={() => setShowJudge(true)}
-            className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500 cursor-pointer"
             title="Ask the Captain"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -968,7 +968,7 @@ export default function Home() {
       {!captainCtaVisible && !showJudge && (
         <button
           onClick={() => setShowJudge(true)}
-          className="fixed bottom-6 right-6 z-40 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-transform"
+          className="fixed bottom-6 right-6 z-40 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-transform cursor-pointer"
           style={{ animation: "fadeIn 0.2s ease-out" }}
           aria-label="Tell the Captain what you accomplished"
         >
