@@ -45,6 +45,7 @@ function LevelDisplay({
   xpForNextLevel,
   isLevelingUp,
   previousOverallLevel,
+  onShake,
 }: {
   level: number;
   progressPercent: number;
@@ -52,21 +53,31 @@ function LevelDisplay({
   xpForNextLevel: number;
   isLevelingUp?: boolean;
   previousOverallLevel?: number;
+  onShake?: () => void;
 }) {
   const numberRef = useRef<HTMLSpanElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Stabilize onShake callback so it doesn't re-trigger the animation effect
+  const onShakeRef = useRef(onShake);
+  onShakeRef.current = onShake;
+
   // Phased animation state for overall level-up
-  const [animPhase, setAnimPhase] = useState<"idle" | "ring-fill" | "number-swap" | "done">("idle");
+  // idle → ring-fill → shatter → number-swap → done → idle
+  const [animPhase, setAnimPhase] = useState<"idle" | "ring-fill" | "shatter" | "number-swap" | "done">("idle");
   const [displayedLevel, setDisplayedLevel] = useState(level);
   const [displayedRank, setDisplayedRank] = useState(getRankTitle(level));
   const [rankChanging, setRankChanging] = useState(false);
+
+  // Shatter fragment state — arc pieces that fly outward
+  const [shatterFragments, setShatterFragments] = useState<
+    { id: number; startAngle: number; endAngle: number; flyAngle: number; delay: number }[]
+  >([]);
 
   // Orchestrate the overall level-up animation
   // isLevelingUp is set immediately; this effect adds a 1400ms internal delay to align with Beat 4
   useEffect(() => {
     if (!isLevelingUp || !previousOverallLevel) {
-      // Don't reset to idle here — let the animation finish naturally
       return;
     }
 
@@ -74,13 +85,38 @@ function LevelDisplay({
     setDisplayedLevel(previousOverallLevel);
     setDisplayedRank(getRankTitle(previousOverallLevel));
 
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
     // Wait 1400ms (Beat 4 timing) before starting the ring animation
-    const startTimer = setTimeout(() => {
+    timers.push(setTimeout(() => {
       // Phase 1: Ring fills to 100%
       setAnimPhase("ring-fill");
 
-      // Phase 2: Swap the number with bounce (~600ms after ring starts)
-      setTimeout(() => {
+      // Phase 2: Shatter — ring breaks into arc fragments (~500ms after ring starts filling)
+      timers.push(setTimeout(() => {
+        // Generate 8 arc fragments evenly around the ring
+        const fragmentCount = 8;
+        const fragments = Array.from({ length: fragmentCount }, (_, index) => {
+          const segmentAngle = (Math.PI * 2) / fragmentCount;
+          const startAngle = index * segmentAngle - Math.PI / 2; // start from top
+          const endAngle = startAngle + segmentAngle;
+          const flyAngle = startAngle + segmentAngle / 2; // fly outward from midpoint
+          return {
+            id: index,
+            startAngle,
+            endAngle,
+            flyAngle,
+            delay: index * 25, // slight stagger for each fragment
+          };
+        });
+        setShatterFragments(fragments);
+        setAnimPhase("shatter");
+        // Trigger page-wide screen shake at the moment of shatter
+        onShakeRef.current?.();
+      }, 500));
+
+      // Phase 3: Swap the number with bounce (~400ms after shatter starts, fragments are flying)
+      timers.push(setTimeout(() => {
         setAnimPhase("number-swap");
         setDisplayedLevel(level);
 
@@ -89,27 +125,28 @@ function LevelDisplay({
         const newRank = getRankTitle(level);
         if (oldRank !== newRank) {
           setRankChanging(true);
-          setTimeout(() => {
+          timers.push(setTimeout(() => {
             setDisplayedRank(newRank);
-            setTimeout(() => setRankChanging(false), 500);
-          }, 150);
+            timers.push(setTimeout(() => setRankChanging(false), 500));
+          }, 150));
         }
-      }, 600);
+      }, 900));
 
-      // Phase 3: Done — settle back to normal
-      setTimeout(() => {
+      // Phase 4: Done — settle back to normal
+      timers.push(setTimeout(() => {
         setAnimPhase("done");
-      }, 1400);
+        setShatterFragments([]);
+      }, 1600));
 
       // Full cleanup
-      setTimeout(() => {
+      timers.push(setTimeout(() => {
         setAnimPhase("idle");
         setRankChanging(false);
-      }, 2200);
-    }, 1400);
+      }, 2400));
+    }, 1400));
 
     return () => {
-      clearTimeout(startTimer);
+      timers.forEach(clearTimeout);
     };
   }, [isLevelingUp, previousOverallLevel, level]);
 
@@ -175,10 +212,12 @@ function LevelDisplay({
 
   // During ring-fill phase, animate to full (offset 0), then after number-swap settle to new progress
   const isAnimatingRing = animPhase === "ring-fill";
+  // Hide the main ring during shatter and number-swap (fragments are visible instead)
+  const isRingHidden = animPhase === "shatter" || animPhase === "number-swap";
   const effectiveStrokeDashoffset = isAnimatingRing ? 0 : targetStrokeDashoffset;
 
   // Glow effect on the container during level-up
-  const isGlowing = animPhase === "ring-fill" || animPhase === "number-swap";
+  const isGlowing = animPhase === "ring-fill" || animPhase === "shatter" || animPhase === "number-swap";
 
   return (
     <div
@@ -204,11 +243,15 @@ function LevelDisplay({
 
       {/* Ring + Number */}
       <div className="relative" style={{ width: ringSize, height: ringSize }}>
-        {/* SVG progress ring */}
+        {/* SVG progress ring — hidden during shatter so fragments take over */}
         <svg
           width={ringSize}
           height={ringSize}
           className="absolute inset-0 -rotate-90"
+          style={{
+            opacity: isRingHidden ? 0 : 1,
+            transition: isRingHidden ? "opacity 0.15s ease-out" : "opacity 0.4s ease-in",
+          }}
         >
           <defs>
             <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -260,6 +303,52 @@ function LevelDisplay({
           )}
         </svg>
 
+        {/* Shatter fragments — arc pieces that fly outward when ring breaks */}
+        {shatterFragments.length > 0 && (
+          <div className="absolute inset-0" style={{ overflow: "visible" }}>
+            {shatterFragments.map((fragment) => {
+              // Each fragment flies outward from its position on the ring
+              const flyDistance = 60 + Math.random() * 20;
+              const translateX = Math.cos(fragment.flyAngle) * flyDistance;
+              const translateY = Math.sin(fragment.flyAngle) * flyDistance;
+              const rotationDeg = ((fragment.flyAngle * 180) / Math.PI) + (Math.random() - 0.5) * 60;
+
+              // Build the arc path for this fragment
+              const cx = ringSize / 2;
+              const cy = ringSize / 2;
+              const x1 = cx + radius * Math.cos(fragment.startAngle);
+              const y1 = cy + radius * Math.sin(fragment.startAngle);
+              const x2 = cx + radius * Math.cos(fragment.endAngle);
+              const y2 = cy + radius * Math.sin(fragment.endAngle);
+
+              return (
+                <svg
+                  key={fragment.id}
+                  width={ringSize}
+                  height={ringSize}
+                  className="absolute inset-0"
+                  style={{
+                    overflow: "visible",
+                    animation: `shatterFly 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94) ${fragment.delay}ms forwards`,
+                    // CSS custom properties for the keyframe
+                    ["--shatter-tx" as string]: `${translateX}px`,
+                    ["--shatter-ty" as string]: `${translateY}px`,
+                    ["--shatter-rotate" as string]: `${rotationDeg}deg`,
+                  }}
+                >
+                  <path
+                    d={`M ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2}`}
+                    fill="none"
+                    stroke="url(#ringGradient)"
+                    strokeWidth={strokeWidth + 1}
+                    strokeLinecap="round"
+                  />
+                </svg>
+              );
+            })}
+          </div>
+        )}
+
         {/* Level number with 3D effect */}
         <span
           ref={numberRef}
@@ -310,6 +399,8 @@ export default function Home() {
   // Overall level-up animation state for the LevelDisplay ring
   const [isOverallLevelingUp, setIsOverallLevelingUp] = useState(false);
   const [previousOverallLevel, setPreviousOverallLevel] = useState<number | undefined>(undefined);
+  // Page-wide screen shake on overall level-up
+  const [isScreenShaking, setIsScreenShaking] = useState(false);
   // Celebration overlay state
   const [celebrationInfo, setCelebrationInfo] = useState<{
     statKey: StatKey;
@@ -460,7 +551,10 @@ export default function Home() {
   const overallProgressPercent = xpForNextLevel > 0 ? Math.round((xpIntoLevel / xpForNextLevel) * 100) : 100;
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-8 pb-20">
+    <main
+      className={`max-w-4xl mx-auto px-4 py-8 pb-20 ${isScreenShaking ? "animate-screenShake" : ""}`}
+      onAnimationEnd={() => setIsScreenShaking(false)}
+    >
       {/* Header */}
       <header className="text-center mb-10 relative">
         <div className="absolute right-0 top-1 flex items-center gap-2">
@@ -514,6 +608,7 @@ export default function Home() {
             xpForNextLevel={xpForNextLevel}
             isLevelingUp={isOverallLevelingUp}
             previousOverallLevel={previousOverallLevel}
+            onShake={() => setIsScreenShaking(true)}
           />
         </div>
       </div>
