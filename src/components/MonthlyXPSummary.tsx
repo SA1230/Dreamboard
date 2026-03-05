@@ -48,17 +48,21 @@ export function MonthlyXPSummary({
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const todayDate = now.getDate();
 
-  // Find the max total XP for any single day (for height scaling)
+  // Find the max total XP for any single day (for height scaling), capped at 10
+  const maxVisibleBlocksPerDay = 10;
   let maxDayXP = 1;
   for (let day = 1; day <= daysInMonth; day++) {
     const dayStats = activitiesByDay[day];
     if (dayStats) {
-      const total = Object.values(dayStats).reduce((sum, xp) => sum + (xp ?? 0), 0);
+      const total = Math.min(
+        maxVisibleBlocksPerDay,
+        Object.values(dayStats).reduce((sum, xp) => sum + (xp ?? 0), 0)
+      );
       if (total > maxDayXP) maxDayXP = total;
     }
   }
 
-  const blockGap = 2; // pixel gap between blocks
+  const blockGap = 0; // no gap — the 3D top face of each block creates natural separation when stacked
 
   // Measure actual chart height so blocks scale to fill available space
   const chartRef = useRef<HTMLDivElement>(null);
@@ -75,9 +79,12 @@ export function MonthlyXPSummary({
     return () => observer.disconnect();
   }, []);
 
-  // Scale blocks to fill the chart, but cap so they look like chunky squares, not tall strips
-  const maxBlockHeight = 18;
+  // Scale blocks to fill the chart, capped to stay roughly square (aspect ratio ~1:1)
+  const maxBlockHeight = 16;
   const blockHeight = Math.min(maxBlockHeight, Math.max(Math.floor((chartHeight - (maxDayXP - 1) * blockGap) / maxDayXP), 4));
+
+  // Depth of the 3D faces — substantial enough to read as a cube
+  const depth = Math.max(3, Math.round(blockHeight * 0.35));
 
   function getStatColor(stat: string): string {
     return statDefinitions?.[stat as StatKey]?.progressColor ?? "#a8a29e";
@@ -85,6 +92,44 @@ export function MonthlyXPSummary({
 
   function getStatName(stat: string): string {
     return statDefinitions?.[stat as StatKey]?.name ?? stat;
+  }
+
+  // Renders a single 3D cube block as an inline SVG.
+  // The SVG height = just the front face. The top + right 3D faces overflow
+  // above/right via overflow:visible, so they don't affect layout spacing.
+  function CubeBlock({ color, size }: { color: string; size: number }) {
+    const d = depth;
+    const f = size;
+    const r = f * 0.22;
+
+    return (
+      <svg
+        viewBox={`0 ${-d} ${f + d} ${f + d}`}
+        className="mx-auto"
+        style={{ width: f + d, height: f, display: "block", flexShrink: 0, overflow: "visible" }}
+      >
+        {/* Top face — lighter tint (extends above the SVG box) */}
+        <polygon
+          points={`1,0 ${d + 1},${-d} ${f + d - 1},${-d} ${f - 1},0`}
+          fill={color}
+        />
+        <polygon
+          points={`1,0 ${d + 1},${-d} ${f + d - 1},${-d} ${f - 1},0`}
+          fill="rgba(255,255,255,0.35)"
+        />
+        {/* Right face — darker shade (extends right of front face) */}
+        <polygon
+          points={`${f},1 ${f + d},${-d + 1} ${f + d},${f - d} ${f},${f}`}
+          fill={color}
+        />
+        <polygon
+          points={`${f},1 ${f + d},${-d + 1} ${f + d},${f - d} ${f},${f}`}
+          fill="rgba(0,0,0,0.2)"
+        />
+        {/* Front face — solid matte color (drawn last, layers on top) */}
+        <rect x={0} y={0} width={f} height={f} rx={r} ry={r} fill={color} />
+      </svg>
+    );
   }
 
   return (
@@ -172,16 +217,49 @@ export function MonthlyXPSummary({
                 name: getStatName(stat),
               }));
 
+            const totalDayXP = statGroups.reduce((sum, g) => sum + g.xp, 0);
+            const maxVisibleBlocks = 10;
+            const overflow = totalDayXP > maxVisibleBlocks ? totalDayXP - maxVisibleBlocks : 0;
+
+            // Proportionally distribute capped blocks across stats
+            const cappedGroups = overflow > 0
+              ? (() => {
+                  const scaled = statGroups.map((g) => ({
+                    ...g,
+                    cappedXP: Math.max(1, Math.round((g.xp / totalDayXP) * maxVisibleBlocks)),
+                  }));
+                  // Adjust rounding so total equals maxVisibleBlocks exactly
+                  let scaledTotal = scaled.reduce((sum, g) => sum + g.cappedXP, 0);
+                  while (scaledTotal > maxVisibleBlocks) {
+                    const largest = scaled.reduce((a, b) => (a.cappedXP > b.cappedXP ? a : b));
+                    largest.cappedXP--;
+                    scaledTotal--;
+                  }
+                  while (scaledTotal < maxVisibleBlocks) {
+                    const largest = scaled.reduce((a, b) => (a.xp > b.xp ? a : b));
+                    largest.cappedXP++;
+                    scaledTotal++;
+                  }
+                  return scaled;
+                })()
+              : statGroups.map((g) => ({ ...g, cappedXP: g.xp }));
+
             return (
               <div
                 key={day}
                 className={`flex-1 flex flex-col-reverse items-stretch h-full justify-start ${todayHighlight}`}
               >
+                {/* +N overflow label */}
+                {overflow > 0 && (
+                  <div className="text-center mb-0.5">
+                    <span className="text-[8px] font-bold text-stone-400">+{overflow}</span>
+                  </div>
+                )}
                 <div
                   className="flex flex-col-reverse"
-                  style={{ gap: blockGap }}
+                  style={{ gap: 2 }}
                 >
-                  {statGroups.map((group) => (
+                  {cappedGroups.map((group) => (
                     <div
                       key={group.stat}
                       className="relative group/stat flex flex-col-reverse"
@@ -192,17 +270,9 @@ export function MonthlyXPSummary({
                         <span style={{ color: group.color }}>{group.name}</span>
                         <span className="text-stone-300 ml-1">{group.xp} XP</span>
                       </div>
-                      {/* Blocks — 3D raised tile effect via inset highlights + bottom shadow */}
-                      {Array.from({ length: group.xp }, (_, blockIndex) => (
-                        <div
-                          key={blockIndex}
-                          className="w-full rounded-sm"
-                          style={{
-                            height: blockHeight,
-                            backgroundColor: group.color,
-                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 rgba(0,0,0,0.2), 0 1px 1px rgba(0,0,0,0.1)`,
-                          }}
-                        />
+                      {/* Blocks — 3D cube with top + right faces */}
+                      {Array.from({ length: group.cappedXP }, (_, blockIndex) => (
+                        <CubeBlock key={blockIndex} color={group.color} size={blockHeight} />
                       ))}
                     </div>
                   ))}
