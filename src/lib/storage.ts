@@ -590,18 +590,21 @@ export function calculateLifetimePoints(data: GameData): number {
   return Math.max(0, earned - lost);
 }
 
-// Returns the full points breakdown: earned, spent, and current balance
+// Returns the full points breakdown: earned, damage, spent, and current balance
 export function getPointsBalance(data: GameData): {
   lifetimeEarned: number;
+  lifetimeDamage: number;
   lifetimeSpent: number;
   balance: number;
 } {
-  const lifetimeEarned = calculateLifetimePoints(data);
+  const lifetimeEarned = countTotalHabitCompletions(data);
+  const lifetimeDamage = countTotalDamageMarks(data);
   const lifetimeSpent = data.pointsWallet?.lifetimeSpent ?? 0;
   return {
     lifetimeEarned,
+    lifetimeDamage,
     lifetimeSpent,
-    balance: Math.max(0, lifetimeEarned - lifetimeSpent),
+    balance: Math.max(0, lifetimeEarned - lifetimeDamage - lifetimeSpent),
   };
 }
 
