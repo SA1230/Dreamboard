@@ -750,11 +750,16 @@ export default function Home() {
             <Settings size={18} />
           </Link>
         </div>
-        <h1 className="mb-1">
+        <h1 className="mb-1 flex items-center justify-center gap-1.5">
           <img
-            src="/logos/dreambound-wordmark-black.svg"
+            src="/logos/dreambound-icon-blue.svg"
+            alt=""
+            className="h-7 inline-block"
+          />
+          <img
+            src="/logos/dreambound-wordmark-blue.svg"
             alt="Dreambound"
-            className="h-8 inline-block"
+            className="h-7 inline-block"
           />
         </h1>
       </header>
