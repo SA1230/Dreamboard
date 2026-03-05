@@ -578,6 +578,69 @@ export default function Home() {
   const { level: overallLevel, xpIntoLevel, xpForNextLevel } = getOverallLevel(gameData.activities.length);
   const overallProgressPercent = xpForNextLevel > 0 ? Math.round((xpIntoLevel / xpForNextLevel) * 100) : 100;
 
+  // Weekly quote — one per week of the year, rotates by week number
+  const weeklyQuotes: { text: string; author: string }[] = [
+    { text: "The secret of getting ahead is getting started.", author: "Mark T." },
+    { text: "Small daily improvements over time lead to stunning results.", author: "Robin S." },
+    { text: "We are what we repeatedly do.", author: "Aristotle" },
+    { text: "A journey of a thousand miles begins with a single step.", author: "Lao T." },
+    { text: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese Proverb" },
+    { text: "Do something today that your future self will thank you for.", author: "Sean P." },
+    { text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
+    { text: "Success is the sum of small efforts repeated day in and day out.", author: "Robert C." },
+    { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Z." },
+    { text: "Discipline is choosing between what you want now and what you want most.", author: "Abraham L." },
+    { text: "The only way to do great work is to love what you do.", author: "Steve J." },
+    { text: "Fall seven times, stand up eight.", author: "Japanese Proverb" },
+    { text: "Motivation gets you going. Habit keeps you there.", author: "Jim R." },
+    { text: "Be not afraid of going slowly; be afraid only of standing still.", author: "Chinese Proverb" },
+    { text: "What you do every day matters more than what you do once in a while.", author: "Gretchen R." },
+    { text: "The harder you work, the luckier you get.", author: "Gary P." },
+    { text: "Start where you are. Use what you have. Do what you can.", author: "Arthur A." },
+    { text: "Consistency is the true foundation of trust.", author: "Roy B." },
+    { text: "Action is the foundational key to all success.", author: "Pablo P." },
+    { text: "Progress, not perfection.", author: "Unknown" },
+    { text: "One day or day one. You decide.", author: "Paulo C." },
+    { text: "Your future is created by what you do today, not tomorrow.", author: "Robert K." },
+    { text: "The pain of discipline is far less than the pain of regret.", author: "Sarah B." },
+    { text: "Champions keep playing until they get it right.", author: "Billie J." },
+    { text: "Dream big. Start small. Act now.", author: "Robin S." },
+    { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam L." },
+    { text: "Believe you can and you're halfway there.", author: "Theodore R." },
+    { text: "If you want something you've never had, do something you've never done.", author: "Thomas J." },
+    { text: "Excellence is not a destination but a continuously growing process.", author: "Ed F." },
+    { text: "The difference between try and triumph is a little umph.", author: "Marvin P." },
+    { text: "Good habits formed at youth make all the difference.", author: "Aristotle" },
+    { text: "Success isn't always about greatness. It's about consistency.", author: "Dwayne J." },
+    { text: "Every accomplishment starts with the decision to try.", author: "John F." },
+    { text: "Energy and persistence conquer all things.", author: "Benjamin F." },
+    { text: "With self-discipline most anything is possible.", author: "Theodore R." },
+    { text: "A little progress each day adds up to big results.", author: "Satya N." },
+    { text: "Strive for progress, not perfection.", author: "David P." },
+    { text: "The way to get started is to quit talking and begin doing.", author: "Walt D." },
+    { text: "Setting goals is the first step in turning the invisible into the visible.", author: "Tony R." },
+    { text: "Don't count the days. Make the days count.", author: "Muhammad A." },
+    { text: "It always seems impossible until it's done.", author: "Nelson M." },
+    { text: "You are never too old to set another goal or to dream a new dream.", author: "C.S. L." },
+    { text: "Build your own dreams, or someone else will hire you to build theirs.", author: "Farrah G." },
+    { text: "Hard work beats talent when talent doesn't work hard.", author: "Tim N." },
+    { text: "The only limit to our realization of tomorrow is our doubts of today.", author: "Franklin R." },
+    { text: "Push yourself, because no one else is going to do it for you.", author: "Unknown" },
+    { text: "Great things never come from comfort zones.", author: "Ben F." },
+    { text: "Wake up with determination. Go to bed with satisfaction.", author: "Unknown" },
+    { text: "It's not about having time. It's about making time.", author: "Unknown" },
+    { text: "Be stronger than your excuses.", author: "Unknown" },
+    { text: "Stay patient and trust your journey.", author: "Unknown" },
+    { text: "The best project you'll ever work on is you.", author: "Unknown" },
+  ];
+  const currentWeekNumber = (() => {
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / 86400000) + 1;
+    return Math.ceil(dayOfYear / 7);
+  })();
+  const weeklyQuote = weeklyQuotes[(currentWeekNumber - 1) % weeklyQuotes.length];
+
   return (
     <main
       className={`max-w-4xl mx-auto px-4 py-8 pb-20 ${isScreenShaking ? "animate-screenShake" : ""}`}
@@ -613,6 +676,10 @@ export default function Home() {
           {gameData.activities.length > 0 && (
             <span className="text-stone-300"> · {formatRelativeTime(gameData.activities[0].timestamp)}</span>
           )}
+          <span className="text-stone-300"> | Week {currentWeekNumber}/52</span>
+        </p>
+        <p className="text-stone-300 text-sm italic mt-0.5">
+          &ldquo;{weeklyQuote.text}&rdquo; — {weeklyQuote.author}
         </p>
       </header>
 
