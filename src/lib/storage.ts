@@ -1,4 +1,4 @@
-import { GameData, StatKey, HabitKey, Activity, StatProgress, CustomStatOverride } from "./types";
+import { GameData, StatKey, HabitKey, DamageKey, Activity, StatProgress, CustomStatOverride } from "./types";
 import { STAT_KEYS, STAT_DEFINITIONS, StatDefinition, COLOR_PRESETS } from "./stats";
 
 const STORAGE_KEY = "dreamboard-data";
@@ -485,4 +485,140 @@ export function exportGameData(data: GameData): void {
   link.download = `dreamboard-backup-${new Date().toISOString().split("T")[0]}.json`;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+// --- Daily Damage ---
+
+export const DAMAGE_KEYS: DamageKey[] = ["substance", "screentime", "junkfood", "badsleep"];
+
+const DEFAULT_ENABLED_DAMAGE: DamageKey[] = ["substance", "screentime", "junkfood", "badsleep"];
+
+export function isDamageMarkedToday(data: GameData, damageKey: DamageKey): boolean {
+  const dates = data.dailyDamage?.[damageKey];
+  if (!dates) return false;
+  return dates.includes(getTodayString());
+}
+
+export function toggleDamageForToday(data: GameData, damageKey: DamageKey): GameData {
+  const today = getTodayString();
+  const currentDates = data.dailyDamage?.[damageKey] ?? [];
+  const alreadyMarked = currentDates.includes(today);
+
+  const updatedDates = alreadyMarked
+    ? currentDates.filter((date) => date !== today)
+    : [...currentDates, today];
+
+  const newData: GameData = {
+    ...data,
+    dailyDamage: {
+      ...data.dailyDamage,
+      [damageKey]: updatedDates,
+    },
+  };
+
+  saveGameData(newData);
+  return newData;
+}
+
+export function getDamageByDay(
+  data: GameData,
+  year: number,
+  month: number
+): Record<number, DamageKey[]> {
+  const result: Record<number, DamageKey[]> = {};
+  const damage = data.dailyDamage;
+  if (!damage) return result;
+
+  for (const damageKey of DAMAGE_KEYS) {
+    const dates = damage[damageKey];
+    if (!dates) continue;
+
+    for (const dateString of dates) {
+      const date = new Date(dateString + "T00:00:00");
+      if (date.getFullYear() !== year || date.getMonth() !== month) continue;
+
+      const day = date.getDate();
+      if (!result[day]) result[day] = [];
+      result[day].push(damageKey);
+    }
+  }
+
+  return result;
+}
+
+export function getEnabledDamage(data: GameData): DamageKey[] {
+  return data.enabledDamage ?? DEFAULT_ENABLED_DAMAGE;
+}
+
+export function saveEnabledDamage(data: GameData, enabledDamage: DamageKey[]): GameData {
+  const newData: GameData = {
+    ...data,
+    enabledDamage,
+  };
+  saveGameData(newData);
+  return newData;
+}
+
+// --- Points Wallet (AA System) ---
+
+// Counts total habit completions across all time
+function countTotalHabitCompletions(data: GameData): number {
+  const habits = data.healthyHabits;
+  if (!habits) return 0;
+  let total = 0;
+  for (const habitKey of Object.keys(habits) as HabitKey[]) {
+    total += habits[habitKey]?.length ?? 0;
+  }
+  return total;
+}
+
+// Counts total damage marks across all time
+function countTotalDamageMarks(data: GameData): number {
+  const damage = data.dailyDamage;
+  if (!damage) return 0;
+  let total = 0;
+  for (const damageKey of Object.keys(damage) as DamageKey[]) {
+    total += damage[damageKey]?.length ?? 0;
+  }
+  return total;
+}
+
+// Calculates lifetime earned points from source data (habits - damage)
+export function calculateLifetimePoints(data: GameData): number {
+  const earned = countTotalHabitCompletions(data);
+  const lost = countTotalDamageMarks(data);
+  return Math.max(0, earned - lost);
+}
+
+// Returns the full points breakdown: earned, spent, and current balance
+export function getPointsBalance(data: GameData): {
+  lifetimeEarned: number;
+  lifetimeSpent: number;
+  balance: number;
+} {
+  const lifetimeEarned = calculateLifetimePoints(data);
+  const lifetimeSpent = data.pointsWallet?.lifetimeSpent ?? 0;
+  return {
+    lifetimeEarned,
+    lifetimeSpent,
+    balance: Math.max(0, lifetimeEarned - lifetimeSpent),
+  };
+}
+
+// Spend points from the wallet (for future shop purchases)
+export function spendPoints(data: GameData, amount: number): GameData | null {
+  const { balance } = getPointsBalance(data);
+  if (amount > balance) return null;
+
+  const currentSpent = data.pointsWallet?.lifetimeSpent ?? 0;
+  const newData: GameData = {
+    ...data,
+    pointsWallet: {
+      lifetimeEarned: calculateLifetimePoints(data),
+      lifetimeSpent: currentSpent + amount,
+    },
+  };
+
+  saveGameData(newData);
+  return newData;
 }

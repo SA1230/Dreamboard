@@ -23,15 +23,16 @@ src/
 │   ├── page.tsx            # Homepage — stat cards, overall level display, monthly XP, healthy habits, activity log
 │   ├── layout.tsx          # Root layout with Nunito font + global styles
 │   ├── globals.css         # Tailwind base + 6 custom keyframe animations
-│   ├── calendar/           # Monthly calendar view showing daily XP + habit icons
-│   └── settings/           # Customize stat names, descriptions, colors, icons + enable/disable daily habits
+│   ├── calendar/           # Monthly calendar view showing daily XP + habit/damage icons
+│   └── settings/           # Customize stat names, descriptions, colors, icons + enable/disable habits & damage
 ├── components/
 │   ├── StatCard.tsx         # One card per stat (icon fill effect, level, XP bar, streak flame, dormant dimming)
 │   ├── MonthlyXPSummary.tsx # Monthly XP total with sparkline bar chart + trend vs last month
 │   ├── AddXPModal.tsx       # Modal to log an activity (pick stat, add note)
 │   ├── ActivityLog.tsx      # Scrollable list of recent 20 activities
-│   ├── MonthCalendar.tsx    # Calendar grid with per-day XP breakdown + healthy habit icons
+│   ├── MonthCalendar.tsx    # Calendar grid with per-day XP breakdown + habit/damage icons
 │   ├── HealthyHabits.tsx    # Daily toggle cards for 6 habits (water, nails, brush, nosugar, floss, steps) — filtered by enabledHabits
+│   ├── DailyDamage.tsx      # Daily toggle cards for 4 damage types (substance, screentime, junkfood, badsleep) — red-themed
 │   └── StatIcons.tsx        # 20 SVG icons (8 stat defaults + 12 extras for customization)
 └── lib/
     ├── types.ts             # TypeScript types: StatKey, HabitKey, Activity, GameData, etc.
@@ -43,10 +44,15 @@ src/
 
 - **StatKey** — one of 8 strings: `"strength"`, `"wisdom"`, `"vitality"`, etc.
 - **HabitKey** — one of 6 strings: `"water"`, `"nails"`, `"brush"`, `"nosugar"`, `"floss"`, `"steps"`
+- **DamageKey** — one of 4 strings: `"substance"`, `"screentime"`, `"junkfood"`, `"badsleep"`
+- **PointsWallet** — `{ lifetimeEarned, lifetimeSpent }` — tracks Power Points spending (earned is always derived from source data)
 - **Activity** — `{ id, stat, note, timestamp }` — one logged action = 1 XP
-- **GameData** — the root object stored in localStorage: `{ stats, activities, customDefinitions?, healthyHabits?, enabledHabits?, mascotOverrides? }`
+- **GameData** — the root object stored in localStorage: `{ stats, activities, customDefinitions?, healthyHabits?, enabledHabits?, dailyDamage?, enabledDamage?, pointsWallet?, mascotOverrides? }`
   - `healthyHabits` maps each `HabitKey` to an array of `"YYYY-MM-DD"` date strings (days the habit was completed)
   - `enabledHabits` is an array of `HabitKey` values that should be visible on the dashboard (defaults to the original 4 if not set)
+  - `dailyDamage` maps each `DamageKey` to an array of `"YYYY-MM-DD"` date strings (days the damage was marked)
+  - `enabledDamage` is an array of `DamageKey` values visible on dashboard (defaults to all 4 if not set)
+  - `pointsWallet` stores `lifetimeSpent` only — `lifetimeEarned` is always recalculated from habit/damage history to prevent sync issues
   - `mascotOverrides` maps level thresholds to mascot image filenames in `public/mascots/` (e.g. `{ 1: "skipper-default.svg", 10: "skipper-cool.svg" }`). Uses threshold logic — picks highest key ≤ current level. Defaults to `skipper-default.svg`
 - **Per-stat leveling:** Fibonacci-ish XP thresholds per stat. Logic in `storage.ts` (`addXP`, `getXPForNextLevel`)
 - **Overall player level:** EQ-inspired curve (max level 60) with "hell levels" at 30/35/40/45/50/55/59. Logic in `storage.ts` (`getOverallLevel`). Rank titles (Novice → Transcendent) are defined in `page.tsx`
@@ -60,6 +66,8 @@ src/
 - **Stat card dormancy:** Cards dim (opacity + desaturation) if the stat has zero activity this month (`isActiveThisMonth` prop)
 - **Icon fill effect:** StatCard layers an unfilled ghost icon behind a filled icon that clips from bottom-up based on XP progress
 - **Healthy Habits:** A separate system from stat XP — boolean-per-day toggles that don't award XP. Stored as date strings in `healthyHabits`. Users can enable/disable which habits appear via settings (`enabledHabits`)
+- **Daily Damage:** Mirrors healthy habits but tracks negative behaviors. Same date-string storage pattern. Red-themed toggle cards on dashboard. Each habit completed = +1 Power Point, each damage marked = -1 Power Point
+- **Power Points (AA System):** Inspired by EverQuest's Alternate Advancement. `lifetimeEarned` is always derived from source data (total habit completions minus total damage marks), never stored incrementally. `lifetimeSpent` is persisted. Balance = earned - spent. Future use: Skipper shop for mascot items
 - **Data export:** `exportGameData()` in `storage.ts` downloads a full JSON backup. Button lives in the Activity Log section
 - **`LevelDisplay` component** lives inline in `page.tsx` (not a separate file) — shows Skipper mascot inside an SVG progress ring, with level badge below and rank title above. Parallax tilt + shatter animation on level-up
 - **Mascot system:** Skipper the penguin SVGs live in `public/mascots/`. `getMascotForLevel()` in `storage.ts` picks the right image based on overall level + optional `mascotOverrides` in GameData. Currently one image (`skipper-default.svg`); ready for per-level variants
@@ -79,6 +87,12 @@ src/
 - `isHabitCompletedToday(data, habitKey)` / `toggleHabitForToday(data, habitKey)`
 - `getHabitsByDay(data, year, month)` — habits grouped by calendar day
 - `getEnabledHabits(data)` / `saveEnabledHabits(data, habits)` — which habits are visible on dashboard
+- `isDamageMarkedToday(data, damageKey)` / `toggleDamageForToday(data, damageKey)` — daily damage toggle
+- `getDamageByDay(data, year, month)` — damage grouped by calendar day
+- `getEnabledDamage(data)` / `saveEnabledDamage(data, enabledDamage)` — which damage types are visible on dashboard
+- `calculateLifetimePoints(data)` — derives total Power Points earned from habit/damage history
+- `getPointsBalance(data)` — returns `{ lifetimeEarned, lifetimeSpent, balance }`
+- `spendPoints(data, amount)` — deducts from wallet (returns null if insufficient balance)
 - `getMascotForLevel(level, overrides?)` — returns mascot image path for a given overall level (threshold logic)
 - `exportGameData(data)` — JSON file download
 

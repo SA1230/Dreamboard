@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { GameData } from "@/lib/types";
-import { loadGameData, getEffectiveDefinitions, getActivitiesByDay, getHabitsByDay } from "@/lib/storage";
+import { loadGameData, getEffectiveDefinitions, getActivitiesByDay, getHabitsByDay, getDamageByDay } from "@/lib/storage";
 import { MonthCalendar } from "@/components/MonthCalendar";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -35,6 +35,11 @@ export default function CalendarPage() {
   const habitsByDay = useMemo(() => {
     if (!gameData) return {};
     return getHabitsByDay(gameData, year, month);
+  }, [gameData, year, month]);
+
+  const damageByDay = useMemo(() => {
+    if (!gameData) return {};
+    return getDamageByDay(gameData, year, month);
   }, [gameData, year, month]);
 
   // Count total XP for the displayed month
@@ -132,6 +137,7 @@ export default function CalendarPage() {
         month={month}
         activitiesByDay={activitiesByDay}
         habitsByDay={habitsByDay}
+        damageByDay={damageByDay}
         definitions={definitions}
         gameData={gameData}
       />

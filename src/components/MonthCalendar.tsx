@@ -1,8 +1,8 @@
 "use client";
 
-import { StatKey, HabitKey, GameData } from "@/lib/types";
+import { StatKey, HabitKey, DamageKey, GameData } from "@/lib/types";
 import { StatDefinition } from "@/lib/stats";
-import { getEnabledHabits } from "@/lib/storage";
+import { getEnabledHabits, getEnabledDamage } from "@/lib/storage";
 import { StatIcon } from "./StatIcons";
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -103,11 +103,59 @@ const TINY_HABIT_ICONS: Record<HabitKey, { component: React.ComponentType; title
   steps: { component: TinyStepsIcon, title: "10k steps" },
 };
 
+function TinySubstanceIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 48 48" fill="none">
+      <path d="M16 18h16v22a4 4 0 01-4 4H20a4 4 0 01-4-4V18z" fill="#fecaca" stroke="#ef4444" strokeWidth="2" />
+      <rect x="20" y="10" width="8" height="8" fill="#fecaca" stroke="#ef4444" strokeWidth="2" />
+      <rect x="19" y="6" width="10" height="5" rx="1.5" fill="#ef4444" />
+    </svg>
+  );
+}
+
+function TinyScreenTimeIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 48 48" fill="none">
+      <rect x="14" y="4" width="20" height="36" rx="4" fill="#fecaca" stroke="#ef4444" strokeWidth="2" />
+      <rect x="16" y="8" width="16" height="26" rx="1" fill="#7f1d1d" />
+      <circle cx="24" cy="38" r="2" fill="#ef4444" />
+    </svg>
+  );
+}
+
+function TinyJunkFoodIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 48 48" fill="none">
+      <path d="M8 22c0-8 7-14 16-14s16 6 16 14H8z" fill="#fecaca" stroke="#ef4444" strokeWidth="2" />
+      <rect x="8" y="26" width="32" height="5" rx="2.5" fill="#991b1b" />
+      <path d="M8 31h32v5a4 4 0 01-4 4H12a4 4 0 01-4-4v-5z" fill="#fecaca" stroke="#ef4444" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function TinyBadSleepIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 48 48" fill="none">
+      <path d="M28 6c-8 0-15 7-15 15s7 15 15 15c-4 0-8-3-8-8 0-6 5-10 10-10 3 0 5 1 7 3-1-8-8-15-9-15z" fill="#fecaca" stroke="#ef4444" strokeWidth="2" />
+      <text x="32" y="16" fontSize="10" fontWeight="bold" fill="#ef4444" opacity="0.8">Z</text>
+      <line x1="14" y1="8" x2="34" y2="34" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+    </svg>
+  );
+}
+
+const TINY_DAMAGE_ICONS: Record<DamageKey, { component: React.ComponentType; title: string }> = {
+  substance: { component: TinySubstanceIcon, title: "Substance used" },
+  screentime: { component: TinyScreenTimeIcon, title: "Excess screen time" },
+  junkfood: { component: TinyJunkFoodIcon, title: "Junk food eaten" },
+  badsleep: { component: TinyBadSleepIcon, title: "Bad sleep" },
+};
+
 interface MonthCalendarProps {
   year: number;
   month: number; // 0-indexed (0 = January)
   activitiesByDay: Record<number, Partial<Record<StatKey, number>>>;
   habitsByDay: Record<number, HabitKey[]>;
+  damageByDay: Record<number, DamageKey[]>;
   definitions: Record<StatKey, StatDefinition>;
   gameData: GameData;
 }
@@ -117,10 +165,12 @@ export function MonthCalendar({
   month,
   activitiesByDay,
   habitsByDay,
+  damageByDay,
   definitions,
   gameData,
 }: MonthCalendarProps) {
   const enabledHabits = getEnabledHabits(gameData);
+  const enabledDamage = getEnabledDamage(gameData);
   const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Sunday
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = new Date();
@@ -231,6 +281,25 @@ export function MonthCalendar({
                       const IconComponent = habit.component;
                       return (
                         <div key={habitKey} title={habit.title}>
+                          <IconComponent />
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
+              {/* Daily damage icons */}
+              {damageByDay[day] && damageByDay[day].length > 0 && (() => {
+                const visibleDamage = damageByDay[day].filter((d) => enabledDamage.includes(d));
+                if (visibleDamage.length === 0) return null;
+                return (
+                  <div className="flex gap-1 mt-auto pt-0.5" style={{ opacity: 0.85 }}>
+                    {visibleDamage.map((damageKey) => {
+                      const damage = TINY_DAMAGE_ICONS[damageKey];
+                      const IconComponent = damage.component;
+                      return (
+                        <div key={damageKey} title={damage.title}>
                           <IconComponent />
                         </div>
                       );
