@@ -810,7 +810,7 @@ export default function Home() {
       </header>
 
       {/* Monthly XP Summary + Today's XP + Level Display — wider than card grid */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-8 sm:-mx-12">
+      <div className="flex flex-col sm:flex-row sm:items-stretch gap-4 mb-8 sm:-mx-12">
         <div className="flex-1 min-w-0">
           <MonthlyXPSummary
             currentMonthXP={monthlyXP.currentMonthXP}
@@ -820,12 +820,12 @@ export default function Home() {
         </div>
         <div className="flex flex-col items-center justify-center rounded-2xl bg-stone-50 border border-stone-200 px-16 py-5 shrink-0">
           <p className="text-xs font-medium text-stone-400 uppercase tracking-wide">Today</p>
-          <p className="text-4xl font-extrabold text-emerald-500 mt-1">
+          <p className="text-6xl font-extrabold text-emerald-500 mt-3">
             {dailyXPForMonth[new Date().getDate() - 1] ?? 0}
           </p>
-          <p className="text-[10px] font-medium text-stone-400 mt-1">XP earned</p>
+          <p className="text-[10px] font-medium text-stone-400 mt-2">XP earned</p>
         </div>
-        <div className="flex items-stretch">
+        <div className="flex" style={{ transform: "scale(1.05)", transformOrigin: "center center" }}>
           <LevelDisplay
             level={overallLevel}
             progressPercent={overallProgressPercent}
