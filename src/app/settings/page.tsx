@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import { GameData, StatKey, HabitKey, CustomStatOverride } from "@/lib/types";
 import { STAT_DEFINITIONS, STAT_KEYS, COLOR_PRESETS, StatDefinition } from "@/lib/stats";
-import { loadGameData, saveCustomDefinitions, getEnabledHabits, saveEnabledHabits } from "@/lib/storage";
+import { loadGameData, saveCustomDefinitions, getEnabledHabits, saveEnabledHabits, resetAllData } from "@/lib/storage";
 import { StatIcon, ICON_OPTIONS } from "@/components/StatIcons";
-import { ArrowLeft, RotateCcw } from "lucide-react";
+import { ArrowLeft, RotateCcw, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const ALL_HABITS: { key: HabitKey; label: string; description: string; emoji: string; color: string; enabledBackground: string }[] = [
   { key: "water", label: "Drink 64oz", description: "Track daily water intake", emoji: "💧", color: "#3b82f6", enabledBackground: "#eff6ff" },
@@ -23,6 +24,8 @@ export default function SettingsPage() {
   const [enabledHabits, setEnabledHabits] = useState<HabitKey[]>([]);
   const [editingStat, setEditingStat] = useState<StatKey | null>(null);
   const [saved, setSaved] = useState(false);
+  const [showResetDataConfirm, setShowResetDataConfirm] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const data = loadGameData();
@@ -356,6 +359,66 @@ export default function SettingsPage() {
           );
         })}
       </div>
+
+      {/* Section: Danger Zone */}
+      <h2 className="text-lg font-bold text-stone-500 mt-12 mb-2">Danger Zone</h2>
+      <div className="rounded-2xl border-2 border-red-200 bg-red-50/50 p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h3 className="font-bold text-sm text-red-600">Reset All Data</h3>
+            <p className="text-xs text-red-400 mt-0.5">
+              Permanently erase all XP, levels, activities, and habits. This cannot be undone.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowResetDataConfirm(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-red-500 hover:bg-red-600 transition-all hover:scale-[1.02] active:scale-[0.98] shrink-0"
+          >
+            <Trash2 size={14} />
+            Reset Data
+          </button>
+        </div>
+      </div>
+
+      {/* Reset Data Confirmation Modal */}
+      {showResetDataConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowResetDataConfirm(false)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-modalSlideUp">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                <Trash2 size={28} className="text-red-500" />
+              </div>
+              <h3 className="text-lg font-extrabold text-stone-700 mb-2">
+                Are you absolutely sure?
+              </h3>
+              <p className="text-sm text-stone-500 mb-6">
+                This will permanently delete <span className="font-bold text-red-500">all of your data</span> — every activity, XP point, level, streak, and habit log. You&apos;ll start completely fresh at Level 1. This cannot be undone.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setShowResetDataConfirm(false)}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-stone-500 bg-stone-100 hover:bg-stone-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    resetAllData();
+                    router.push("/");
+                  }}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-all"
+                >
+                  Yes, wipe everything
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
