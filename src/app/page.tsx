@@ -879,7 +879,16 @@ export default function Home() {
             <path d="M11.5 1L4 11h5.5L8.5 19 16 9h-5.5L11.5 1z" fill="#f59e0b" stroke="#d97706" strokeWidth="1.2" strokeLinejoin="round" />
           </svg>
           Power Points
-          <span className="ml-2 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-200 rounded-full">
+          <span
+            className="ml-2 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-full border border-amber-300/60"
+            style={{
+              background: 'linear-gradient(90deg, #d97706, #f59e0b, #fbbf24, #f59e0b, #d97706)',
+              backgroundSize: '200% auto',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              animation: 'shopTextShimmer 3s linear infinite, shopPulse 2.5s ease-in-out infinite',
+            }}
+          >
             Shop coming soon
           </span>
         </h2>
