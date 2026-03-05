@@ -1,4 +1,4 @@
-import { GameData, StatKey, HabitKey, DamageKey, Activity, StatProgress, CustomStatOverride } from "./types";
+import { GameData, StatKey, HabitKey, DamageKey, Activity, StatProgress, CustomStatOverride, FeedEvent } from "./types";
 import { STAT_KEYS, STAT_DEFINITIONS, StatDefinition, COLOR_PRESETS } from "./stats";
 
 const STORAGE_KEY = "dreamboard-data";
@@ -97,18 +97,67 @@ export function addXP(
     leveledUp = true;
   }
 
+  const now = new Date().toISOString();
+
   const activity: Activity = {
     id: crypto.randomUUID(),
     stat: statKey,
     note,
-    timestamp: new Date().toISOString(),
+    timestamp: now,
   };
 
-  const newData: GameData = {
+  let newData: GameData = {
     ...data,
     stats: { ...data.stats, [statKey]: stat },
     activities: [activity, ...data.activities],
   };
+
+  // Push XP gain feed event
+  newData = pushFeedEvent(newData, {
+    type: "xp_gain",
+    id: crypto.randomUUID(),
+    timestamp: now,
+    stat: statKey,
+    note,
+  });
+
+  // Push level-up feed event if stat leveled up
+  if (leveledUp) {
+    newData = pushFeedEvent(newData, {
+      type: "level_up",
+      id: crypto.randomUUID(),
+      timestamp: now,
+      stat: statKey,
+      newLevel: stat.level,
+    });
+  }
+
+  // Check if overall level changed (can happen on any XP gain, not just stat level-ups)
+  const overallBefore = getOverallLevel(data.activities.length);
+  const overallAfter = getOverallLevel(newData.activities.length);
+
+  if (overallAfter.level > overallBefore.level) {
+    newData = pushFeedEvent(newData, {
+      type: "overall_level_up",
+      id: crypto.randomUUID(),
+      timestamp: now,
+      newLevel: overallAfter.level,
+      previousLevel: overallBefore.level,
+    });
+
+    // Check if rank title also changed
+    const rankBefore = getRankTitleForLevel(overallBefore.level);
+    const rankAfter = getRankTitleForLevel(overallAfter.level);
+    if (rankAfter !== rankBefore) {
+      newData = pushFeedEvent(newData, {
+        type: "rank_up",
+        id: crypto.randomUUID(),
+        timestamp: now,
+        newRank: rankAfter,
+        newLevel: overallAfter.level,
+      });
+    }
+  }
 
   saveGameData(newData);
   return { newData, leveledUp, previousLevel };
@@ -158,6 +207,28 @@ export function getOverallLevel(totalXP: number): {
 
   // Max level reached
   return { level: MAX_OVERALL_LEVEL, xpIntoLevel: 0, xpForNextLevel: 0 };
+}
+
+// Rank titles — duplicated from page.tsx so storage can detect rank transitions
+const RANK_TITLES_STORAGE: [number, string][] = [
+  [1, "Novice"], [5, "Apprentice"], [10, "Journeyman"], [15, "Adept"],
+  [20, "Expert"], [25, "Veteran"], [30, "Elite"], [35, "Master"],
+  [40, "Grandmaster"], [45, "Champion"], [50, "Legend"], [55, "Mythic"],
+  [60, "Transcendent"],
+];
+
+function getRankTitleForLevel(level: number): string {
+  let title = "Novice";
+  for (const [threshold, name] of RANK_TITLES_STORAGE) {
+    if (level >= threshold) title = name;
+  }
+  return title;
+}
+
+// Push a feed event onto the front of the feedEvents array (newest first)
+function pushFeedEvent(data: GameData, event: FeedEvent): GameData {
+  const existingEvents = data.feedEvents ?? [];
+  return { ...data, feedEvents: [event, ...existingEvents] };
 }
 
 export function getEffectiveDefinitions(data: GameData): Record<StatKey, StatDefinition> {
@@ -341,13 +412,21 @@ export function toggleHabitForToday(data: GameData, habitKey: HabitKey): GameDat
     ? currentDates.filter((date) => date !== today)
     : [...currentDates, today];
 
-  const newData: GameData = {
+  let newData: GameData = {
     ...data,
     healthyHabits: {
       ...data.healthyHabits,
       [habitKey]: updatedDates,
     },
   };
+
+  // Push feed event for habit toggle
+  newData = pushFeedEvent(newData, {
+    type: alreadyCompleted ? "habit_removed" : "habit_completed",
+    id: crypto.randomUUID(),
+    timestamp: new Date().toISOString(),
+    habitKey,
+  });
 
   saveGameData(newData);
   return newData;
@@ -508,13 +587,21 @@ export function toggleDamageForToday(data: GameData, damageKey: DamageKey): Game
     ? currentDates.filter((date) => date !== today)
     : [...currentDates, today];
 
-  const newData: GameData = {
+  let newData: GameData = {
     ...data,
     dailyDamage: {
       ...data.dailyDamage,
       [damageKey]: updatedDates,
     },
   };
+
+  // Push feed event for damage toggle
+  newData = pushFeedEvent(newData, {
+    type: alreadyMarked ? "damage_removed" : "damage_marked",
+    id: crypto.randomUUID(),
+    timestamp: new Date().toISOString(),
+    damageKey,
+  });
 
   saveGameData(newData);
   return newData;

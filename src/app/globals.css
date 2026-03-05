@@ -311,6 +311,11 @@
   100% { opacity: 0; }
 }
 
+@keyframes shimmerSlide {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 body {
   background: #FDF8F4;
 }
