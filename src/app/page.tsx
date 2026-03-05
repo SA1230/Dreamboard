@@ -5,7 +5,6 @@ import { GameData, StatKey, HabitKey, DamageKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
 import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForToday, toggleDamageForToday, getPointsBalance, getLastActivityTimestamps, formatRelativeTime, getMascotForLevel } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
-import { AddXPModal } from "@/components/AddXPModal";
 import { JudgeModal } from "@/components/JudgeModal";
 import { ActivityLog } from "@/components/ActivityLog";
 import { MonthlyXPSummary } from "@/components/MonthlyXPSummary";
@@ -524,10 +523,9 @@ function LevelDisplay({
 
 export default function Home() {
   const [gameData, setGameData] = useState<GameData | null>(null);
-  const [activeModal, setActiveModal] = useState<StatKey | null>(null);
-  const [leveledUpStat, setLeveledUpStat] = useState<StatKey | null>(null);
+  const [leveledUpStat, _setLeveledUpStat] = useState<StatKey | null>(null);
   const [xpGainedStat, setXpGainedStat] = useState<StatKey | null>(null);
-  const [previousStatLevel, setPreviousStatLevel] = useState<number | undefined>(undefined);
+  const [previousStatLevel, _setPreviousStatLevel] = useState<number | undefined>(undefined);
   // Overall level-up animation state for the LevelDisplay ring
   const [isOverallLevelingUp, setIsOverallLevelingUp] = useState(false);
   const [previousOverallLevel, setPreviousOverallLevel] = useState<number | undefined>(undefined);
@@ -628,61 +626,6 @@ export default function Home() {
     const interval = setInterval(() => setTimeTick((tick) => tick + 1), 60000);
     return () => clearInterval(interval);
   }, []);
-
-  const handleAddXP = useCallback(
-    (statKey: StatKey, note: string) => {
-      if (!gameData || !definitions) return;
-
-      // Capture overall level BEFORE the XP is added
-      const overallBefore = getOverallLevel(getTotalLifetimeXP(gameData));
-
-      const { newData, leveledUp, previousLevel } = addXP(gameData, statKey, note);
-      setGameData(newData);
-      setActiveModal(null);
-
-      // Trigger XP gain animation
-      setXpGainedStat(statKey);
-      setTimeout(() => setXpGainedStat(null), 900);
-
-      // Check if overall level went up (independent of stat level-up)
-      const overallAfter = getOverallLevel(getTotalLifetimeXP(newData));
-      const isOverallLevelUp = overallAfter.level > overallBefore.level;
-
-      // Trigger stat level-up animation
-      if (leveledUp) {
-        setPreviousStatLevel(previousLevel);
-        setLeveledUpStat(statKey);
-        setTimeout(() => setLeveledUpStat(null), 2100);
-
-        // Get the stat color for confetti
-        const statColor = definitions[statKey].color;
-
-        setCelebrationInfo({
-          statKey,
-          newLevel: newData.stats[statKey].level,
-          statColor,
-          isOverallLevelUp,
-          overallNewLevel: isOverallLevelUp ? overallAfter.level : undefined,
-          overallNewRank: isOverallLevelUp ? getRankTitle(overallAfter.level) : undefined,
-        });
-      }
-
-      // Trigger LevelDisplay ring animation if overall level went up (fires even without stat level-up)
-      if (isOverallLevelUp) {
-        setPreviousOverallLevel(overallBefore.level);
-        setIsOverallLevelingUp(true);
-
-        // If no stat celebration to handle cleanup, auto-cleanup after animation completes
-        if (!leveledUp) {
-          setTimeout(() => {
-            setIsOverallLevelingUp(false);
-            setPreviousOverallLevel(undefined);
-          }, 4000);
-        }
-      }
-    },
-    [gameData, definitions]
-  );
 
   const handleJudgeVerdict = useCallback(
     (awards: { stat: StatKey; amount: number }[]) => {
@@ -940,7 +883,6 @@ export default function Home() {
             key={key}
             definition={definitions[key]}
             progress={gameData.stats[key]}
-            onAddXP={() => setActiveModal(key)}
             leveledUp={leveledUpStat === key}
             justGainedXP={xpGainedStat === key}
             streak={streaks[key]}
@@ -1033,14 +975,6 @@ export default function Home() {
         )}
       </section>
 
-      {/* AddXP Modal */}
-      {activeModal && (
-        <AddXPModal
-          definition={definitions[activeModal]}
-          onConfirm={(note) => handleAddXP(activeModal, note)}
-          onCancel={() => setActiveModal(null)}
-        />
-      )}
 
       {/* Judge Modal */}
       {showJudge && (

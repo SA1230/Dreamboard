@@ -4,13 +4,12 @@ import { StatProgress } from "@/lib/types";
 import { StatDefinition } from "@/lib/stats";
 import { getXPForNextLevel, formatRelativeTime } from "@/lib/storage";
 import { StatIcon } from "./StatIcons";
-import { Plus, Flame } from "lucide-react";
+import { Flame } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
 interface StatCardProps {
   definition: StatDefinition;
   progress: StatProgress;
-  onAddXP: () => void;
   leveledUp: boolean;
   justGainedXP: boolean;
   streak: number;
@@ -22,7 +21,6 @@ interface StatCardProps {
 export function StatCard({
   definition,
   progress,
-  onAddXP,
   leveledUp,
   justGainedXP,
   streak,
@@ -162,17 +160,6 @@ export function StatCard({
             </p>
           </div>
         </div>
-        <button
-          onClick={onAddXP}
-          className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 shadow-sm"
-          style={{
-            backgroundColor: definition.color,
-            color: definition.backgroundColor,
-          }}
-          aria-label={`Add XP to ${definition.name}`}
-        >
-          <Plus size={18} strokeWidth={2.5} />
-        </button>
       </div>
 
       {/* Level badge + streak */}
