@@ -582,7 +582,7 @@ export default function Home() {
     return activeStats;
   }, [gameData]);
 
-  // Build an array of daily XP totals for the sparkline chart
+  // Build an array of daily XP totals for the Today counter
   const dailyXPForMonth = useMemo(() => {
     if (!gameData) return [];
     const now = new Date();
@@ -598,6 +598,13 @@ export default function Home() {
       if (!dayStats) return 0;
       return Object.values(dayStats).reduce((sum, xp) => sum + (xp ?? 0), 0);
     });
+  }, [gameData]);
+
+  // Per-day per-stat XP breakdown for the stacked bar chart
+  const activitiesByDayForMonth = useMemo(() => {
+    if (!gameData) return {} as Record<number, Partial<Record<StatKey, number>>>;
+    const now = new Date();
+    return getActivitiesByDay(gameData.activities, now.getFullYear(), now.getMonth());
   }, [gameData]);
 
   // Last activity timestamp per stat (for "2h ago" display on cards)
@@ -823,7 +830,8 @@ export default function Home() {
           <MonthlyXPSummary
             currentMonthXP={monthlyXP.currentMonthXP}
             lastMonthXP={monthlyXP.lastMonthXP}
-            dailyXP={dailyXPForMonth}
+            activitiesByDay={activitiesByDayForMonth}
+            statDefinitions={definitions}
           />
         </div>
         <div className="flex flex-col items-center justify-center rounded-2xl bg-stone-50 border border-stone-200 px-16 py-5 shrink-0">
