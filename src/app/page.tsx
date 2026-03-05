@@ -532,6 +532,7 @@ export default function Home() {
   const [previousOverallLevel, setPreviousOverallLevel] = useState<number | undefined>(undefined);
   // Page-wide screen shake on overall level-up
   const [isScreenShaking, setIsScreenShaking] = useState(false);
+  const [isActivityExpanded, setIsActivityExpanded] = useState(true);
   // Celebration overlay state
   const [celebrationInfo, setCelebrationInfo] = useState<{
     statKey: StatKey;
@@ -902,17 +903,32 @@ export default function Home() {
       {/* Activity Log */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-stone-600">Recent Activity</h2>
           <button
-            onClick={() => exportGameData(gameData)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-400 bg-stone-100 hover:bg-stone-200 transition-colors duration-200"
-            title="Export your data as JSON"
+            onClick={() => setIsActivityExpanded(!isActivityExpanded)}
+            className="flex items-center gap-2 group"
           >
-            <Download size={14} />
-            Export
+            <h2 className="text-lg font-bold text-stone-600 group-hover:text-stone-700 transition-colors">Recent Activity</h2>
+            <span
+              className="text-stone-400 text-xs transition-transform duration-200 inline-block"
+              style={{ transform: isActivityExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
+            >
+              ▶
+            </span>
           </button>
+          {isActivityExpanded && (
+            <button
+              onClick={() => exportGameData(gameData)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-400 bg-stone-100 hover:bg-stone-200 transition-colors duration-200"
+              title="Export your data as JSON"
+            >
+              <Download size={14} />
+              Export
+            </button>
+          )}
         </div>
-        <ActivityLog feedEvents={gameData.feedEvents ?? []} definitions={definitions} />
+        {isActivityExpanded && (
+          <ActivityLog feedEvents={gameData.feedEvents ?? []} definitions={definitions} />
+        )}
       </section>
 
       {/* AddXP Modal */}
