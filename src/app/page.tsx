@@ -871,6 +871,9 @@ export default function Home() {
             <path d="M11.5 1L4 11h5.5L8.5 19 16 9h-5.5L11.5 1z" fill="#f59e0b" stroke="#d97706" strokeWidth="1.2" strokeLinejoin="round" />
           </svg>
           Power Points
+          <span className="ml-2 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-200 rounded-full">
+            Shop coming soon
+          </span>
         </h2>
         <div className="flex items-center justify-center gap-4 py-4 px-6 rounded-2xl bg-stone-50 border border-stone-200 mx-auto w-fit">
           {/* Earned */}
@@ -909,7 +912,7 @@ export default function Home() {
             Export
           </button>
         </div>
-        <ActivityLog activities={gameData.activities} definitions={definitions} />
+        <ActivityLog feedEvents={gameData.feedEvents ?? []} definitions={definitions} />
       </section>
 
       {/* AddXP Modal */}
