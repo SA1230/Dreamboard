@@ -2,6 +2,7 @@
 
 import { GameData, DamageKey } from "@/lib/types";
 import { isDamageMarkedToday, getEnabledDamage } from "@/lib/storage";
+import { DAMAGE_DEFINITIONS } from "@/lib/damage";
 
 interface DailyDamageProps {
   gameData: GameData;
@@ -302,12 +303,10 @@ function BadSleepIcon({ marked }: { marked: boolean }) {
   );
 }
 
-const DAMAGE_CONFIG: Record<DamageKey, { label: string }> = {
-  substance: { label: "Substances" },
-  screentime: { label: "Excess screen time" },
-  junkfood: { label: "Junk food" },
-  badsleep: { label: "Bad sleep" },
-};
+// Build config from shared definitions
+const DAMAGE_CONFIG: Record<DamageKey, { label: string }> = Object.fromEntries(
+  DAMAGE_DEFINITIONS.map((d) => [d.key, { label: d.label }])
+) as Record<DamageKey, { label: string }>;
 
 const DAMAGE_ICONS: Record<DamageKey, React.ComponentType<{ marked: boolean }>> = {
   substance: SubstanceIcon,

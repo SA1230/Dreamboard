@@ -2,6 +2,7 @@
 
 import { GameData, HabitKey } from "@/lib/types";
 import { isHabitCompletedToday, getEnabledHabits } from "@/lib/storage";
+import { HABIT_DEFINITIONS } from "@/lib/habits";
 
 interface HealthyHabitsProps {
   gameData: GameData;
@@ -541,14 +542,10 @@ function StepsIcon({ completed }: { completed: boolean }) {
   );
 }
 
-const HABIT_CONFIG: Record<HabitKey, { label: string; completedLabel: string }> = {
-  water: { label: "Drink 64oz", completedLabel: "64oz done!" },
-  nails: { label: "No nail biting", completedLabel: "Nails safe!" },
-  brush: { label: "Brush 2x", completedLabel: "Brushed!" },
-  nosugar: { label: "No sugar", completedLabel: "Sugar free!" },
-  floss: { label: "Floss teeth", completedLabel: "Flossed!" },
-  steps: { label: "10k steps", completedLabel: "10k done!" },
-};
+// Build config from shared definitions
+const HABIT_CONFIG: Record<HabitKey, { label: string; completedLabel: string }> = Object.fromEntries(
+  HABIT_DEFINITIONS.map((h) => [h.key, { label: h.label, completedLabel: h.completedLabel }])
+) as Record<HabitKey, { label: string; completedLabel: string }>;
 
 const HABIT_STYLES: Record<HabitKey, { activeBackground: string; activeBorder: string; activeText: string }> = {
   water: { activeBackground: "#eff6ff", activeBorder: "#3b82f6", activeText: "#2563eb" },

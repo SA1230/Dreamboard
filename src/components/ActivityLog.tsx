@@ -1,7 +1,9 @@
 "use client";
 
-import { FeedEvent, StatKey, HabitKey, DamageKey } from "@/lib/types";
+import { FeedEvent, StatKey } from "@/lib/types";
 import { StatDefinition } from "@/lib/stats";
+import { HABIT_DEFINITIONS } from "@/lib/habits";
+import { DAMAGE_DEFINITIONS } from "@/lib/damage";
 import { StatIcon } from "./StatIcons";
 
 interface ActivityLogProps {
@@ -9,38 +11,11 @@ interface ActivityLogProps {
   definitions: Record<StatKey, StatDefinition>;
 }
 
-// Human-readable labels for habits and damage types
-const HABIT_LABELS: Record<HabitKey, string> = {
-  water: "Drink 64oz",
-  nails: "No nail biting",
-  brush: "Brush 2x",
-  nosugar: "No sugar",
-  floss: "Floss teeth",
-  steps: "10k steps",
-};
-
-const HABIT_EMOJI: Record<HabitKey, string> = {
-  water: "\u{1F4A7}",
-  nails: "\u{1F485}",
-  brush: "\u{1FAA5}",
-  nosugar: "\u{1F6AB}",
-  floss: "\u{1F9B7}",
-  steps: "\u{1F6B6}",
-};
-
-const DAMAGE_LABELS: Record<DamageKey, string> = {
-  substance: "Substance used",
-  screentime: "Excess screen time",
-  junkfood: "Junk food eaten",
-  badsleep: "Bad sleep",
-};
-
-const DAMAGE_EMOJI: Record<DamageKey, string> = {
-  substance: "\u{1F37A}",
-  screentime: "\u{1F4F1}",
-  junkfood: "\u{1F354}",
-  badsleep: "\u{1F319}",
-};
+// Build lookup maps from shared definitions
+const HABIT_LABELS = Object.fromEntries(HABIT_DEFINITIONS.map((h) => [h.key, h.label]));
+const HABIT_EMOJI = Object.fromEntries(HABIT_DEFINITIONS.map((h) => [h.key, h.emoji]));
+const DAMAGE_LABELS = Object.fromEntries(DAMAGE_DEFINITIONS.map((d) => [d.key, d.label]));
+const DAMAGE_EMOJI = Object.fromEntries(DAMAGE_DEFINITIONS.map((d) => [d.key, d.emoji]));
 
 function formatTimestamp(isoString: string): string {
   const date = new Date(isoString);
