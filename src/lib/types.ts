@@ -71,6 +71,17 @@ export interface PlayerInventory {
   equippedItems: Partial<Record<EquipmentSlot, string>>;
 }
 
+// --- Prize Track ---
+
+/** A user-created IRL prize/reward that unlocks at a specific overall level */
+export interface Prize {
+  id: string;
+  name: string;
+  unlockLevel: number;
+  link?: string;
+  createdAt: string;
+}
+
 // Discriminated union for all events that appear in the activity feed
 export type FeedEvent =
   | { type: "xp_gain"; id: string; timestamp: string; stat: StatKey; note: string; amount?: number }
@@ -80,7 +91,8 @@ export type FeedEvent =
   | { type: "damage_removed"; id: string; timestamp: string; damageKey: DamageKey }
   | { type: "level_up"; id: string; timestamp: string; stat: StatKey; newLevel: number }
   | { type: "overall_level_up"; id: string; timestamp: string; newLevel: number; previousLevel: number }
-  | { type: "rank_up"; id: string; timestamp: string; newRank: string; newLevel: number };
+  | { type: "rank_up"; id: string; timestamp: string; newRank: string; newLevel: number }
+  | { type: "prize_unlocked"; id: string; timestamp: string; prizeId: string; prizeName: string; unlockLevel: number };
 
 export interface GameData {
   stats: Record<StatKey, StatProgress>;
@@ -104,4 +116,6 @@ export interface GameData {
   inventory?: PlayerInventory;
   /** Custom name for the mascot (defaults to "Skipper", unlocks at level 5) */
   mascotName?: string;
+  /** User-created IRL prize rewards, unlocked at specific overall levels */
+  prizes?: Prize[];
 }

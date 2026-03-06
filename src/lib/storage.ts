@@ -1,7 +1,8 @@
-import { GameData, StatKey, HabitKey, DamageKey, Activity, StatProgress, CustomStatOverride, FeedEvent, PlayerInventory, EquipmentSlot } from "./types";
+import { GameData, StatKey, HabitKey, DamageKey, Activity, StatProgress, CustomStatOverride, FeedEvent, PlayerInventory, EquipmentSlot, Prize } from "./types";
 import { getItemById } from "./items";
 import { STAT_KEYS, STAT_DEFINITIONS, StatDefinition, COLOR_PRESETS } from "./stats";
 import { getRankTitle } from "./ranks";
+import { MAX_USER_PRIZES } from "./prizes";
 
 const STORAGE_KEY = "dreamboard-data";
 
@@ -815,4 +816,102 @@ export function unequipSlot(data: GameData, slot: EquipmentSlot): GameData {
   };
   saveGameData(newData);
   return newData;
+}
+
+// --- Prize Track ---
+
+/** Get all user prizes, sorted by unlock level ascending */
+export function getPrizes(data: GameData): Prize[] {
+  return [...(data.prizes ?? [])].sort((a, b) => a.unlockLevel - b.unlockLevel);
+}
+
+/** Add a new user prize. Returns updated GameData, or null if at the soft limit (15). */
+export function addPrize(data: GameData, name: string, unlockLevel: number, link?: string): GameData | null {
+  const existing = data.prizes ?? [];
+  if (existing.length >= MAX_USER_PRIZES) return null;
+
+  const prize: Prize = {
+    id: crypto.randomUUID(),
+    name: name.trim().slice(0, 60),
+    unlockLevel: Math.max(1, Math.min(60, unlockLevel)),
+    link: link?.trim() || undefined,
+    createdAt: new Date().toISOString(),
+  };
+
+  const newData: GameData = {
+    ...data,
+    prizes: [...existing, prize],
+  };
+  saveGameData(newData);
+  return newData;
+}
+
+/** Update an existing prize. Returns updated GameData, or null if prize not found. */
+export function updatePrize(
+  data: GameData,
+  prizeId: string,
+  updates: { name?: string; unlockLevel?: number; link?: string | null }
+): GameData | null {
+  const existing = data.prizes ?? [];
+  const index = existing.findIndex((p) => p.id === prizeId);
+  if (index === -1) return null;
+
+  const updated = { ...existing[index] };
+  if (updates.name !== undefined) updated.name = updates.name.trim().slice(0, 60);
+  if (updates.unlockLevel !== undefined) updated.unlockLevel = Math.max(1, Math.min(60, updates.unlockLevel));
+  if (updates.link !== undefined) updated.link = updates.link?.trim() || undefined;
+
+  const newPrizes = [...existing];
+  newPrizes[index] = updated;
+
+  const newData: GameData = { ...data, prizes: newPrizes };
+  saveGameData(newData);
+  return newData;
+}
+
+/** Delete a prize by ID. */
+export function deletePrize(data: GameData, prizeId: string): GameData {
+  const newData: GameData = {
+    ...data,
+    prizes: (data.prizes ?? []).filter((p) => p.id !== prizeId),
+  };
+  saveGameData(newData);
+  return newData;
+}
+
+/** Check for newly unlocked prizes and generate feed events for any that haven't been recorded yet. */
+export function checkPrizeUnlocks(data: GameData, currentLevel: number): GameData {
+  const prizes = data.prizes ?? [];
+  const feedEvents = data.feedEvents ?? [];
+
+  // Find prize IDs that already have unlock feed events
+  const alreadyUnlockedIds = new Set(
+    feedEvents
+      .filter((e): e is Extract<FeedEvent, { type: "prize_unlocked" }> => e.type === "prize_unlocked")
+      .map((e) => e.prizeId)
+  );
+
+  // Find prizes that should be unlocked but haven't generated events yet
+  const newlyUnlocked = prizes.filter(
+    (p) => p.unlockLevel <= currentLevel && !alreadyUnlockedIds.has(p.id)
+  );
+
+  if (newlyUnlocked.length === 0) return data;
+
+  const now = new Date().toISOString();
+  let updatedData = data;
+
+  for (const prize of newlyUnlocked) {
+    updatedData = pushFeedEvent(updatedData, {
+      type: "prize_unlocked",
+      id: crypto.randomUUID(),
+      timestamp: now,
+      prizeId: prize.id,
+      prizeName: prize.name,
+      unlockLevel: prize.unlockLevel,
+    });
+  }
+
+  saveGameData(updatedData);
+  return updatedData;
 }
