@@ -524,20 +524,6 @@ export default function Home() {
   const [isScreenShaking, setIsScreenShaking] = useState(false);
   const [isActivityExpanded, setIsActivityExpanded] = useState(true);
   const [showJudge, setShowJudge] = useState(false);
-  const [captainCtaVisible, setCaptainCtaVisible] = useState(true);
-  const captainCtaRef = useRef<HTMLDivElement>(null);
-
-  // Show floating FAB when the main CTA scrolls out of view
-  useEffect(() => {
-    const element = captainCtaRef.current;
-    if (!element) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setCaptainCtaVisible(entry.isIntersecting),
-      { threshold: 0.1 }
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [gameData]);
 
   // Celebration overlay state
   const [celebrationInfo, setCelebrationInfo] = useState<{
@@ -719,16 +705,6 @@ export default function Home() {
       {/* Header */}
       <header className="text-center mb-10 relative sticky top-0 z-50 bg-[#FDF8F4]/80 backdrop-blur-md -mx-4 px-4 py-3 border-b border-stone-200/50">
         <div className="absolute right-0 top-1 flex items-center gap-2">
-          <button
-            onClick={() => setShowJudge(true)}
-            className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500 cursor-pointer"
-            title="Ask the Captain"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </button>
           <Link
             href="/calendar"
             className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
@@ -759,7 +735,7 @@ export default function Home() {
       </header>
 
       {/* Captain CTA */}
-      <div ref={captainCtaRef} className="mt-14 mb-6">
+      <div className="mt-14 mb-6">
         <button
           onClick={() => setShowJudge(true)}
           className="relative w-full flex flex-col items-center pt-12 pb-4 px-8 rounded-2xl border border-amber-200/60 hover:border-amber-300 transition-all cursor-pointer group active:scale-[0.98]"
@@ -961,30 +937,23 @@ export default function Home() {
         />
       )}
 
-      {/* Floating Captain FAB — appears when main CTA scrolls out of view */}
-      {!captainCtaVisible && !showJudge && (
+      {/* Floating Captain FAB — always visible in bottom-right corner */}
+      {!showJudge && (
         <button
           onClick={() => setShowJudge(true)}
-          className="fixed bottom-6 right-6 z-40 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-transform cursor-pointer"
-          style={{ animation: "fadeIn 0.2s ease-out" }}
+          className="fixed bottom-6 right-6 z-40 w-16 h-16 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-transform cursor-pointer"
+          style={{
+            background: "linear-gradient(135deg, #D4A44A 0%, #B4722A 100%)",
+            boxShadow: "0 4px 16px rgba(180, 114, 42, 0.35), 0 2px 4px rgba(0,0,0,0.1)",
+          }}
           aria-label="Tell the Captain what you accomplished"
         >
-          <div className="relative flex items-center justify-center">
-            {/* Sonar ripple rings */}
-            <div
-              className="absolute w-14 h-14 rounded-full border-2 border-amber-400/40"
-              style={{ animation: "captainRipple 2.5s ease-out infinite" }}
-            />
-            <div
-              className="absolute w-14 h-14 rounded-full border-2 border-amber-400/40"
-              style={{ animation: "captainRipple 2.5s ease-out 1.25s infinite" }}
-            />
-            <img
-              src="/mascots/judge-hero.svg"
-              alt="The Captain"
-              className="w-14 h-14 rounded-full bg-white border-2 border-amber-300 p-1 shadow-md relative"
-            />
-          </div>
+          <img
+            src="/mascots/judge-hero.svg"
+            alt="The Captain"
+            className="w-full h-full rounded-full p-1.5"
+            style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.15))" }}
+          />
         </button>
       )}
 
