@@ -48,6 +48,11 @@ src/
     ├── items.ts             # Item catalog (ITEM_CATALOG), rarity colors, slot definitions, helpers
     ├── itemSvgs.ts          # SVG content registry for equippable items (placeholder art)
     └── storage.ts           # All data logic: load/save, addXP, leveling, habits, streaks, inventory, export, etc.
+
+.claude/
+└── skills/
+    ├── xp-debug/SKILL.md       # /xp-debug — injects temporary +5 XP debug button into page.tsx (never committed)
+    └── xp-debug-off/SKILL.md   # /xp-debug-off — removes the debug button via git checkout
 ```
 
 ## Data model (defined in `src/lib/types.ts`)
