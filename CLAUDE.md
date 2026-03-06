@@ -16,6 +16,7 @@ The core loop: User tells the Judge what they did → Judge interviews them (1-3
 - **AI Judge:** Anthropic Claude Sonnet 4 (fallback: OpenAI GPT-4o) via `/api/judge` route — evaluates activities and awards variable XP
 - **Charts:** None — we build visualizations with plain CSS/SVG (no recharts, no d3)
 - **Animations:** 6 custom keyframe animations in `globals.css` (fadeIn, modalSlideUp, xpPop, levelUpGlow, levelUpText, particle)
+- **Viewport:** Designed for mobile-width viewports (375–430px). No desktop breakpoints currently — do not add responsive layouts unless asked
 - **Run locally:** `npm run dev` (port 3000) / `npm run build` to check for errors
 
 ## Project structure
@@ -27,13 +28,12 @@ src/
 │   ├── layout.tsx          # Root layout with Nunito font + global styles
 │   ├── globals.css         # Tailwind base + 6 custom keyframe animations
 │   ├── api/judge/route.ts  # POST endpoint — sends activity to AI judge, returns XP verdict
-│   ├── calendar/           # Monthly calendar view showing daily XP + habit/damage icons
+│   ├── calendar/           # Month-at-a-glance view — daily XP totals with habit/damage icons, tap a day to see detail modal
 │   └── settings/           # Customize stat names, descriptions, colors, icons + enable/disable habits & damage
 ├── components/
 │   ├── StatCard.tsx         # One card per stat (icon fill effect, level, XP bar, streak flame, dormant dimming) — read-only, no + button
 │   ├── MonthlyXPSummary.tsx # Monthly XP total with sparkline bar chart + trend vs last month
 │   ├── JudgeModal.tsx       # Conversational AI judge — multi-turn chat, awards variable XP (1-10 per stat)
-│   ├── AddXPModal.tsx       # (Legacy) Manual XP entry modal — no longer wired up, Judge is the sole XP entry point
 │   ├── ActivityLog.tsx      # Unified feed of all events (XP gains, habits, damage, level-ups, rank-ups) with distinct visuals per type
 │   ├── MonthCalendar.tsx    # Calendar grid with per-day XP breakdown + habit/damage icons
 │   ├── HealthyHabits.tsx    # Daily toggle cards for 6 habits (water, nails, brush, nosugar, floss, steps) — filtered by enabledHabits
@@ -42,6 +42,7 @@ src/
 └── lib/
     ├── types.ts             # TypeScript types: StatKey, HabitKey, Activity, GameData, etc.
     ├── stats.ts             # Stat definitions, ColorPreset palettes, STAT_KEYS array
+    ├── ranks.ts             # Rank titles, rank colors, rank progression helpers
     └── storage.ts           # All data logic: load/save, addXP, leveling, habits, streaks, export, etc.
 ```
 
@@ -62,7 +63,7 @@ src/
   - `mascotOverrides` maps level thresholds to mascot image filenames in `public/mascots/` (e.g. `{ 1: "skipper-default.svg", 10: "skipper-cool.svg" }`). Uses threshold logic — picks highest key ≤ current level. Defaults to `skipper-default.svg`
   - `feedEvents` is an array of `FeedEvent` objects (newest first) — the unified activity feed that captures XP gains, habit toggles, damage toggles, level-ups, and rank transitions. Pushed automatically by `addXP`, `toggleHabitForToday`, and `toggleDamageForToday`
 - **Per-stat leveling:** Fibonacci-ish XP thresholds per stat. Logic in `storage.ts` (`addXP`, `getXPForNextLevel`)
-- **Overall player level:** EQ-inspired curve (max level 60) with "hell levels" at 30/35/40/45/50/55/59. Logic in `storage.ts` (`getOverallLevel`). Rank titles (Novice → Transcendent) are defined in `page.tsx` and duplicated in `storage.ts` for feed event generation
+- **Overall player level:** EQ-inspired curve (max level 60) with "hell levels" at 30/35/40/45/50/55/59. Logic in `storage.ts` (`getOverallLevel`). Rank titles and colors now live in `ranks.ts` as the single source of truth — do not add rank definitions elsewhere
 
 ## Key patterns
 
@@ -78,7 +79,26 @@ src/
 - **Data export:** `exportGameData()` in `storage.ts` downloads a full JSON backup. Button lives in the Activity Log section
 - **`LevelDisplay` component** lives inline in `page.tsx` (not a separate file) — shows Skipper mascot inside an SVG progress ring, with level badge below and rank title above. Parallax tilt + shatter animation on level-up
 - **Mascot system:** Skipper the penguin SVGs live in `public/mascots/`. `getMascotForLevel()` in `storage.ts` picks the right image based on overall level + optional `mascotOverrides` in GameData. Currently one image (`skipper-default.svg`); ready for per-level variants
-- **XP Judge:** The sole way to earn XP. A conversational AI (via `/api/judge`) evaluates user-described activities, asks up to 3 follow-up questions, then awards 1-10 XP per stat. Triggered from a centered CTA card on the homepage (hero penguin avatar from `public/mascots/judge-hero.svg`). The hero avatar also appears in the JudgeModal header and next to each judge message. Stat cards no longer have `+` buttons — `AddXPModal` is disconnected
+- **XP Judge:** The sole way to earn XP. A conversational AI (via `/api/judge`) evaluates user-described activities, asks up to 3 follow-up questions, then awards 1-10 XP per stat. Triggered from a centered CTA card on the homepage (hero penguin avatar from `public/mascots/judge-hero.svg`). The hero avatar also appears in the JudgeModal header and next to each judge message
+- **Error handling:** Errors in `JudgeModal` are caught and displayed as a red system message inline in the chat thread, with a "Dismiss" button. Loading state always resets. Follow this pattern (in-place error display, no retry logic, user-dismissable) for any new API-dependent features
+
+## Key exports in `stats.ts`
+
+- `StatDefinition` (type) — shape of a single stat's config (name, description, color, icon)
+- `ColorPreset` (type) — shape of a color palette option
+- `STAT_KEYS: StatKey[]` — canonical array of the 8 stat key strings
+- `STAT_DEFINITIONS: Record<StatKey, StatDefinition>` — default definitions for all 8 stats
+- `COLOR_PRESETS: ColorPreset[]` — 14 color palette presets available in settings
+
+## Key exports in `ranks.ts`
+
+- `RANK_TITLES: [number, string][]` — level thresholds paired with rank names (Novice at 1 → Transcendent at 60)
+- `RANK_COLORS: Record<number, [string, string]>` — hex color pairs (start, end) for each rank threshold
+- `getRankTitle(level)` — returns rank name for a given overall level
+- `getNextRankTitle(level)` — returns next rank name, or null at max rank
+- `getRankProgress(level, levelFraction?)` — returns 0–1 progress through current rank bracket
+- `getRankColorPair(level)` — returns [startColor, endColor] for current rank
+- `interpolateHexColor(hexA, hexB, t)` — linearly interpolates between two hex colors
 
 ## Key exports in `storage.ts`
 
