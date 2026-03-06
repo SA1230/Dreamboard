@@ -30,12 +30,14 @@ src/
 │   ├── api/judge/route.ts  # POST endpoint — sends activity to AI judge, returns XP verdict
 │   ├── calendar/           # Month-at-a-glance view — daily XP totals with habit/damage icons, tap a day to see detail modal
 │   ├── settings/           # Customize stat names, descriptions, colors, icons + enable/disable habits & damage
-│   └── shop/               # Power-Up Store — buy and equip cosmetic items on Skipper
+│   ├── shop/               # Power-Up Store — buy and equip cosmetic items on Skipper
+│   └── prizes/             # Prize Track — dual-track timeline with system rewards (rank milestones) + user-created IRL prizes
 ├── components/
 │   ├── StatCard.tsx         # One card per stat (icon fill effect, level, XP bar, streak flame, dormant dimming) — read-only, no + button
 │   ├── MonthlyXPSummary.tsx # Monthly XP total with sparkline bar chart + trend vs last month
 │   ├── JudgeModal.tsx       # Conversational AI judge — multi-turn chat, awards variable XP (1-10 per stat)
-│   ├── ActivityLog.tsx      # Unified feed of all events (XP gains, habits, damage, level-ups, rank-ups) with distinct visuals per type
+│   ├── ActivityLog.tsx      # Unified feed of all events (XP gains, habits, damage, level-ups, rank-ups, prize unlocks) with distinct visuals per type
+│   ├── PrizeTimeline.tsx    # Horizontal scrollable dual-track timeline — system rewards (top) + user prizes (bottom) with fog of war
 │   ├── MonthCalendar.tsx    # Calendar grid with per-day XP breakdown + habit/damage icons
 │   ├── HealthyHabits.tsx    # Daily toggle cards for 6 habits (water, nails, brush, nosugar, floss, steps) — filtered by enabledHabits
 │   ├── DailyDamage.tsx      # Daily toggle cards for 4 damage types (substance, screentime, junkfood, badsleep) — red-themed
@@ -45,6 +47,7 @@ src/
     ├── types.ts             # TypeScript types: StatKey, HabitKey, Activity, GameData, etc.
     ├── stats.ts             # Stat definitions, ColorPreset palettes, STAT_KEYS array
     ├── ranks.ts             # Rank titles, rank colors, rank progression helpers
+    ├── prizes.ts            # System reward constants (derived from ranks), fog-of-war bracket helpers, MAX_USER_PRIZES
     ├── items.ts             # Item catalog (ITEM_CATALOG), rarity colors, slot definitions, helpers
     ├── itemSvgs.ts          # SVG content registry for equippable items (placeholder art)
     └── storage.ts           # All data logic: load/save, addXP, leveling, habits, streaks, inventory, export, etc.
@@ -62,21 +65,23 @@ src/
 - **DamageKey** — one of 4 strings: `"substance"`, `"screentime"`, `"junkfood"`, `"badsleep"`
 - **PointsWallet** — `{ lifetimeEarned, lifetimeSpent }` — tracks Power Points spending (earned is always derived from source data)
 - **Activity** — `{ id, stat, note, timestamp, amount? }` — one logged action. `amount` defaults to 1 for legacy entries; Judge awards variable amounts (1-10)
-- **FeedEvent** — discriminated union (`type` field) for the activity feed. Types: `xp_gain`, `habit_completed`, `habit_removed`, `damage_marked`, `damage_removed`, `level_up`, `rank_up`. Each has `id` + `timestamp` + type-specific fields
+- **Prize** — `{ id, name, unlockLevel, link?, createdAt }` — a user-created IRL prize that unlocks at a specific overall level
+- **FeedEvent** — discriminated union (`type` field) for the activity feed. Types: `xp_gain`, `habit_completed`, `habit_removed`, `damage_marked`, `damage_removed`, `level_up`, `rank_up`, `prize_unlocked`. Each has `id` + `timestamp` + type-specific fields
 - **VisibleSlot** — one of 8 strings: `"head"`, `"chest"`, `"legs"`, `"robe"`, `"hands"`, `"feet"`, `"primary"`, `"secondary"` — SVG layers rendered on Skipper
 - **HiddenSlot** — inventory-only slots (rings, ears, neck, shoulders, back, bracers, ranged) — no visual on character, for future stat items
 - **EquipmentSlot** — `VisibleSlot | HiddenSlot`
 - **ItemRarity** — `"common" | "uncommon" | "rare" | "epic" | "legendary"`
 - **ShopItem** — `{ id, name, description, slot, rarity, cost, levelRequirement?, svgAssetKey?, thumbnailSrc, overridesSlots? }` — item definition. `overridesSlots` lets robes hide chest+legs visuals
 - **PlayerInventory** — `{ ownedItemIds: string[], equippedItems: Partial<Record<EquipmentSlot, string>> }` — owned items + slot-to-itemId mapping
-- **GameData** — the root object stored in localStorage: `{ stats, activities, customDefinitions?, healthyHabits?, enabledHabits?, dailyDamage?, enabledDamage?, pointsWallet?, mascotOverrides?, feedEvents?, inventory? }`
+- **GameData** — the root object stored in localStorage: `{ stats, activities, customDefinitions?, healthyHabits?, enabledHabits?, dailyDamage?, enabledDamage?, pointsWallet?, mascotOverrides?, feedEvents?, inventory?, prizes? }`
   - `healthyHabits` maps each `HabitKey` to an array of `"YYYY-MM-DD"` date strings (days the habit was completed)
   - `enabledHabits` is an array of `HabitKey` values that should be visible on the dashboard (defaults to the original 4 if not set)
   - `dailyDamage` maps each `DamageKey` to an array of `"YYYY-MM-DD"` date strings (days the damage was marked)
   - `enabledDamage` is an array of `DamageKey` values visible on dashboard (defaults to all 4 if not set)
   - `pointsWallet` stores `lifetimeSpent` only — `lifetimeEarned` is always recalculated from habit/damage history to prevent sync issues
   - `mascotOverrides` maps level thresholds to mascot image filenames in `public/mascots/` (e.g. `{ 1: "skipper-default.svg", 10: "skipper-cool.svg" }`). Uses threshold logic — picks highest key ≤ current level. Defaults to `skipper-default.svg`
-  - `feedEvents` is an array of `FeedEvent` objects (newest first) — the unified activity feed that captures XP gains, habit toggles, damage toggles, level-ups, and rank transitions. Pushed automatically by `addXP`, `toggleHabitForToday`, and `toggleDamageForToday`
+  - `feedEvents` is an array of `FeedEvent` objects (newest first) — the unified activity feed that captures XP gains, habit toggles, damage toggles, level-ups, rank transitions, and prize unlocks. Pushed automatically by `addXP`, `toggleHabitForToday`, `toggleDamageForToday`, and `checkPrizeUnlocks`
+  - `prizes` is an array of `Prize` objects — user-created IRL rewards that unlock at specific overall levels. Managed via the Prize Track page (`/prizes`)
 - **Per-stat leveling:** Fibonacci-ish XP thresholds per stat. Logic in `storage.ts` (`addXP`, `getXPForNextLevel`)
 - **Overall player level:** EQ-inspired curve (max level 60) with "hell levels" at 30/35/40/45/50/55/59. Logic in `storage.ts` (`getOverallLevel`). Rank titles and colors now live in `ranks.ts` as the single source of truth — do not add rank definitions elsewhere
 
@@ -97,6 +102,7 @@ src/
 - **Data export:** `exportGameData()` in `storage.ts` downloads a full JSON backup. Button lives in the Activity Log section
 - **Mascot system:** Skipper the penguin base SVG paths are inlined in `SkipperCharacter.tsx`. `getMascotForLevel()` in `storage.ts` still exists for future per-level base variants via `mascotOverrides` in GameData
 - **XP Judge:** The sole way to earn XP. A conversational AI (via `/api/judge`) evaluates user-described activities, asks up to 3 follow-up questions, then awards 1-10 XP per stat. Triggered from a centered CTA card on the homepage (hero penguin avatar from `public/mascots/judge-hero.svg`). The hero avatar also appears in the JudgeModal header and next to each judge message
+- **Prize Track:** Separate from the Shop (level-based rewards vs currency-based purchases). Dual-track horizontal timeline: system rewards (rank titles) on top, user-created IRL prizes on bottom, level progression line in the center. Fog of war hides future brackets — current rank bracket is fully visible, next bracket is teased/dimmed, beyond is hidden. Auto-unlock when level is reached (no claim step), generates `prize_unlocked` feed event. `checkPrizeUnlocks` is called on homepage mount and prizes page mount
 - **Error handling:** Errors in `JudgeModal` are caught and displayed as a red system message inline in the chat thread, with a "Dismiss" button. Loading state always resets. Follow this pattern (in-place error display, no retry logic, user-dismissable) for any new API-dependent features
 
 ## Key exports in `stats.ts`
@@ -116,6 +122,14 @@ src/
 - `getRankProgress(level, levelFraction?)` — returns 0–1 progress through current rank bracket
 - `getRankColorPair(level)` — returns [startColor, endColor] for current rank
 - `interpolateHexColor(hexA, hexB, t)` — linearly interpolates between two hex colors
+
+## Key exports in `prizes.ts`
+
+- `SystemReward` (type) — `{ level, title, description }` — a system-granted reward at a rank threshold
+- `SYSTEM_REWARDS: SystemReward[]` — 13 entries derived from `RANK_TITLES` in `ranks.ts`
+- `MAX_USER_PRIZES = 15` — soft cap on user-created prizes
+- `getCurrentBracket(level)` — returns `{ start, end }` for the rank bracket containing the given level
+- `getVisibleRange(level)` — returns which brackets are fully visible vs teased (fog of war logic)
 
 ## Key exports in `items.ts`
 
@@ -158,6 +172,11 @@ src/
 - `unequipSlot(data, slot)` — remove item from a slot
 - `getMascotForLevel(level, overrides?)` — returns mascot image path for a given overall level (threshold logic)
 - `exportGameData(data)` — JSON file download
+- `getPrizes(data)` — returns sorted prizes (by unlockLevel)
+- `addPrize(data, name, unlockLevel, link?)` — creates prize, enforces 15 cap, returns updated GameData or null
+- `updatePrize(data, prizeId, updates)` — partial update, returns updated GameData or null
+- `deletePrize(data, prizeId)` — removes prize, returns updated GameData
+- `checkPrizeUnlocks(data, currentLevel)` — generates `prize_unlocked` feed events for newly unlocked prizes (deduplicates against existing events)
 
 ## Visual Design System
 
