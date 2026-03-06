@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { getRankTitle, getNextRankTitle, getRankProgress, getRankColorPair, interpolateHexColor } from "@/lib/ranks";
+import { useRef } from "react";
+import { getNextRankTitle, getRankProgress, getRankColorPair, interpolateHexColor } from "@/lib/ranks";
+import { useLevelUpAnimation } from "@/hooks/useLevelUpAnimation";
+import { useParallaxTilt } from "@/hooks/useParallaxTilt";
 
 export function LevelDisplay({
   level,
@@ -25,153 +27,10 @@ export function LevelDisplay({
   const numberRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Stabilize onShake callback so it doesn't re-trigger the animation effect
-  const onShakeRef = useRef(onShake);
-  onShakeRef.current = onShake;
+  const { animPhase, displayedLevel, displayedRank, rankChanging, shatterFragments } =
+    useLevelUpAnimation({ level, isLevelingUp, previousOverallLevel, onShake });
 
-  // Phased animation state for overall level-up
-  // idle → ring-fill → shatter → number-swap → done → idle
-  const [animPhase, setAnimPhase] = useState<"idle" | "anticipation" | "ring-fill" | "shatter" | "number-swap" | "done">("idle");
-  const [displayedLevel, setDisplayedLevel] = useState(level);
-  const [displayedRank, setDisplayedRank] = useState(getRankTitle(level));
-  const [rankChanging, setRankChanging] = useState(false);
-
-  // Shatter fragment state — arc pieces that fly outward
-  const [shatterFragments, setShatterFragments] = useState<
-    { id: number; startAngle: number; endAngle: number; flyAngle: number; delay: number }[]
-  >([]);
-
-  // Orchestrate the overall level-up animation
-  // isLevelingUp is set immediately; this effect adds a 1400ms internal delay to align with Beat 4
-  useEffect(() => {
-    if (!isLevelingUp || !previousOverallLevel) {
-      return;
-    }
-
-    // Show old level initially
-    setDisplayedLevel(previousOverallLevel);
-    setDisplayedRank(getRankTitle(previousOverallLevel));
-
-    const timers: ReturnType<typeof setTimeout>[] = [];
-
-    // Phase 0: Anticipation — ring glows, mascot bounces (600ms before ring fills)
-    timers.push(setTimeout(() => {
-      setAnimPhase("anticipation");
-    }, 800));
-
-    // Wait 1400ms (Beat 4 timing) before starting the ring animation
-    timers.push(setTimeout(() => {
-      // Phase 1: Ring fills to 100%
-      setAnimPhase("ring-fill");
-
-      // Phase 2: Shatter — ring breaks into arc fragments (~500ms after ring starts filling)
-      timers.push(setTimeout(() => {
-        // Generate 8 arc fragments evenly around the ring
-        const fragmentCount = 8;
-        const fragments = Array.from({ length: fragmentCount }, (_, index) => {
-          const segmentAngle = (Math.PI * 2) / fragmentCount;
-          const startAngle = index * segmentAngle - Math.PI / 2; // start from top
-          const endAngle = startAngle + segmentAngle;
-          const flyAngle = startAngle + segmentAngle / 2; // fly outward from midpoint
-          return {
-            id: index,
-            startAngle,
-            endAngle,
-            flyAngle,
-            delay: index * 25, // slight stagger for each fragment
-          };
-        });
-        setShatterFragments(fragments);
-        setAnimPhase("shatter");
-        // Trigger page-wide screen shake at the moment of shatter
-        onShakeRef.current?.();
-      }, 500));
-
-      // Phase 3: Swap the number with bounce (~400ms after shatter starts, fragments are flying)
-      timers.push(setTimeout(() => {
-        setAnimPhase("number-swap");
-        setDisplayedLevel(level);
-
-        // Check if rank title changed
-        const oldRank = getRankTitle(previousOverallLevel);
-        const newRank = getRankTitle(level);
-        if (oldRank !== newRank) {
-          setRankChanging(true);
-          timers.push(setTimeout(() => {
-            setDisplayedRank(newRank);
-            timers.push(setTimeout(() => setRankChanging(false), 500));
-          }, 150));
-        }
-      }, 900));
-
-      // Phase 4: Done — settle back to normal
-      timers.push(setTimeout(() => {
-        setAnimPhase("done");
-        setShatterFragments([]);
-      }, 1600));
-
-      // Full cleanup
-      timers.push(setTimeout(() => {
-        setAnimPhase("idle");
-        setRankChanging(false);
-      }, 2400));
-    }, 1400));
-
-    return () => {
-      timers.forEach(clearTimeout);
-    };
-  }, [isLevelingUp, previousOverallLevel, level]);
-
-  // Keep displayed values in sync when not animating
-  useEffect(() => {
-    if (!isLevelingUp) {
-      setDisplayedLevel(level);
-      setDisplayedRank(getRankTitle(level));
-    }
-  }, [level, isLevelingUp]);
-
-  // Parallax tilt on hover (desktop) and scroll (mobile)
-  useEffect(() => {
-    const numberElement = numberRef.current;
-    const containerElement = containerRef.current;
-    if (!numberElement || !containerElement) return;
-
-    // Desktop: tilt toward mouse position
-    function handleMouseMove(event: MouseEvent) {
-      if (!containerElement || !numberElement) return;
-      const rect = containerElement.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const offsetX = ((event.clientX - centerX) / (rect.width / 2)) * 6;
-      const offsetY = ((event.clientY - centerY) / (rect.height / 2)) * 6;
-      numberElement.style.transform = `perspective(200px) rotateY(${offsetX}deg) rotateX(${-offsetY}deg)`;
-    }
-
-    function handleMouseLeave() {
-      if (!numberElement) return;
-      numberElement.style.transform = "perspective(200px) rotateY(0deg) rotateX(0deg)";
-    }
-
-    // Mobile: subtle float based on scroll position
-    function handleScroll() {
-      if (!containerElement || !numberElement) return;
-      const rect = containerElement.getBoundingClientRect();
-      const viewportCenter = window.innerHeight / 2;
-      const distanceFromCenter = (rect.top + rect.height / 2 - viewportCenter) / viewportCenter;
-      const tiltX = distanceFromCenter * 4;
-      numberElement.style.transform = `perspective(200px) rotateX(${tiltX}deg)`;
-    }
-
-    containerElement.addEventListener("mousemove", handleMouseMove);
-    containerElement.addEventListener("mouseleave", handleMouseLeave);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-
-    return () => {
-      containerElement.removeEventListener("mousemove", handleMouseMove);
-      containerElement.removeEventListener("mouseleave", handleMouseLeave);
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
+  useParallaxTilt(containerRef, numberRef);
 
   const isMaxLevel = level >= 60;
 
