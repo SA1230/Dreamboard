@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { GameData, EquipmentSlot, VisibleSlot } from "@/lib/types";
 import { loadGameData, getPointsBalance, getInventory, purchaseItem, equipItem, unequipSlot, getOverallLevel, getTotalLifetimeXP } from "@/lib/storage";
 import { ITEM_CATALOG, RARITY_COLORS, VISIBLE_SLOTS, getItemById } from "@/lib/items";
+import { ITEM_THUMBNAIL_REGISTRY } from "@/lib/itemSvgs";
 import { SkipperCharacter } from "@/components/SkipperCharacter";
 import { ArrowLeft, ShoppingBag, Check, Sword } from "lucide-react";
 import Link from "next/link";
@@ -38,6 +39,7 @@ export default function ShopPage() {
     const result = unequipSlot(freshData, slot);
     setGameData(result);
   }, []);
+
 
   if (!gameData) {
     return (
@@ -77,6 +79,7 @@ export default function ShopPage() {
           </svg>
           <span className="text-sm font-bold text-amber-700">{pointsBalance.balance}</span>
         </div>
+
       </div>
 
       {/* Skipper Preview */}
@@ -181,12 +184,21 @@ export default function ShopPage() {
                 {item.rarity}
               </span>
 
-              {/* Item thumbnail placeholder */}
+              {/* Item thumbnail */}
               <div
                 className="w-full aspect-square rounded-lg mb-2 flex items-center justify-center"
                 style={{ background: `${rarityColors.border}30` }}
               >
-                <Sword size={28} style={{ color: rarityColors.text, opacity: 0.5 }} />
+                {item.svgAssetKey && ITEM_THUMBNAIL_REGISTRY[item.svgAssetKey] ? (
+                  <svg
+                    viewBox="0 0 64 64"
+                    className="w-16 h-16"
+                    aria-label={item.name}
+                    dangerouslySetInnerHTML={{ __html: ITEM_THUMBNAIL_REGISTRY[item.svgAssetKey] }}
+                  />
+                ) : (
+                  <Sword size={28} style={{ color: rarityColors.text, opacity: 0.5 }} />
+                )}
               </div>
 
               {/* Item name + description */}
@@ -198,9 +210,9 @@ export default function ShopPage() {
                 {item.slot}
               </span>
 
-              {/* Level requirement */}
-              {item.levelRequirement && !meetsLevel && (
-                <span className="text-[9px] text-red-400 font-medium mt-0.5 block">
+              {/* Level requirement — always visible if item has one */}
+              {item.levelRequirement && (
+                <span className={`text-[9px] font-medium mt-0.5 block ${meetsLevel ? "text-stone-300" : "text-red-400"}`}>
                   Requires Lv. {item.levelRequirement}
                 </span>
               )}

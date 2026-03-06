@@ -62,8 +62,6 @@ export interface ShopItem {
   levelRequirement?: number;
   /** Maps to SVG content in itemSvgs registry (only for visible slots) */
   svgAssetKey?: string;
-  /** Preview image path for shop grid */
-  thumbnailSrc: string;
   /** Slots this item visually overrides (e.g. robe overrides chest+legs) */
   overridesSlots?: VisibleSlot[];
 }
