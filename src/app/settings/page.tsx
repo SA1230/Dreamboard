@@ -6,7 +6,6 @@ import { STAT_DEFINITIONS, STAT_KEYS, COLOR_PRESETS, StatDefinition } from "@/li
 import { loadGameData, saveCustomDefinitions, getEnabledHabits, saveEnabledHabits, getEnabledDamage, saveEnabledDamage, resetAllData, saveProfilePicture, getProfilePicture, getOverallLevel, getTotalLifetimeXP, getMascotName, setMascotName, isMascotNameUnlocked } from "@/lib/storage";
 import { StatIcon, ICON_OPTIONS } from "@/components/StatIcons";
 import { ArrowLeft, RotateCcw, Trash2, Camera, X } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { HABIT_DEFINITIONS } from "@/lib/habits";
 import { DAMAGE_DEFINITIONS } from "@/lib/damage";
@@ -27,7 +26,10 @@ export default function SettingsPage() {
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [mascotNameValue, setMascotNameValue] = useState("Skipper");
   const [overallLevel, setOverallLevel] = useState(1);
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const savedOverridesRef = useRef<string>("{}");
+  const savedMascotNameRef = useRef<string>("Skipper");
   const router = useRouter();
 
   useEffect(() => {
@@ -37,9 +39,16 @@ export default function SettingsPage() {
     setEnabledHabits(getEnabledHabits(data));
     setEnabledDamage(getEnabledDamage(data));
     setProfilePicture(getProfilePicture(data));
-    setMascotNameValue(getMascotName(data));
+    const mascotName = getMascotName(data);
+    setMascotNameValue(mascotName);
     setOverallLevel(getOverallLevel(getTotalLifetimeXP(data)).level);
+    savedOverridesRef.current = JSON.stringify(data.customDefinitions ?? {});
+    savedMascotNameRef.current = mascotName;
   }, []);
+
+  const isDirty =
+    JSON.stringify(overrides) !== savedOverridesRef.current ||
+    mascotNameValue !== savedMascotNameRef.current;
 
   if (!gameData) {
     return (
@@ -188,7 +197,10 @@ export default function SettingsPage() {
     let newData = saveCustomDefinitions(gameData, overrides);
     newData = saveEnabledHabits(newData, enabledHabits);
     newData = saveEnabledDamage(newData, enabledDamage);
+    newData = setMascotName(newData, mascotNameValue);
     setGameData(newData);
+    savedOverridesRef.current = JSON.stringify(overrides);
+    savedMascotNameRef.current = mascotNameValue;
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
@@ -198,12 +210,18 @@ export default function SettingsPage() {
       {/* Header */}
       <header className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <Link
-            href="/"
+          <button
+            onClick={() => {
+              if (isDirty) {
+                setShowUnsavedModal(true);
+              } else {
+                router.push("/");
+              }
+            }}
             className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-500"
           >
             <ArrowLeft size={18} />
-          </Link>
+          </button>
           <h1 className="text-2xl font-extrabold text-stone-700">Settings</h1>
         </div>
         <div className="flex items-center gap-2">
@@ -287,12 +305,6 @@ export default function SettingsPage() {
                 value={mascotNameValue}
                 onChange={(e) => {
                   setMascotNameValue(e.target.value);
-                  setSaved(false);
-                }}
-                onBlur={() => {
-                  if (!gameData) return;
-                  const newData = setMascotName(gameData, mascotNameValue);
-                  setGameData(newData);
                 }}
                 maxLength={20}
                 className="w-full px-3 py-2 rounded-xl border-2 border-stone-200 text-sm bg-white/80 text-stone-700 outline-none transition-colors focus:border-amber-400"
@@ -610,6 +622,43 @@ export default function SettingsPage() {
                   style={{ background: 'linear-gradient(135deg, #d97706, #f59e0b)' }}
                 >
                   Enable it
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalBackdrop>
+      )}
+
+      {/* Unsaved Changes Modal */}
+      {showUnsavedModal && (
+        <ModalBackdrop onClose={() => setShowUnsavedModal(false)} backdropStyle="dark">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-modalSlideUp">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 9v4" />
+                  <path d="M12 17h.01" />
+                  <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-extrabold text-stone-700 mb-2">
+                Unsaved changes
+              </h3>
+              <p className="text-sm text-stone-500 mb-6">
+                You have changes that haven&apos;t been saved yet. Want to go back and save, or discard them?
+              </p>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setShowUnsavedModal(false)}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-stone-500 bg-stone-100 hover:bg-stone-200 transition-colors"
+                >
+                  Go back
+                </button>
+                <button
+                  onClick={() => router.push("/")}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-amber-500 hover:bg-amber-600 transition-all"
+                >
+                  Discard
                 </button>
               </div>
             </div>
