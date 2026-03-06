@@ -10,6 +10,7 @@ interface MonthlyXPSummaryProps {
   habitsByDay: Record<number, HabitKey[]>;
   statDefinitions: Record<StatKey, StatDefinition> | null;
   todayXP: number;
+  todayXPPulsing?: boolean;
 }
 
 // Emoji representations of each habit — compact and recognizable at small sizes
@@ -29,6 +30,7 @@ export function MonthlyXPSummary({
   habitsByDay,
   statDefinitions,
   todayXP,
+  todayXPPulsing,
 }: MonthlyXPSummaryProps) {
   // Calculate percentage change from last month to this month
   let percentChange = 0;
@@ -183,7 +185,7 @@ export function MonthlyXPSummary({
               {dayOfWeek}
             </p>
           </div>
-          <div className="self-center px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200">
+          <div className={`self-center px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200${todayXPPulsing ? " animate-todayXPPulse" : ""}`}>
             <span className="text-xs font-bold text-emerald-600">Today: {todayXP} XP</span>
           </div>
         </div>

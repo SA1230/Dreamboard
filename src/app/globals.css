@@ -389,6 +389,29 @@
   100% { background-position: -200% center; }
 }
 
+/* Post-verdict XP toast: slides down from top, holds, then fades out */
+.animate-xpToast {
+  animation: xpToastSlideDown 3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes xpToastSlideDown {
+  0% { opacity: 0; transform: translateY(-100%) scale(0.95); }
+  8% { opacity: 1; transform: translateY(0) scale(1); }
+  75% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-8px) scale(0.97); }
+}
+
+/* Today XP pill: brief green glow after XP is earned */
+.animate-todayXPPulse {
+  animation: todayXPPulse 800ms ease-out forwards;
+}
+
+@keyframes todayXPPulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  30% { box-shadow: 0 0 10px 3px rgba(16, 185, 129, 0.35); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
 body {
   background: #FDF8F4;
 }

@@ -5,6 +5,7 @@ import { GameData, StatKey, HabitKey, DamageKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
 import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForToday, toggleDamageForToday, getPointsBalance, formatRelativeTime, getMascotForLevel } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
+import { StatIcon } from "@/components/StatIcons";
 import { JudgeModal } from "@/components/JudgeModal";
 import { ActivityLog } from "@/components/ActivityLog";
 import { MonthlyXPSummary } from "@/components/MonthlyXPSummary";
@@ -525,6 +526,11 @@ export default function Home() {
   const [isActivityExpanded, setIsActivityExpanded] = useState(true);
   const [showJudge, setShowJudge] = useState(false);
 
+  // Post-verdict XP toasts
+  const [xpToasts, setXpToasts] = useState<{ id: string; statKey: StatKey; amount: number; color: string; iconKey: string; name: string }[]>([]);
+  // Today XP pill pulse after verdict
+  const [todayXPPulsing, setTodayXPPulsing] = useState(false);
+
   // Celebration overlay state
   const [celebrationInfo, setCelebrationInfo] = useState<{
     statKey: StatKey;
@@ -653,6 +659,33 @@ export default function Home() {
 
       setGameData(currentData);
       setShowJudge(false);
+
+      // Post-verdict feedback: staggered XP toasts + Today pill pulse
+      awards.forEach((award, index) => {
+        const def = definitions[award.stat];
+        setTimeout(() => {
+          const toastId = `${Date.now()}-${award.stat}-${index}`;
+          setXpToasts((prev) => [
+            ...prev,
+            {
+              id: toastId,
+              statKey: award.stat,
+              amount: award.amount,
+              color: def.color,
+              iconKey: def.iconKey,
+              name: def.name,
+            },
+          ]);
+          // Remove toast after animation completes (3s)
+          setTimeout(() => {
+            setXpToasts((prev) => prev.filter((t) => t.id !== toastId));
+          }, 3000);
+        }, index * 300);
+      });
+
+      // Pulse the Today XP pill
+      setTodayXPPulsing(true);
+      setTimeout(() => setTodayXPPulsing(false), 800);
     },
     [gameData, definitions, celebrationInfo]
   );
@@ -793,6 +826,7 @@ export default function Home() {
             habitsByDay={habitsByDayForMonth}
             statDefinitions={definitions}
             todayXP={dailyXPForMonth[new Date().getDate() - 1] ?? 0}
+            todayXPPulsing={todayXPPulsing}
           />
         </div>
         <div className="flex" style={{ transform: "scale(1.05)", transformOrigin: "center center" }}>
@@ -923,6 +957,31 @@ export default function Home() {
         </section>
       )}
 
+
+      {/* Post-verdict XP toasts */}
+      {xpToasts.length > 0 && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 pointer-events-none">
+          {xpToasts.map((toast) => (
+            <div
+              key={toast.id}
+              className="animate-xpToast flex items-center gap-2 px-4 py-2 rounded-xl border"
+              style={{
+                backgroundColor: toast.color + "12",
+                borderColor: toast.color + "30",
+                boxShadow: `0 4px 12px ${toast.color}20`,
+              }}
+            >
+              <div style={{ color: toast.color }}><StatIcon iconKey={toast.iconKey} className="w-5 h-5" /></div>
+              <span className="text-sm font-bold" style={{ color: toast.color }}>
+                {toast.name}
+              </span>
+              <span className="text-sm font-extrabold" style={{ color: toast.color }}>
+                +{toast.amount} XP
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Judge Modal */}
       {showJudge && (
