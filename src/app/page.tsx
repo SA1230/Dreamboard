@@ -40,6 +40,14 @@ function getRankTitle(level: number): string {
   return title;
 }
 
+// Returns the next rank name the player will reach, or null if already at max rank
+function getNextRankTitle(level: number): string | null {
+  for (const [threshold, name] of RANK_TITLES) {
+    if (threshold > level) return name;
+  }
+  return null; // already at Transcendent
+}
+
 // Returns 0–1 representing fine-grained progress through the current rank bracket.
 // levelFraction (0–1) is XP progress within the current level, so the color shifts smoothly per XP.
 function getRankProgress(level: number, levelFraction: number = 0): number {
@@ -324,7 +332,7 @@ function LevelDisplay({
         const shimmerClass = rankProgress > 0.5 ? "animate-rankShimmer" : "";
         return (
           <span
-            className={`text-sm font-extrabold uppercase tracking-[0.25em] mb-3 ${
+            className={`text-sm font-extrabold uppercase tracking-[0.25em] mb-0.5 ${
               rankChanging ? "animate-titleReveal" : ""
             } ${shimmerClass}`}
             key={displayedRank}
@@ -356,6 +364,19 @@ function LevelDisplay({
         );
       })()}
 
+      {/* Next rank milestone preview */}
+      {(() => {
+        const nextRank = getNextRankTitle(displayedLevel);
+        return nextRank ? (
+          <span className="text-[10px] text-stone-300 font-medium mb-2">
+            Next: {nextRank}
+          </span>
+        ) : (
+          <span className="text-[10px] text-amber-400/60 font-medium mb-2">
+            Max Rank
+          </span>
+        );
+      })()}
 
       {/* Ring + Number */}
       <div className="relative" style={{ width: ringSize, height: ringSize }}>
@@ -511,6 +532,7 @@ function LevelDisplay({
           Max Level
         </span>
       )}
+
     </div>
   );
 }
