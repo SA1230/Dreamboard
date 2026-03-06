@@ -233,7 +233,7 @@ export function MonthCalendar({
           return (
             <div
               key={day}
-              className={`min-h-[120px] rounded-xl p-2.5 flex flex-col transition-colors duration-200 ${
+              className={`min-h-[80px] sm:min-h-[120px] rounded-xl p-1.5 sm:p-2.5 flex flex-col transition-colors duration-200 overflow-hidden ${
                 hasContent ? "cursor-pointer" : ""
               }`}
               style={{
@@ -299,7 +299,7 @@ export function MonthCalendar({
                 const visibleHabits = habitsByDay[day].filter((h) => enabledHabits.includes(h));
                 if (visibleHabits.length === 0) return null;
                 return (
-                  <div className="flex gap-1 mt-auto pt-1">
+                  <div className="flex flex-wrap gap-1 mt-auto pt-1">
                     {visibleHabits.map((habitKey) => {
                       const habit = TINY_HABIT_ICONS[habitKey];
                       const IconComponent = habit.component;
@@ -318,7 +318,7 @@ export function MonthCalendar({
                 const visibleDamage = damageByDay[day].filter((d) => enabledDamage.includes(d));
                 if (visibleDamage.length === 0) return null;
                 return (
-                  <div className="flex gap-1 mt-auto pt-0.5" style={{ opacity: 0.85 }}>
+                  <div className="flex flex-wrap gap-1 mt-auto pt-0.5" style={{ opacity: 0.85 }}>
                     {visibleDamage.map((damageKey) => {
                       const damage = TINY_DAMAGE_ICONS[damageKey];
                       const IconComponent = damage.component;

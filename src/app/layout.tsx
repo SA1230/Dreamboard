@@ -7,6 +7,10 @@ const nunito = Nunito({
   variable: "--font-nunito",
 });
 
+export const viewport = {
+  viewportFit: "cover" as const,
+};
+
 export const metadata: Metadata = {
   title: "Dreamboard",
   description: "Level up your real life — track habits, earn XP, and grow your character",

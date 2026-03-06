@@ -348,7 +348,7 @@ export function JudgeModal({
 
         {/* Input area (hidden after verdict) */}
         {!verdict && (
-          <form onSubmit={handleSubmit} className="px-6 pb-5 pt-3 border-t border-stone-100">
+          <form onSubmit={handleSubmit} className="px-6 pt-3 border-t border-stone-100" style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom, 1.25rem))" }}>
             <div className="flex gap-2">
               <textarea
                 ref={inputRef}

@@ -144,7 +144,7 @@ export function MonthlyXPSummary({
       <svg
         viewBox={`0 ${-d} ${f + d} ${f + d}`}
         className="mx-auto"
-        style={{ width: f + d, height: f, display: "block", flexShrink: 0, overflow: "visible" }}
+        style={{ width: f + d, maxWidth: "100%", height: f, display: "block", overflow: "visible" }}
       >
         {/* Top face — lighter tint (extends above the SVG box) */}
         <polygon
