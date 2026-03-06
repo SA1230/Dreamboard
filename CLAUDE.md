@@ -29,7 +29,8 @@ src/
 │   ├── globals.css         # Tailwind base + 6 custom keyframe animations
 │   ├── api/judge/route.ts  # POST endpoint — sends activity to AI judge, returns XP verdict
 │   ├── calendar/           # Month-at-a-glance view — daily XP totals with habit/damage icons, tap a day to see detail modal
-│   └── settings/           # Customize stat names, descriptions, colors, icons + enable/disable habits & damage
+│   ├── settings/           # Customize stat names, descriptions, colors, icons + enable/disable habits & damage
+│   └── shop/               # Power-Up Store — buy and equip cosmetic items on Skipper
 ├── components/
 │   ├── StatCard.tsx         # One card per stat (icon fill effect, level, XP bar, streak flame, dormant dimming) — read-only, no + button
 │   ├── MonthlyXPSummary.tsx # Monthly XP total with sparkline bar chart + trend vs last month
@@ -38,12 +39,15 @@ src/
 │   ├── MonthCalendar.tsx    # Calendar grid with per-day XP breakdown + habit/damage icons
 │   ├── HealthyHabits.tsx    # Daily toggle cards for 6 habits (water, nails, brush, nosugar, floss, steps) — filtered by enabledHabits
 │   ├── DailyDamage.tsx      # Daily toggle cards for 4 damage types (substance, screentime, junkfood, badsleep) — red-themed
+│   ├── SkipperCharacter.tsx # Inline SVG paper-doll — renders Skipper with layered equipment overlays
 │   └── StatIcons.tsx        # 20 SVG icons (8 stat defaults + 12 extras for customization)
 └── lib/
     ├── types.ts             # TypeScript types: StatKey, HabitKey, Activity, GameData, etc.
     ├── stats.ts             # Stat definitions, ColorPreset palettes, STAT_KEYS array
     ├── ranks.ts             # Rank titles, rank colors, rank progression helpers
-    └── storage.ts           # All data logic: load/save, addXP, leveling, habits, streaks, export, etc.
+    ├── items.ts             # Item catalog (ITEM_CATALOG), rarity colors, slot definitions, helpers
+    ├── itemSvgs.ts          # SVG content registry for equippable items (placeholder art)
+    └── storage.ts           # All data logic: load/save, addXP, leveling, habits, streaks, inventory, export, etc.
 ```
 
 ## Data model (defined in `src/lib/types.ts`)
@@ -54,7 +58,13 @@ src/
 - **PointsWallet** — `{ lifetimeEarned, lifetimeSpent }` — tracks Power Points spending (earned is always derived from source data)
 - **Activity** — `{ id, stat, note, timestamp, amount? }` — one logged action. `amount` defaults to 1 for legacy entries; Judge awards variable amounts (1-10)
 - **FeedEvent** — discriminated union (`type` field) for the activity feed. Types: `xp_gain`, `habit_completed`, `habit_removed`, `damage_marked`, `damage_removed`, `level_up`, `rank_up`. Each has `id` + `timestamp` + type-specific fields
-- **GameData** — the root object stored in localStorage: `{ stats, activities, customDefinitions?, healthyHabits?, enabledHabits?, dailyDamage?, enabledDamage?, pointsWallet?, mascotOverrides?, feedEvents? }`
+- **VisibleSlot** — one of 8 strings: `"head"`, `"chest"`, `"legs"`, `"robe"`, `"hands"`, `"feet"`, `"primary"`, `"secondary"` — SVG layers rendered on Skipper
+- **HiddenSlot** — inventory-only slots (rings, ears, neck, shoulders, back, bracers, ranged) — no visual on character, for future stat items
+- **EquipmentSlot** — `VisibleSlot | HiddenSlot`
+- **ItemRarity** — `"common" | "uncommon" | "rare" | "epic" | "legendary"`
+- **ShopItem** — `{ id, name, description, slot, rarity, cost, levelRequirement?, svgAssetKey?, thumbnailSrc, overridesSlots? }` — item definition. `overridesSlots` lets robes hide chest+legs visuals
+- **PlayerInventory** — `{ ownedItemIds: string[], equippedItems: Partial<Record<EquipmentSlot, string>> }` — owned items + slot-to-itemId mapping
+- **GameData** — the root object stored in localStorage: `{ stats, activities, customDefinitions?, healthyHabits?, enabledHabits?, dailyDamage?, enabledDamage?, pointsWallet?, mascotOverrides?, feedEvents?, inventory? }`
   - `healthyHabits` maps each `HabitKey` to an array of `"YYYY-MM-DD"` date strings (days the habit was completed)
   - `enabledHabits` is an array of `HabitKey` values that should be visible on the dashboard (defaults to the original 4 if not set)
   - `dailyDamage` maps each `DamageKey` to an array of `"YYYY-MM-DD"` date strings (days the damage was marked)
@@ -75,10 +85,12 @@ src/
 - **Icon fill effect:** StatCard layers an unfilled ghost icon behind a filled icon that clips from bottom-up based on XP progress
 - **Healthy Habits:** A separate system from stat XP — boolean-per-day toggles that don't award XP. Stored as date strings in `healthyHabits`. Users can enable/disable which habits appear via settings (`enabledHabits`)
 - **Daily Damage:** Mirrors healthy habits but tracks negative behaviors. Same date-string storage pattern. Red-themed toggle cards on dashboard. Each habit completed = +1 Power Point, each damage marked = -1 Power Point
-- **Power Points (AA System):** Inspired by EverQuest's Alternate Advancement. `lifetimeEarned` is always derived from source data (total habit completions minus total damage marks), never stored incrementally. `lifetimeSpent` is persisted. Balance = earned - spent. Future use: Skipper shop for mascot items
+- **Power Points (AA System):** Inspired by EverQuest's Alternate Advancement. `lifetimeEarned` is always derived from source data (total habit completions minus total damage marks), never stored incrementally. `lifetimeSpent` is persisted. Balance = earned - spent. Spent via the Power-Up Store (`/shop`)
+- **Equipment system (EQ-inspired):** Visible slots (head, chest, legs, robe, hands, feet, primary, secondary) render as SVG overlays on Skipper. Hidden slots (rings, ears, neck, etc.) are inventory-only for future stat items. Robes use `overridesSlots` to visually hide chest+legs when equipped
+- **SkipperCharacter component:** Inline SVG paper-doll that renders Skipper with layered equipment. Items are `<g>` groups from `itemSvgs.ts` inserted at z-order positions (feet → arms → weapons → body → armor → head → face). Uses `dangerouslySetInnerHTML` for item SVGs (safe — content is from our own registry)
+- **`LevelDisplay` component** now uses `SkipperCharacter` instead of `<img>`. Lives in `src/components/LevelDisplay.tsx`. Accepts `equippedItems` prop. Shows Skipper inside SVG progress ring with level badge and rank title. Parallax tilt + shatter animation on level-up
 - **Data export:** `exportGameData()` in `storage.ts` downloads a full JSON backup. Button lives in the Activity Log section
-- **`LevelDisplay` component** lives inline in `page.tsx` (not a separate file) — shows Skipper mascot inside an SVG progress ring, with level badge below and rank title above. Parallax tilt + shatter animation on level-up
-- **Mascot system:** Skipper the penguin SVGs live in `public/mascots/`. `getMascotForLevel()` in `storage.ts` picks the right image based on overall level + optional `mascotOverrides` in GameData. Currently one image (`skipper-default.svg`); ready for per-level variants
+- **Mascot system:** Skipper the penguin base SVG paths are inlined in `SkipperCharacter.tsx`. `getMascotForLevel()` in `storage.ts` still exists for future per-level base variants via `mascotOverrides` in GameData
 - **XP Judge:** The sole way to earn XP. A conversational AI (via `/api/judge`) evaluates user-described activities, asks up to 3 follow-up questions, then awards 1-10 XP per stat. Triggered from a centered CTA card on the homepage (hero penguin avatar from `public/mascots/judge-hero.svg`). The hero avatar also appears in the JudgeModal header and next to each judge message
 - **Error handling:** Errors in `JudgeModal` are caught and displayed as a red system message inline in the chat thread, with a "Dismiss" button. Loading state always resets. Follow this pattern (in-place error display, no retry logic, user-dismissable) for any new API-dependent features
 
@@ -99,6 +111,19 @@ src/
 - `getRankProgress(level, levelFraction?)` — returns 0–1 progress through current rank bracket
 - `getRankColorPair(level)` — returns [startColor, endColor] for current rank
 - `interpolateHexColor(hexA, hexB, t)` — linearly interpolates between two hex colors
+
+## Key exports in `items.ts`
+
+- `RARITY_COLORS: Record<ItemRarity, { text, background, border }>` — color scheme per rarity tier
+- `VISIBLE_SLOTS: { slot, label }[]` — all visible slot names for shop UI tabs
+- `ITEM_CATALOG: ShopItem[]` — full item catalog (8 starter items in Phase 1)
+- `getItemById(id)` — lookup a single item by ID
+- `getItemsBySlot(slot)` — filter items by equipment slot
+- `getAffordableItems(balance, level)` — items the player can buy right now
+
+## Key exports in `itemSvgs.ts`
+
+- `ITEM_SVG_REGISTRY: Record<string, string>` — raw SVG strings for each item, keyed by `svgAssetKey`. Designed in Skipper's coordinate space (viewBox `330 245 450 665`). Phase 1 uses colored placeholder shapes
 
 ## Key exports in `storage.ts`
 
@@ -121,6 +146,10 @@ src/
 - `calculateLifetimePoints(data)` — derives total Power Points earned from habit/damage history
 - `getPointsBalance(data)` — returns `{ lifetimeEarned, lifetimeSpent, balance }`
 - `spendPoints(data, amount)` — deducts from wallet (returns null if insufficient balance)
+- `getInventory(data)` — returns PlayerInventory (with defaults if not set)
+- `purchaseItem(data, itemId)` — buy an item: validates ownership/balance, deducts points, adds to ownedItemIds
+- `equipItem(data, itemId)` — equip an owned item to its slot
+- `unequipSlot(data, slot)` — remove item from a slot
 - `getMascotForLevel(level, overrides?)` — returns mascot image path for a given overall level (threshold logic)
 - `exportGameData(data)` — JSON file download
 

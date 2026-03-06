@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { GameData, StatKey, HabitKey, DamageKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForToday, toggleDamageForToday, getPointsBalance, formatRelativeTime, getMascotForLevel } from "@/lib/storage";
+import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForToday, toggleDamageForToday, getPointsBalance, formatRelativeTime, getInventory } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
 import { StatIcon } from "@/components/StatIcons";
 import { JudgeModal } from "@/components/JudgeModal";
@@ -342,7 +342,7 @@ export default function Home() {
             isLevelingUp={isOverallLevelingUp}
             previousOverallLevel={previousOverallLevel}
             onShake={() => setIsScreenShaking(true)}
-            mascotSrc={getMascotForLevel(overallLevel, gameData.mascotOverrides)}
+            equippedItems={getInventory(gameData).equippedItems}
           />
         </div>
       </div>
@@ -424,8 +424,9 @@ export default function Home() {
             <path d="M11.5 1L4 11h5.5L8.5 19 16 9h-5.5L11.5 1z" fill="#f59e0b" stroke="#d97706" strokeWidth="1.2" strokeLinejoin="round" />
           </svg>
           Power Points
-          <span
-            className="ml-2 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-full border border-amber-300/60"
+          <Link
+            href="/shop"
+            className="ml-2 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-full border border-amber-300/60 no-underline"
             style={{
               background: 'linear-gradient(90deg, #d97706, #f59e0b, #fbbf24, #f59e0b, #d97706)',
               backgroundSize: '200% auto',
@@ -434,8 +435,8 @@ export default function Home() {
               animation: 'shopTextShimmer 3s linear infinite, shopPulse 2.5s ease-in-out infinite',
             }}
           >
-            Shop coming soon
-          </span>
+            Visit Shop
+          </Link>
         </h2>
         <div className="flex items-center justify-center gap-4 py-4 px-6 rounded-2xl bg-stone-50 border border-stone-200 mx-auto w-fit">
           {/* Earned */}

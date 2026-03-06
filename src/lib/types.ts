@@ -39,6 +39,40 @@ export interface PointsWallet {
   lifetimeSpent: number;
 }
 
+// --- Equipment & Shop ---
+
+/** Visible slots — SVG layers rendered on Skipper's character model */
+export type VisibleSlot = "head" | "chest" | "legs" | "robe" | "hands" | "feet" | "primary" | "secondary";
+
+/** Hidden slots — inventory-only, no visual on character (future stat items) */
+export type HiddenSlot = "ring1" | "ring2" | "ear1" | "ear2" | "neck" | "shoulders" | "back" | "bracers" | "ranged";
+
+/** All equipment slots (visible + hidden) */
+export type EquipmentSlot = VisibleSlot | HiddenSlot;
+
+export type ItemRarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
+
+export interface ShopItem {
+  id: string;
+  name: string;
+  description: string;
+  slot: EquipmentSlot;
+  rarity: ItemRarity;
+  cost: number;
+  levelRequirement?: number;
+  /** Maps to SVG content in itemSvgs registry (only for visible slots) */
+  svgAssetKey?: string;
+  /** Preview image path for shop grid */
+  thumbnailSrc: string;
+  /** Slots this item visually overrides (e.g. robe overrides chest+legs) */
+  overridesSlots?: VisibleSlot[];
+}
+
+export interface PlayerInventory {
+  ownedItemIds: string[];
+  equippedItems: Partial<Record<EquipmentSlot, string>>;
+}
+
 // Discriminated union for all events that appear in the activity feed
 export type FeedEvent =
   | { type: "xp_gain"; id: string; timestamp: string; stat: StatKey; note: string; amount?: number }
@@ -68,4 +102,6 @@ export interface GameData {
   feedEvents?: FeedEvent[];
   /** Base64 data URL of the user's profile picture (shown in Judge chat) */
   profilePicture?: string;
+  /** Player's item inventory and equipment loadout */
+  inventory?: PlayerInventory;
 }

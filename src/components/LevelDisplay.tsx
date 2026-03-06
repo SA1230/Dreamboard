@@ -4,6 +4,8 @@ import { useRef } from "react";
 import { getNextRankTitle, getRankProgress, getRankColorPair, interpolateHexColor } from "@/lib/ranks";
 import { useLevelUpAnimation } from "@/hooks/useLevelUpAnimation";
 import { useParallaxTilt } from "@/hooks/useParallaxTilt";
+import { SkipperCharacter } from "@/components/SkipperCharacter";
+import { PlayerInventory } from "@/lib/types";
 
 export function LevelDisplay({
   level,
@@ -13,7 +15,7 @@ export function LevelDisplay({
   isLevelingUp,
   previousOverallLevel,
   onShake,
-  mascotSrc,
+  equippedItems,
 }: {
   level: number;
   progressPercent: number;
@@ -22,7 +24,7 @@ export function LevelDisplay({
   isLevelingUp?: boolean;
   previousOverallLevel?: number;
   onShake?: () => void;
-  mascotSrc: string;
+  equippedItems?: PlayerInventory["equippedItems"];
 }) {
   const numberRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -252,13 +254,10 @@ export function LevelDisplay({
           className="absolute inset-0 flex items-center justify-center select-none overflow-visible"
           style={{ transition: "transform 0.2s ease-out" }}
         >
-          <img
-            key={mascotSrc}
-            src={mascotSrc}
-            alt={`Level ${displayedLevel} mascot`}
-            className={`w-[108px] h-[108px] object-contain ${animPhase === "number-swap" ? "animate-levelIn" : animPhase === "anticipation" ? "animate-mascotAnticipate" : ""}`}
-            style={{ filter: "drop-shadow(0 2px 4px rgba(80,50,15,0.2))" }}
-            draggable={false}
+          <SkipperCharacter
+            equippedItems={equippedItems}
+            size={108}
+            className={animPhase === "number-swap" ? "animate-levelIn" : animPhase === "anticipation" ? "animate-mascotAnticipate" : ""}
           />
         </div>
       </div>

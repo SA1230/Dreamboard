@@ -412,6 +412,29 @@
   100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 
+/* Skipper character: gentle idle breathing bob */
+.animate-skipperIdle {
+  animation: skipperIdle 3s ease-in-out infinite;
+}
+
+@keyframes skipperIdle {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  50% { transform: translateY(-2px) scaleY(1.01); }
+}
+
+/* Skipper character: bounce on tap */
+.animate-skipperTap {
+  animation: skipperTap 500ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes skipperTap {
+  0% { transform: scale(1); }
+  20% { transform: scale(0.92) translateY(3px); }
+  50% { transform: scale(1.08) translateY(-6px); }
+  70% { transform: scale(0.98) translateY(1px); }
+  100% { transform: scale(1) translateY(0); }
+}
+
 body {
   background: #FDF8F4;
 }
