@@ -13,7 +13,7 @@ import { HealthyHabits } from "@/components/HealthyHabits";
 import { DailyDamage } from "@/components/DailyDamage";
 import { LevelDisplay } from "@/components/LevelDisplay";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
-import { Download, Settings, CalendarDays } from "lucide-react";
+import { Download, Settings, CalendarDays, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { getRankTitle } from "@/lib/ranks";
 
@@ -247,6 +247,14 @@ export default function Home() {
             aria-label="Monthly calendar"
           >
             <CalendarDays size={18} />
+          </Link>
+          <Link
+            href="/shop"
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
+            title="Power-Up Store"
+            aria-label="Shop"
+          >
+            <ShoppingBag size={18} />
           </Link>
           <Link
             href="/settings"
