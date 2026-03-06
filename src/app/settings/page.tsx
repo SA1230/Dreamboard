@@ -8,22 +8,12 @@ import { StatIcon, ICON_OPTIONS } from "@/components/StatIcons";
 import { ArrowLeft, RotateCcw, Trash2, Camera, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { HABIT_DEFINITIONS } from "@/lib/habits";
+import { DAMAGE_DEFINITIONS } from "@/lib/damage";
+import { ModalBackdrop } from "@/components/ModalBackdrop";
 
-const ALL_HABITS: { key: HabitKey; label: string; description: string; emoji: string; color: string; enabledBackground: string }[] = [
-  { key: "water", label: "Drink 64oz", description: "Track daily water intake", emoji: "💧", color: "#3b82f6", enabledBackground: "#eff6ff" },
-  { key: "nails", label: "No nail biting", description: "Keep nails healthy", emoji: "💅", color: "#ec4899", enabledBackground: "#fdf2f8" },
-  { key: "brush", label: "Brush 2x", description: "Brush teeth morning & night", emoji: "🪥", color: "#14b8a6", enabledBackground: "#f0fdfa" },
-  { key: "nosugar", label: "No sugar", description: "Avoid added sugars", emoji: "🍩", color: "#f59e0b", enabledBackground: "#fffbeb" },
-  { key: "floss", label: "Floss teeth", description: "Floss at least once daily", emoji: "🦷", color: "#8b5cf6", enabledBackground: "#f5f3ff" },
-  { key: "steps", label: "10k steps", description: "Walk 10,000 steps", emoji: "👟", color: "#10b981", enabledBackground: "#ecfdf5" },
-];
-
-const ALL_DAMAGE: { key: DamageKey; label: string; description: string; emoji: string; color: string; enabledBackground: string }[] = [
-  { key: "substance", label: "Substance Abuse", description: "Alcohol, nicotine, or other substances", emoji: "🍺", color: "#ef4444", enabledBackground: "#fef2f2" },
-  { key: "screentime", label: "Excess Screen Time", description: "Doomscrolling or binge-watching", emoji: "📱", color: "#ef4444", enabledBackground: "#fef2f2" },
-  { key: "junkfood", label: "Junk Food", description: "Fast food, snacks, or processed food", emoji: "🍔", color: "#ef4444", enabledBackground: "#fef2f2" },
-  { key: "badsleep", label: "Bad Sleep Hygiene", description: "Late nights or disrupted sleep", emoji: "🌙", color: "#ef4444", enabledBackground: "#fef2f2" },
-];
+const ALL_HABITS = HABIT_DEFINITIONS;
+const ALL_DAMAGE = DAMAGE_DEFINITIONS;
 
 export default function SettingsPage() {
   const [gameData, setGameData] = useState<GameData | null>(null);
@@ -237,6 +227,7 @@ export default function SettingsPage() {
               <button
                 onClick={removeProfilePicture}
                 className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md hover:bg-red-600 transition-colors"
+                aria-label="Remove profile picture"
               >
                 <X size={12} />
               </button>
@@ -545,12 +536,8 @@ export default function SettingsPage() {
 
       {/* Reset Data Confirmation Modal */}
       {showResetDataConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setShowResetDataConfirm(false)}
-          />
-          <div className="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-modalSlideUp">
+        <ModalBackdrop onClose={() => setShowResetDataConfirm(false)} backdropStyle="dark">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-modalSlideUp">
             <div className="flex flex-col items-center text-center">
               <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">
                 <Trash2 size={28} className="text-red-500" />
@@ -580,7 +567,7 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-        </div>
+        </ModalBackdrop>
       )}
     </main>
   );

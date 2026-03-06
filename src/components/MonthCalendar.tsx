@@ -3,6 +3,8 @@
 import { StatKey, HabitKey, DamageKey, GameData } from "@/lib/types";
 import { StatDefinition } from "@/lib/stats";
 import { getEnabledHabits, getEnabledDamage } from "@/lib/storage";
+import { HABIT_LABELS } from "@/lib/habits";
+import { DAMAGE_LABELS } from "@/lib/damage";
 import { StatIcon } from "./StatIcons";
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -95,12 +97,12 @@ function TinyStepsIcon() {
 }
 
 const TINY_HABIT_ICONS: Record<HabitKey, { component: React.ComponentType; title: string }> = {
-  water: { component: TinyWaterIcon, title: "Drank 64oz water" },
-  nails: { component: TinyNailsIcon, title: "No nail biting" },
-  brush: { component: TinyBrushIcon, title: "Brushed 2x" },
-  nosugar: { component: TinyNoSugarIcon, title: "No sugar" },
-  floss: { component: TinyFlossIcon, title: "Flossed teeth" },
-  steps: { component: TinyStepsIcon, title: "10k steps" },
+  water: { component: TinyWaterIcon, title: HABIT_LABELS.water },
+  nails: { component: TinyNailsIcon, title: HABIT_LABELS.nails },
+  brush: { component: TinyBrushIcon, title: HABIT_LABELS.brush },
+  nosugar: { component: TinyNoSugarIcon, title: HABIT_LABELS.nosugar },
+  floss: { component: TinyFlossIcon, title: HABIT_LABELS.floss },
+  steps: { component: TinyStepsIcon, title: HABIT_LABELS.steps },
 };
 
 function TinySubstanceIcon() {
@@ -144,10 +146,10 @@ function TinyBadSleepIcon() {
 }
 
 const TINY_DAMAGE_ICONS: Record<DamageKey, { component: React.ComponentType; title: string }> = {
-  substance: { component: TinySubstanceIcon, title: "Substance used" },
-  screentime: { component: TinyScreenTimeIcon, title: "Excess screen time" },
-  junkfood: { component: TinyJunkFoodIcon, title: "Junk food eaten" },
-  badsleep: { component: TinyBadSleepIcon, title: "Bad sleep" },
+  substance: { component: TinySubstanceIcon, title: DAMAGE_LABELS.substance },
+  screentime: { component: TinyScreenTimeIcon, title: DAMAGE_LABELS.screentime },
+  junkfood: { component: TinyJunkFoodIcon, title: DAMAGE_LABELS.junkfood },
+  badsleep: { component: TinyBadSleepIcon, title: DAMAGE_LABELS.badsleep },
 };
 
 interface MonthCalendarProps {
@@ -249,6 +251,9 @@ export function MonthCalendar({
                     : "2px solid transparent",
               }}
               onClick={hasContent && onDayTap ? () => onDayTap(day) : undefined}
+              role={hasContent && onDayTap ? "button" : undefined}
+              aria-label={hasContent && onDayTap ? `View details for day ${day}` : undefined}
+              tabIndex={hasContent && onDayTap ? 0 : undefined}
             >
               {/* Day number */}
               <div

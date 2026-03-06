@@ -1,5 +1,6 @@
 import { GameData, StatKey, HabitKey, DamageKey, Activity, StatProgress, CustomStatOverride, FeedEvent } from "./types";
 import { STAT_KEYS, STAT_DEFINITIONS, StatDefinition, COLOR_PRESETS } from "./stats";
+import { getRankTitle } from "./ranks";
 
 const STORAGE_KEY = "dreamboard-data";
 
@@ -150,8 +151,8 @@ export function addXP(
     });
 
     // Check if rank title also changed
-    const rankBefore = getRankTitleForLevel(overallBefore.level);
-    const rankAfter = getRankTitleForLevel(overallAfter.level);
+    const rankBefore = getRankTitle(overallBefore.level);
+    const rankAfter = getRankTitle(overallAfter.level);
     if (rankAfter !== rankBefore) {
       newData = pushFeedEvent(newData, {
         type: "rank_up",
@@ -218,21 +219,7 @@ export function getOverallLevel(totalXP: number): {
   return { level: MAX_OVERALL_LEVEL, xpIntoLevel: 0, xpForNextLevel: 0 };
 }
 
-// Rank titles — duplicated from page.tsx so storage can detect rank transitions
-const RANK_TITLES_STORAGE: [number, string][] = [
-  [1, "Novice"], [5, "Apprentice"], [10, "Journeyman"], [15, "Adept"],
-  [20, "Expert"], [25, "Veteran"], [30, "Elite"], [35, "Master"],
-  [40, "Grandmaster"], [45, "Champion"], [50, "Legend"], [55, "Mythic"],
-  [60, "Transcendent"],
-];
-
-function getRankTitleForLevel(level: number): string {
-  let title = "Novice";
-  for (const [threshold, name] of RANK_TITLES_STORAGE) {
-    if (level >= threshold) title = name;
-  }
-  return title;
-}
+// getRankTitle is imported from ./ranks (single source of truth for rank definitions)
 
 // Push a feed event onto the front of the feedEvents array (newest first)
 function pushFeedEvent(data: GameData, event: FeedEvent): GameData {
@@ -441,21 +428,19 @@ export function toggleHabitForToday(data: GameData, habitKey: HabitKey): GameDat
   return newData;
 }
 
-// Group healthy habits by day for a given month
-// Returns: { dayNumber: ["water", "nails"] } for days where habits were completed
-export function getHabitsByDay(
-  data: GameData,
+// Generic helper: group date-string entries by calendar day for a given month
+// Used by both getHabitsByDay and getDamageByDay to avoid duplicate iteration logic
+function groupDateEntriesByDay<K extends string>(
+  dateMap: Partial<Record<K, string[]>> | undefined,
+  keys: K[],
   year: number,
   month: number
-): Record<number, HabitKey[]> {
-  const result: Record<number, HabitKey[]> = {};
-  const habits = data.healthyHabits;
-  if (!habits) return result;
+): Record<number, K[]> {
+  const result: Record<number, K[]> = {};
+  if (!dateMap) return result;
 
-  const habitKeys: HabitKey[] = ["water", "nails", "brush", "nosugar", "floss", "steps"];
-
-  for (const habitKey of habitKeys) {
-    const dates = habits[habitKey];
+  for (const key of keys) {
+    const dates = dateMap[key];
     if (!dates) continue;
 
     for (const dateString of dates) {
@@ -464,11 +449,22 @@ export function getHabitsByDay(
 
       const day = date.getDate();
       if (!result[day]) result[day] = [];
-      result[day].push(habitKey);
+      result[day].push(key);
     }
   }
 
   return result;
+}
+
+// Group healthy habits by day for a given month
+// Returns: { dayNumber: ["water", "nails"] } for days where habits were completed
+export function getHabitsByDay(
+  data: GameData,
+  year: number,
+  month: number
+): Record<number, HabitKey[]> {
+  const habitKeys: HabitKey[] = ["water", "nails", "brush", "nosugar", "floss", "steps"];
+  return groupDateEntriesByDay(data.healthyHabits, habitKeys, year, month);
 }
 
 // --- Enabled Habits (which habits appear on the dashboard) ---
@@ -624,25 +620,7 @@ export function getDamageByDay(
   year: number,
   month: number
 ): Record<number, DamageKey[]> {
-  const result: Record<number, DamageKey[]> = {};
-  const damage = data.dailyDamage;
-  if (!damage) return result;
-
-  for (const damageKey of DAMAGE_KEYS) {
-    const dates = damage[damageKey];
-    if (!dates) continue;
-
-    for (const dateString of dates) {
-      const date = new Date(dateString + "T00:00:00");
-      if (date.getFullYear() !== year || date.getMonth() !== month) continue;
-
-      const day = date.getDate();
-      if (!result[day]) result[day] = [];
-      result[day].push(damageKey);
-    }
-  }
-
-  return result;
+  return groupDateEntriesByDay(data.dailyDamage, DAMAGE_KEYS, year, month);
 }
 
 export function getEnabledDamage(data: GameData): DamageKey[] {

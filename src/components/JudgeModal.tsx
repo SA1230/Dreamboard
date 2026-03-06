@@ -5,6 +5,7 @@ import { GameData, StatKey } from "@/lib/types";
 import { STAT_KEYS, StatDefinition } from "@/lib/stats";
 import { getStatStreaks, getXPForNextLevel } from "@/lib/storage";
 import { StatIcon } from "./StatIcons";
+import { ModalBackdrop } from "./ModalBackdrop";
 
 // --- Types ---
 
@@ -172,12 +173,8 @@ export function JudgeModal({
   const totalXP = verdict?.awards.reduce((sum, a) => sum + a.amount, 0) ?? 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onKeyDown={handleKeyDown}>
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm animate-fadeIn" onClick={onCancel} />
-
-      {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md animate-modalSlideUp flex flex-col" style={{ maxHeight: "80vh" }}>
+    <ModalBackdrop onClose={onCancel} onKeyDown={handleKeyDown}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md animate-modalSlideUp flex flex-col" style={{ maxHeight: "80vh" }}>
         {/* Header */}
         <div className="px-6 pt-5 pb-3 border-b border-stone-100">
           <div className="flex items-center justify-between">
@@ -382,6 +379,6 @@ export function JudgeModal({
           </form>
         )}
       </div>
-    </div>
+    </ModalBackdrop>
   );
 }

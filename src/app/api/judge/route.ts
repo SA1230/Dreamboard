@@ -234,7 +234,7 @@ async function callAnthropic(
   forceVerdict: boolean
 ): Promise<JudgeResult> {
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514",
     max_tokens: 500,
     system: systemPrompt,
     messages: messages,
@@ -268,7 +268,7 @@ async function callOpenAI(
   ];
 
   const response = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: process.env.OPENAI_MODEL || "gpt-4o",
     max_tokens: 500,
     messages: openaiMessages,
     tools: [AWARD_XP_TOOL_OPENAI],
