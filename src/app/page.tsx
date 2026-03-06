@@ -769,7 +769,7 @@ export default function Home() {
               />
             </div>
           </div>
-          <span className="text-lg font-bold text-amber-800">What did you accomplish?</span>
+          <span className="text-lg font-bold text-amber-800">What did you do today?</span>
           <span
             className="inline-block mt-2 px-5 py-1.5 text-sm font-bold text-white rounded-full shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all"
             style={{
@@ -778,7 +778,7 @@ export default function Home() {
               animation: "ctaShimmer 4s ease-in-out infinite",
             }}
           >
-            Tell the Captain &amp; earn XP
+            Log it &amp; earn XP
           </span>
         </button>
       </div>
