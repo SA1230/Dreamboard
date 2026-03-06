@@ -581,11 +581,7 @@ export function HealthyHabits({ gameData, onToggleHabit }: HealthyHabitsProps) {
       <h2 className="text-lg font-bold text-stone-600 mb-4">
         Healthy Habits
         <span className="ml-3 text-sm font-normal text-stone-400">
-          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).replace(/\d+/, (day) => {
-            const d = parseInt(day);
-            const suffix = d === 1 || d === 21 || d === 31 ? 'st' : d === 2 || d === 22 ? 'nd' : d === 3 || d === 23 ? 'rd' : 'th';
-            return d + suffix;
-          })}
+          tap to check off today
         </span>
       </h2>
       <div className="grid grid-cols-2 gap-4">
