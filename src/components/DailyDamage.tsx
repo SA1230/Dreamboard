@@ -302,11 +302,11 @@ function BadSleepIcon({ marked }: { marked: boolean }) {
   );
 }
 
-const DAMAGE_CONFIG: Record<DamageKey, { label: string; markedLabel: string }> = {
-  substance: { label: "No substances", markedLabel: "Substance used" },
-  screentime: { label: "Screen time OK", markedLabel: "Excess screen" },
-  junkfood: { label: "Ate clean", markedLabel: "Junk food eaten" },
-  badsleep: { label: "Slept well", markedLabel: "Bad sleep" },
+const DAMAGE_CONFIG: Record<DamageKey, { label: string }> = {
+  substance: { label: "Substances" },
+  screentime: { label: "Excess screen time" },
+  junkfood: { label: "Junk food" },
+  badsleep: { label: "Bad sleep" },
 };
 
 const DAMAGE_ICONS: Record<DamageKey, React.ComponentType<{ marked: boolean }>> = {
@@ -360,7 +360,7 @@ export function DailyDamage({ gameData, onToggleDamage }: DailyDamageProps) {
                 className="text-xs font-semibold transition-colors duration-300"
                 style={{ color: marked ? "#dc2626" : "#a8a29e" }}
               >
-                {marked ? config.markedLabel : config.label}
+                {config.label}
               </span>
             </button>
           );
