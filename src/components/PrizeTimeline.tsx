@@ -80,34 +80,36 @@ export function PrizeTimeline({ currentLevel, prizes, onEditPrize }: PrizeTimeli
     }
   }, []);
 
-  const NODE_WIDTH = 100;
-  const totalWidth = Math.max(positions.length * NODE_WIDTH + 40, 400);
+  // Visible (non-hidden) positions for rendering
+  const visiblePositions = positions.filter(
+    (level) => getNodeState(level, currentLevel, visibleRange) !== "hidden"
+  );
 
   return (
     <div
       ref={scrollContainerRef}
-      className="overflow-x-auto -mx-4 px-4"
+      className="overflow-x-auto w-full"
       style={{ WebkitOverflowScrolling: "touch" }}
     >
-      <div className="relative" style={{ width: totalWidth, minHeight: 230 }}>
-        {/* Center line */}
+      {/* Flex container — nodes spread evenly across full width */}
+      <div className="relative flex justify-evenly items-start w-full min-w-[400px]">
+        {/* Center line — spans from first to last node */}
         <div
           className="absolute left-0 right-0 h-[2px] bg-stone-200"
-          style={{ top: 110 }}
+          style={{ top: 160 }}
         />
 
         {/* Dashed continuation if there's more beyond teased */}
         {visibleRange.teased && (
           <div
             className="absolute right-0 h-[2px] border-t-2 border-dashed border-stone-200"
-            style={{ top: 110, width: 40 }}
+            style={{ top: 160, width: 40 }}
           />
         )}
 
         {/* Level nodes */}
-        {positions.map((level, index) => {
+        {visiblePositions.map((level) => {
           const state = getNodeState(level, currentLevel, visibleRange);
-          if (state === "hidden") return null;
 
           const systemReward = systemRewardsByLevel.get(level);
           const levelPrizes = prizesByLevel.get(level) ?? [];
@@ -120,42 +122,39 @@ export function PrizeTimeline({ currentLevel, prizes, onEditPrize }: PrizeTimeli
           return (
             <div
               key={level}
-              className="absolute flex flex-col items-center"
+              className="flex flex-col items-center flex-1 min-w-[130px]"
               style={{
-                left: index * NODE_WIDTH + 20,
-                width: NODE_WIDTH,
-                top: 0,
                 opacity: isTeased ? 0.4 : 1,
                 filter: isTeased ? "grayscale(0.6)" : "none",
               }}
               ref={isCurrent ? currentLevelRef : undefined}
             >
               {/* Top track: System rewards */}
-              <div className="h-[100px] flex flex-col justify-end items-center pb-2">
+              <div className="h-[148px] flex flex-col justify-end items-center pb-3">
                 {systemReward && (
                   <div
-                    className={`rounded-lg px-2 py-1.5 text-center w-[88px] border ${
+                    className={`rounded-xl px-3 py-2.5 text-center w-[116px] border ${
                       isUnlocked
                         ? "border-stone-300 bg-white/80"
                         : "border-stone-200 bg-stone-50"
                     }`}
                   >
                     {isTeased ? (
-                      <Lock size={14} className="mx-auto text-stone-300 mb-0.5" />
+                      <Lock size={18} className="mx-auto text-stone-300 mb-1" />
                     ) : (
                       <Trophy
-                        size={14}
-                        className="mx-auto mb-0.5"
+                        size={18}
+                        className="mx-auto mb-1"
                         style={{ color: isUnlocked ? rankStartColor : "#a8a29e" }}
                       />
                     )}
                     <p
-                      className="text-[9px] font-bold leading-tight"
+                      className="text-xs font-bold leading-tight"
                       style={{ color: isUnlocked ? rankStartColor : "#a8a29e" }}
                     >
                       {systemReward.title}
                     </p>
-                    <p className="text-[8px] text-stone-400 leading-tight mt-0.5">
+                    <p className="text-[10px] text-stone-400 leading-tight mt-0.5">
                       Lv. {systemReward.level}
                     </p>
                   </div>
@@ -163,14 +162,14 @@ export function PrizeTimeline({ currentLevel, prizes, onEditPrize }: PrizeTimeli
               </div>
 
               {/* Center: Level marker */}
-              <div className="relative flex items-center justify-center h-[20px]">
+              <div className="relative flex items-center justify-center h-[24px]">
                 <div
                   className={`rounded-full transition-all ${
                     isCurrent
-                      ? "w-5 h-5 animate-levelPulse"
+                      ? "w-6 h-6 animate-levelPulse"
                       : isCompleted
-                      ? "w-3 h-3"
-                      : "w-3 h-3"
+                      ? "w-3.5 h-3.5"
+                      : "w-3.5 h-3.5"
                   }`}
                   style={{
                     backgroundColor: isCurrent
@@ -185,7 +184,7 @@ export function PrizeTimeline({ currentLevel, prizes, onEditPrize }: PrizeTimeli
                 />
                 {/* Level number below the marker */}
                 <span
-                  className={`absolute top-full mt-0.5 text-[8px] font-semibold ${
+                  className={`absolute top-full mt-1 text-[10px] font-semibold ${
                     isCurrent
                       ? "text-amber-600"
                       : isCompleted
@@ -200,31 +199,31 @@ export function PrizeTimeline({ currentLevel, prizes, onEditPrize }: PrizeTimeli
               </div>
 
               {/* Bottom track: User prizes */}
-              <div className="h-[100px] flex flex-col justify-start items-center pt-4">
+              <div className="h-[148px] flex flex-col justify-start items-center pt-5">
                 {levelPrizes.map((prize) => (
                   <button
                     key={prize.id}
                     onClick={() => onEditPrize(prize)}
-                    className={`rounded-lg px-2 py-1.5 text-center w-[88px] border cursor-pointer transition-colors mb-1 ${
+                    className={`rounded-xl px-3 py-2.5 text-center w-[116px] border cursor-pointer transition-colors mb-1 ${
                       isUnlocked
                         ? "border-amber-200 bg-amber-50/80 hover:bg-amber-100/80"
                         : "border-stone-200 bg-stone-50 hover:bg-stone-100"
                     }`}
                   >
                     {isUnlocked ? (
-                      <Gift size={14} className="mx-auto mb-0.5 text-amber-500" />
+                      <Gift size={18} className="mx-auto mb-1 text-amber-500" />
                     ) : (
-                      <Lock size={14} className="mx-auto mb-0.5 text-stone-300" />
+                      <Lock size={18} className="mx-auto mb-1 text-stone-300" />
                     )}
                     <p
-                      className={`text-[10px] font-bold leading-tight line-clamp-2 ${
+                      className={`text-xs font-bold leading-tight line-clamp-2 ${
                         isUnlocked ? "text-amber-700" : "text-stone-400"
                       }`}
                     >
                       {prize.name}
                     </p>
                     {prize.link && (
-                      <ExternalLink size={8} className="mx-auto mt-0.5 text-stone-300" />
+                      <ExternalLink size={10} className="mx-auto mt-1 text-stone-300" />
                     )}
                   </button>
                 ))}

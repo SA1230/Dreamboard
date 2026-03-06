@@ -117,9 +117,9 @@ export default function PrizesPage() {
   }
 
   return (
-    <main className="min-h-screen p-4 pb-24 max-w-lg mx-auto">
+    <main className="min-h-screen flex flex-col p-4 pb-24">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-2 max-w-lg mx-auto w-full">
         <Link
           href="/"
           className="flex items-center justify-center w-9 h-9 rounded-full bg-stone-100 text-stone-500 hover:bg-stone-200 transition-colors"
@@ -137,26 +137,26 @@ export default function PrizesPage() {
       </div>
 
       {/* Description */}
-      <p className="text-xs text-stone-400 mb-4 leading-relaxed">
+      <p className="text-xs text-stone-400 mb-4 leading-relaxed max-w-lg mx-auto w-full">
         Set IRL prizes for yourself as you level up. System rewards (top) unlock
         at rank milestones. Your prizes (bottom) are goals you create.
       </p>
 
-      {/* Timeline */}
-      <PrizeTimeline
-        currentLevel={currentLevel}
-        prizes={prizes}
-        onEditPrize={openEditForm}
-      />
+      {/* Timeline — fills remaining vertical space, centered */}
+      <div className="flex-1 flex flex-col items-center justify-center">
+        <PrizeTimeline
+          currentLevel={currentLevel}
+          prizes={prizes}
+          onEditPrize={openEditForm}
+        />
 
-      {/* Empty state for user prizes */}
-      {prizes.length === 0 && (
-        <div className="text-center pt-2 pb-4">
-          <p className="text-xs text-stone-400">
+        {/* Empty state for user prizes */}
+        {prizes.length === 0 && (
+          <p className="text-xs text-stone-400 mt-2">
             No prizes set yet. Tap + to add your first reward!
           </p>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Add Prize FAB */}
       <button
