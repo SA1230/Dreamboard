@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { GameData, StatKey, HabitKey, DamageKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForToday, toggleDamageForToday, getPointsBalance, getLastActivityTimestamps, formatRelativeTime, getMascotForLevel } from "@/lib/storage";
+import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForToday, toggleDamageForToday, getPointsBalance, formatRelativeTime, getMascotForLevel } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
 import { JudgeModal } from "@/components/JudgeModal";
 import { ActivityLog } from "@/components/ActivityLog";
@@ -620,12 +620,6 @@ export default function Home() {
     return getHabitsByDay(gameData, now.getFullYear(), now.getMonth());
   }, [gameData]);
 
-  // Last activity timestamp per stat (for "2h ago" display on cards)
-  const lastActivityTimestamps = useMemo(() => {
-    if (!gameData) return null;
-    return getLastActivityTimestamps(gameData.activities);
-  }, [gameData]);
-
   // Tick every 60 seconds to keep relative timestamps fresh
   const [, setTimeTick] = useState(0);
   useEffect(() => {
@@ -839,9 +833,13 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Stat Card Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
-        {STAT_KEYS.map((key) => (
+      {/* Stat Card Grid — active stats first, then inactive */}
+      <div className="grid grid-cols-2 gap-2.5 mb-12">
+        {[...STAT_KEYS].sort((a, b) => {
+          const aActive = activeStatsThisMonth.has(a) ? 0 : 1;
+          const bActive = activeStatsThisMonth.has(b) ? 0 : 1;
+          return aActive - bActive;
+        }).map((key) => (
           <StatCard
             key={key}
             definition={definitions[key]}
@@ -850,7 +848,6 @@ export default function Home() {
             justGainedXP={xpGainedStat === key}
             streak={streaks[key]}
             isActiveThisMonth={activeStatsThisMonth.has(key)}
-            lastLoggedTimestamp={lastActivityTimestamps?.[key] ?? null}
             previousLevel={undefined}
           />
         ))}
