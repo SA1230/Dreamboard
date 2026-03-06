@@ -251,6 +251,9 @@ export function MonthCalendar({
                     : "2px solid transparent",
               }}
               onClick={hasContent && onDayTap ? () => onDayTap(day) : undefined}
+              role={hasContent && onDayTap ? "button" : undefined}
+              aria-label={hasContent && onDayTap ? `View details for day ${day}` : undefined}
+              tabIndex={hasContent && onDayTap ? 0 : undefined}
             >
               {/* Day number */}
               <div

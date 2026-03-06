@@ -244,6 +244,7 @@ export default function Home() {
             href="/calendar"
             className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
             title="Monthly calendar"
+            aria-label="Monthly calendar"
           >
             <CalendarDays size={18} />
           </Link>
@@ -251,6 +252,7 @@ export default function Home() {
             href="/settings"
             className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
             title="Customize stats"
+            aria-label="Settings"
           >
             <Settings size={18} />
           </Link>

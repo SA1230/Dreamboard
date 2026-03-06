@@ -288,6 +288,7 @@ export default function CalendarPage() {
           <Link
             href="/"
             className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-500"
+            aria-label="Back to dashboard"
           >
             <ArrowLeft size={18} />
           </Link>
@@ -308,6 +309,7 @@ export default function CalendarPage() {
         <button
           onClick={goToPreviousMonth}
           className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-500"
+          aria-label="Previous month"
         >
           <ChevronLeft size={18} />
         </button>
@@ -322,6 +324,7 @@ export default function CalendarPage() {
         <button
           onClick={goToNextMonth}
           className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-500"
+          aria-label="Next month"
         >
           <ChevronRight size={18} />
         </button>

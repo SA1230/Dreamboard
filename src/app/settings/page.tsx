@@ -227,6 +227,7 @@ export default function SettingsPage() {
               <button
                 onClick={removeProfilePicture}
                 className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md hover:bg-red-600 transition-colors"
+                aria-label="Remove profile picture"
               >
                 <X size={12} />
               </button>
