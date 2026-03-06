@@ -50,11 +50,44 @@ export function MonthlyXPSummary({
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const todayDate = now.getDate();
 
-  // Find the max total XP for any single day (for height scaling), capped at 10
+  // View mode: "week" shows last 7 days (default), "month" shows full month
+  const [viewMode, setViewMode] = useState<"week" | "month">("week");
+
+  // Build array of days to display based on view mode
+  const displayDays = viewMode === "week"
+    ? Array.from({ length: 7 }, (_, i) => {
+        const date = new Date(now.getFullYear(), now.getMonth(), todayDate - 6 + i);
+        const isInCurrentMonth = date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+        return {
+          key: `week-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`,
+          dayOfMonth: date.getDate(),
+          isCurrentMonth: isInCurrentMonth,
+          isToday: i === 6,
+          isFuture: false,
+          label: date.toLocaleString("default", { weekday: "short" }),
+          showLabel: true,
+        };
+      })
+    : Array.from({ length: daysInMonth }, (_, i) => {
+        const day = i + 1;
+        const isToday = day === todayDate;
+        return {
+          key: `month-${day}`,
+          dayOfMonth: day,
+          isCurrentMonth: true,
+          isToday,
+          isFuture: day > todayDate,
+          label: `${day}`,
+          showLabel: isToday || day === 1 || day % 5 === 0 || day === daysInMonth,
+        };
+      });
+
+  // Find the max total XP for any day in the display range (for height scaling), capped at 10
   const maxVisibleBlocksPerDay = 10;
   let maxDayXP = 1;
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dayStats = activitiesByDay[day];
+  for (const displayDay of displayDays) {
+    if (displayDay.isFuture || !displayDay.isCurrentMonth) continue;
+    const dayStats = activitiesByDay[displayDay.dayOfMonth];
     if (dayStats) {
       const total = Math.min(
         maxVisibleBlocksPerDay,
@@ -184,20 +217,18 @@ export function MonthlyXPSummary({
         </div>
       </div>
 
-      {/* Stacked block chart — each 1 XP = 1 discrete block, consistent stat order */}
+      {/* Stacked block chart */}
       <div className="mt-3 flex-1 flex flex-col min-h-0">
-        <div ref={chartRef} className="flex items-end gap-[2px] flex-1 min-h-[60px]">
-          {Array.from({ length: daysInMonth }, (_, index) => {
-            const day = index + 1;
-            const isToday = day === todayDate;
-            const isFutureDay = day > todayDate;
-            const dayStats = activitiesByDay[day];
+        <div ref={chartRef} className={`flex items-end flex-1 min-h-[60px] ${viewMode === "week" ? "gap-3 justify-around" : "gap-[2px]"}`}>
+          {displayDays.map((day) => {
+            const dayStats = day.isCurrentMonth ? activitiesByDay[day.dayOfMonth] : undefined;
+            const todayHighlight = day.isToday ? "bg-amber-50 rounded-sm" : "";
 
-            const todayHighlight = isToday ? "bg-amber-50 rounded-sm" : "";
+            const columnClass = viewMode === "week" ? "w-10" : "flex-1";
 
-            if (isFutureDay) {
+            if (day.isFuture) {
               return (
-                <div key={day} className="flex-1 flex items-end h-full">
+                <div key={day.key} className={`${columnClass} flex items-end h-full`}>
                   <div className="w-full h-[1px] bg-stone-100 rounded-sm" />
                 </div>
               );
@@ -205,7 +236,7 @@ export function MonthlyXPSummary({
 
             if (!dayStats || Object.keys(dayStats).length === 0) {
               return (
-                <div key={day} className={`flex-1 flex items-end h-full ${todayHighlight}`}>
+                <div key={day.key} className={`${columnClass} flex items-end h-full ${todayHighlight}`}>
                   <div className="w-full h-[2px] bg-stone-200 rounded-sm" />
                 </div>
               );
@@ -251,8 +282,8 @@ export function MonthlyXPSummary({
 
             return (
               <div
-                key={day}
-                className={`flex-1 flex flex-col-reverse items-stretch h-full justify-start ${todayHighlight}`}
+                key={day.key}
+                className={`${columnClass} flex flex-col-reverse items-stretch h-full justify-start ${todayHighlight}`}
               >
                 {/* +N overflow label */}
                 {overflow > 0 && (
@@ -287,39 +318,33 @@ export function MonthlyXPSummary({
           })}
         </div>
 
-        {/* Day labels — today always shown + highlighted */}
-        <div className="flex gap-[2px] mt-1">
-          {Array.from({ length: daysInMonth }, (_, index) => {
-            const day = index + 1;
-            const isToday = day === todayDate;
-            const showLabel = isToday || day === 1 || day % 5 === 0 || day === daysInMonth;
-            return (
-              <div key={day} className="flex-1 flex flex-col items-center">
-                {showLabel && (
-                  <span className={`text-[9px] ${isToday ? "font-bold text-amber-600" : "text-stone-300"}`}>
-                    {day}
-                  </span>
-                )}
-                {isToday && (
-                  <div className="w-1 h-1 rounded-full bg-amber-500 mt-0.5" />
-                )}
-              </div>
-            );
-          })}
+        {/* Day labels — day-of-week in week mode, day numbers in month mode */}
+        <div className={`flex mt-1 ${viewMode === "week" ? "gap-3 justify-around" : "gap-[2px]"}`}>
+          {displayDays.map((day) => (
+            <div key={day.key} className={`${viewMode === "week" ? "w-10" : "flex-1"} flex flex-col items-center`}>
+              {day.showLabel && (
+                <span className={`text-[9px] ${day.isToday ? "font-bold text-amber-600" : "text-stone-300"}`}>
+                  {day.label}
+                </span>
+              )}
+              {day.isToday && (
+                <div className="w-1 h-1 rounded-full bg-amber-500 mt-0.5" />
+              )}
+            </div>
+          ))}
         </div>
 
         {/* Healthy habit icons below each day */}
-        <div className="flex gap-[2px] mt-0.5">
-          {Array.from({ length: daysInMonth }, (_, index) => {
-            const day = index + 1;
-            const habits = habitsByDay[day];
+        <div className={`flex mt-0.5 ${viewMode === "week" ? "gap-3 justify-around" : "gap-[2px]"}`}>
+          {displayDays.map((day) => {
+            const habits = day.isCurrentMonth ? habitsByDay[day.dayOfMonth] : undefined;
 
             if (!habits || habits.length === 0) {
-              return <div key={day} className="flex-1" />;
+              return <div key={day.key} className={viewMode === "week" ? "w-10" : "flex-1"} />;
             }
 
             return (
-              <div key={day} className="flex-1 flex flex-col items-center">
+              <div key={day.key} className={`${viewMode === "week" ? "w-10" : "flex-1"} flex flex-col items-center`}>
                 {habits.map((habitKey) => (
                   <span key={habitKey} className="text-[8px] leading-none">
                     {HABIT_EMOJI[habitKey]}
@@ -328,6 +353,16 @@ export function MonthlyXPSummary({
               </div>
             );
           })}
+        </div>
+
+        {/* View toggle */}
+        <div className="flex justify-end mt-2">
+          <button
+            onClick={() => setViewMode(viewMode === "week" ? "month" : "week")}
+            className="text-[10px] font-medium text-stone-400 hover:text-stone-500 transition-colors cursor-pointer"
+          >
+            {viewMode === "week" ? "View full month" : "Last 7 days"}
+          </button>
         </div>
       </div>
     </div>
