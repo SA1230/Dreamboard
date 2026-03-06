@@ -4,6 +4,8 @@
 
 Dreamboard is a gamified personal habit tracker. Users earn XP by logging real-life activities across 8 stats (Strength, Wisdom, Vitality, Charisma, Craft, Discipline, Spirit, Wealth). Each stat levels up as XP accumulates. Think RPG character sheet for your daily life.
 
+The core loop: User tells the Judge what they did → Judge interviews them (1-3 follow-ups) → Judge delivers a sassy verdict with variable XP → Stats update → Level up over time.
+
 ## Tech stack
 
 - **Framework:** Next.js 15 (App Router) with React 19 and TypeScript
@@ -101,6 +103,89 @@ src/
 - `spendPoints(data, amount)` — deducts from wallet (returns null if insufficient balance)
 - `getMascotForLevel(level, overrides?)` — returns mascot image path for a given overall level (threshold logic)
 - `exportGameData(data)` — JSON file download
+
+## Visual Design System
+
+This section exists because design changes are the easiest to mess up. Follow these rules strictly when modifying any visual element.
+
+### Color Palette
+
+- **Background:** Warm cream/stone tones (Tailwind `stone-50` / `stone-100` range) — NEVER pure white
+- **Primary accent:** Gold/dark gold for CTA buttons, highlights, Skipper's ring border
+- **Text:** Dark charcoal/navy for headings, medium warm gray for body
+- **Stat category colors:** Defined in `stats.ts` `ColorPreset` palettes — each stat has its own muted color. These are user-customizable via settings. Never hardcode assumptions about which color maps to which stat
+- **Positive feedback:** Mint/teal green for XP pills, active states, habit completion
+- **Negative feedback:** Red for Daily Damage cards, destructive actions, the Danger Zone
+- **Inactive/dormant states:** Reduced opacity + desaturation (existing `isActiveThisMonth` pattern)
+
+### Visual Rules — Do NOT
+
+- Do not introduce colors outside the existing palette (check `stats.ts` and `globals.css`)
+- Do not add drop shadows or box shadows (the app uses border + background tint for elevation)
+- Do not add gradients (except the existing gold CTA button)
+- Do not use pure white (`#FFFFFF`) or pure black (`#000000`) — use the warm stone tones and dark charcoal
+- Do not change the Nunito font
+- Do not replace hand-drawn SVG icons with a different icon library
+- Do not add emojis to UI components (settings uses emojis for habit/damage items, but dashboard cards do not)
+- Do not make it look like a fitness app, corporate dashboard, or children's game — it should feel like a cozy RPG companion
+
+### Visual Rules — Do
+
+- Maintain the warm, approachable, earth-toned aesthetic throughout
+- Use rounded corners on cards and buttons (existing Tailwind `rounded-xl` / `rounded-2xl` patterns)
+- Use colored background tints (not borders) to associate cards with their stat category
+- Keep animations subtle and fast — the existing 6 keyframe animations in `globals.css` set the standard
+- When adding new visual elements, match the weight and style of existing ones
+
+## The Judge (Skipper) — Personality & Behavior
+
+This section governs the AI system prompt in `/api/judge/route.ts` and how `JudgeModal` presents the conversation. Do not modify the Judge's personality without explicit approval.
+
+### Tone
+
+- **Sassy but warm** — roasts you lovingly, never meanly
+- **Honest** — calls out exaggerations and BS, but always gives credit where due
+- **Encouraging** — even when giving less XP, frames it positively
+- **Specific** — references details from what the user said, doesn't give generic responses
+- **Witty** — uses humor, wordplay, and unexpected observations
+- **Brief** — verdicts should be 2-4 sentences, not essays
+
+### Example of GOOD Judge tone
+
+> "Five hours for five miles? That's a leisurely stroll, not a run. But hey, you got outside and moved for five straight hours — that's commitment to being vertical. I'll give you credit for the endurance, even if your pace suggests you stopped to admire every leaf along the way."
+
+### Example of BAD Judge tone
+
+> "Great job going on a run! Running is a wonderful form of exercise. Keep up the good work!"
+
+*(Too generic, no personality, no specificity)*
+
+### Interview Behavior
+
+- Ask 1-3 follow-up questions to verify/understand the accomplishment
+- Questions should be specific to what the user said (not generic)
+- Vary the questions between sessions — don't always ask the same things
+- Catch obvious exaggerations and address them with humor, not punishment
+
+### Verdict Behavior
+
+- Award 1-10 XP to 1-3 relevant stat categories
+- The XP amount should reflect actual effort/accomplishment
+- One activity CAN earn XP across multiple categories (a hike with friends = Vitality + Strength + Charisma + Spirit)
+- Explain the reasoning with personality, not just a number
+- If awarding low XP, be funny about it rather than harsh
+
+## Known Issues & Planned Improvements
+
+These are documented product-level issues. Reference this section when working on related features to avoid reintroducing them or building on top of broken patterns.
+
+- **Dashboard label inconsistencies:** Daily Damage labels on the dashboard don't match the settings labels. Dashboard shows positive-sounding names ("No substances," "Screen time OK," "Slept well") but the section says "tap if you took damage." These should all describe the damage itself ("Substances," "Excess screen time," "Bad sleep") since tapping = logging damage.
+- **Month comparison edge case:** When the previous month has 0 XP, `MonthlyXPSummary` shows "+100%" which is mathematically meaningless. Should show something like "First active month!" instead.
+- **Dashboard density:** The homepage currently stacks: Judge CTA → XP summary + chart → 8 stat cards → Healthy Habits → Daily Damage → Power Points → Activity Log. This is a lot of scrolling. Habits and damage (daily actionable items) are buried below 8 stat cards.
+- **Habits/Damage disconnected from XP:** Healthy Habits and Daily Damage are a separate system from stat XP. They earn/subtract Power Points but this connection isn't visible to users. The two halves of the app (Judge + stats vs. habits + damage) feel like different products.
+- **Judge CTA redundancy:** The + nav button and the golden CTA card on the dashboard both open JudgeModal. Two paths to the same action with very different visual weights.
+- **Calendar empty state:** Calendar shows full 31-day grid but early in the month most cells are empty. Looks barren for new users.
+- **Activity feed repetition:** A single activity that earns XP in 4 categories creates 4+ separate feed entries plus level-up cards. Could be grouped by activity for a cleaner feed.
 
 ## ⚠ Using this context correctly
 
