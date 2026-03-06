@@ -38,6 +38,7 @@ export function MonthlyXPSummary({
     percentChange = 100;
   }
 
+  const isFirstActiveMonth = lastMonthXP === 0 && currentMonthXP > 0;
   const isUp = percentChange > 0;
   const isDown = percentChange < 0;
 
@@ -195,19 +196,22 @@ export function MonthlyXPSummary({
             vs {lastMonthName}: <span className="font-bold text-stone-500">{lastMonthXP} XP</span>
           </p>
           <div className="flex items-center justify-end gap-1.5 mt-1.5">
-            {isUp && (
+            {isFirstActiveMonth ? (
+              <>
+                <TrendingUp size={18} className="text-emerald-500" />
+                <span className="text-sm font-bold text-emerald-500">First active month!</span>
+              </>
+            ) : isUp ? (
               <>
                 <TrendingUp size={18} className="text-emerald-500" />
                 <span className="text-sm font-bold text-emerald-500">+{percentChange}%</span>
               </>
-            )}
-            {isDown && (
+            ) : isDown ? (
               <>
                 <TrendingDown size={18} className="text-red-400" />
                 <span className="text-sm font-bold text-red-400">{percentChange}%</span>
               </>
-            )}
-            {!isUp && !isDown && (
+            ) : (
               <>
                 <Minus size={18} className="text-stone-400" />
                 <span className="text-sm font-bold text-stone-400">0%</span>
