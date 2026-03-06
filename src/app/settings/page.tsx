@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { GameData, StatKey, HabitKey, DamageKey, CustomStatOverride } from "@/lib/types";
 import { STAT_DEFINITIONS, STAT_KEYS, COLOR_PRESETS, StatDefinition } from "@/lib/stats";
-import { loadGameData, saveCustomDefinitions, getEnabledHabits, saveEnabledHabits, getEnabledDamage, saveEnabledDamage, resetAllData, saveProfilePicture, getProfilePicture } from "@/lib/storage";
+import { loadGameData, saveCustomDefinitions, getEnabledHabits, saveEnabledHabits, getEnabledDamage, saveEnabledDamage, resetAllData, saveProfilePicture, getProfilePicture, getOverallLevel, getTotalLifetimeXP, getMascotName, setMascotName, isMascotNameUnlocked } from "@/lib/storage";
 import { StatIcon, ICON_OPTIONS } from "@/components/StatIcons";
 import { ArrowLeft, RotateCcw, Trash2, Camera, X } from "lucide-react";
 import Link from "next/link";
@@ -25,6 +25,8 @@ export default function SettingsPage() {
   const [showResetDataConfirm, setShowResetDataConfirm] = useState(false);
   const [pendingDamageKey, setPendingDamageKey] = useState<DamageKey | null>(null);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const [mascotNameValue, setMascotNameValue] = useState("Skipper");
+  const [overallLevel, setOverallLevel] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -35,6 +37,8 @@ export default function SettingsPage() {
     setEnabledHabits(getEnabledHabits(data));
     setEnabledDamage(getEnabledDamage(data));
     setProfilePicture(getProfilePicture(data));
+    setMascotNameValue(getMascotName(data));
+    setOverallLevel(getOverallLevel(getTotalLifetimeXP(data)).level);
   }, []);
 
   if (!gameData) {
@@ -184,6 +188,7 @@ export default function SettingsPage() {
     let newData = saveCustomDefinitions(gameData, overrides);
     newData = saveEnabledHabits(newData, enabledHabits);
     newData = saveEnabledDamage(newData, enabledDamage);
+    newData = setMascotName(newData, mascotNameValue);
     setGameData(newData);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -219,9 +224,9 @@ export default function SettingsPage() {
         </div>
       </header>
 
-      {/* Section: Profile Picture */}
+      {/* Section: Profile */}
       <h2 className="text-lg font-bold text-stone-500 mb-4">Profile</h2>
-      <div className="rounded-2xl bg-stone-50 border-2 border-stone-200 p-5 mb-8">
+      <div className="rounded-2xl bg-stone-50 border-2 border-stone-200 p-5 mb-8 space-y-5">
         <div className="flex items-center gap-5">
           {/* Avatar preview */}
           <div className="relative group">
@@ -270,6 +275,28 @@ export default function SettingsPage() {
             </button>
           </div>
         </div>
+
+        {/* Mascot name — only visible at level 5+ */}
+        {isMascotNameUnlocked(overallLevel) && (
+          <>
+            <div className="h-px bg-stone-200" />
+            <div>
+              <label className="text-sm font-bold text-stone-600 mb-1 block">Companion Name</label>
+              <p className="text-xs text-stone-400 mb-2">Give your companion a name that feels right.</p>
+              <input
+                type="text"
+                value={mascotNameValue}
+                onChange={(e) => {
+                  setMascotNameValue(e.target.value);
+                  setSaved(false);
+                }}
+                maxLength={20}
+                className="w-full px-3 py-2 rounded-xl border-2 border-stone-200 text-sm bg-white/80 text-stone-700 outline-none transition-colors focus:border-amber-400"
+                placeholder="Skipper"
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Section: Stats */}

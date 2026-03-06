@@ -560,6 +560,25 @@ export function getMascotForLevel(level: number, overrides?: Record<number, stri
   return defaultImage;
 }
 
+// --- Mascot Name ---
+
+const MASCOT_NAME_UNLOCK_LEVEL = 5;
+
+export function getMascotName(data: GameData): string {
+  return data.mascotName ?? "Skipper";
+}
+
+export function setMascotName(data: GameData, name: string): GameData {
+  const trimmed = name.trim().slice(0, 20);
+  const updated = { ...data, mascotName: trimmed || "Skipper" };
+  saveGameData(updated);
+  return updated;
+}
+
+export function isMascotNameUnlocked(level: number): boolean {
+  return level >= MASCOT_NAME_UNLOCK_LEVEL;
+}
+
 export function resetAllData(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
