@@ -833,6 +833,12 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Healthy Habits */}
+      <HealthyHabits gameData={gameData} onToggleHabit={handleToggleHabit} />
+
+      {/* Daily Damage */}
+      <DailyDamage gameData={gameData} onToggleDamage={handleToggleDamage} />
+
       {/* Stat Card Grid — active stats first, then inactive */}
       <div className="grid grid-cols-2 gap-2.5 mb-12">
         {[...STAT_KEYS].sort((a, b) => {
@@ -853,11 +859,48 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Healthy Habits */}
-      <HealthyHabits gameData={gameData} onToggleHabit={handleToggleHabit} />
-
-      {/* Daily Damage */}
-      <DailyDamage gameData={gameData} onToggleDamage={handleToggleDamage} />
+      {/* Activity Log */}
+      <section>
+        <div className="flex items-center mb-4">
+          <button
+            onClick={() => setIsActivityExpanded(!isActivityExpanded)}
+            className="flex items-center gap-2 group"
+          >
+            <h2 className="text-lg font-bold text-stone-600 group-hover:text-stone-700 transition-colors">Recent Activity</h2>
+            <span
+              className="text-stone-400 text-xs transition-transform duration-200 inline-block"
+              style={{ transform: isActivityExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
+            >
+              ▶
+            </span>
+          </button>
+          <span className="text-xs text-stone-300 font-medium ml-2">
+            {gameData.activities.length} activit{gameData.activities.length === 1 ? "y" : "ies"}
+            {(() => {
+              const latestActivity = gameData.activities[0]?.timestamp;
+              const latestFeed = gameData.feedEvents?.[0]?.timestamp;
+              const mostRecent = latestActivity && latestFeed
+                ? (latestActivity > latestFeed ? latestActivity : latestFeed)
+                : latestActivity || latestFeed;
+              return mostRecent ? <> · {formatRelativeTime(mostRecent)}</> : null;
+            })()}
+          </span>
+          <div className="ml-auto" />
+          {isActivityExpanded && (
+            <button
+              onClick={() => exportGameData(gameData)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-400 bg-stone-100 hover:bg-stone-200 transition-colors duration-200"
+              title="Export your data as JSON"
+            >
+              <Download size={14} />
+              Export
+            </button>
+          )}
+        </div>
+        {isActivityExpanded && (
+          <ActivityLog feedEvents={gameData.feedEvents ?? []} definitions={definitions} />
+        )}
+      </section>
 
       {/* Points Balance */}
       {pointsBalance && (
@@ -903,49 +946,6 @@ export default function Home() {
         </div>
         </section>
       )}
-
-      {/* Activity Log */}
-      <section>
-        <div className="flex items-center mb-4">
-          <button
-            onClick={() => setIsActivityExpanded(!isActivityExpanded)}
-            className="flex items-center gap-2 group"
-          >
-            <h2 className="text-lg font-bold text-stone-600 group-hover:text-stone-700 transition-colors">Recent Activity</h2>
-            <span
-              className="text-stone-400 text-xs transition-transform duration-200 inline-block"
-              style={{ transform: isActivityExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
-            >
-              ▶
-            </span>
-          </button>
-          <span className="text-xs text-stone-300 font-medium ml-2">
-            {gameData.activities.length} activit{gameData.activities.length === 1 ? "y" : "ies"}
-            {(() => {
-              const latestActivity = gameData.activities[0]?.timestamp;
-              const latestFeed = gameData.feedEvents?.[0]?.timestamp;
-              const mostRecent = latestActivity && latestFeed
-                ? (latestActivity > latestFeed ? latestActivity : latestFeed)
-                : latestActivity || latestFeed;
-              return mostRecent ? <> · {formatRelativeTime(mostRecent)}</> : null;
-            })()}
-          </span>
-          <div className="ml-auto" />
-          {isActivityExpanded && (
-            <button
-              onClick={() => exportGameData(gameData)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-400 bg-stone-100 hover:bg-stone-200 transition-colors duration-200"
-              title="Export your data as JSON"
-            >
-              <Download size={14} />
-              Export
-            </button>
-          )}
-        </div>
-        {isActivityExpanded && (
-          <ActivityLog feedEvents={gameData.feedEvents ?? []} definitions={definitions} />
-        )}
-      </section>
 
 
       {/* Judge Modal */}
