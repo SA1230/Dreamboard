@@ -102,4 +102,6 @@ export interface GameData {
   profilePicture?: string;
   /** Player's item inventory and equipment loadout */
   inventory?: PlayerInventory;
+  /** Custom name for the mascot (defaults to "Skipper", unlocks at level 5) */
+  mascotName?: string;
 }
