@@ -15,7 +15,7 @@ import {
 import { MAX_USER_PRIZES } from "@/lib/prizes";
 import { getRankTitle } from "@/lib/ranks";
 import { PrizeTimeline } from "@/components/PrizeTimeline";
-import { ArrowLeft, Trophy, Plus, X, Trash2 } from "lucide-react";
+import { ArrowLeft, Trophy, Plus, X, Trash2, Gift } from "lucide-react";
 import Link from "next/link";
 
 interface PrizeFormState {
@@ -142,8 +142,8 @@ export default function PrizesPage() {
         at rank milestones. Your prizes (bottom) are goals you create.
       </p>
 
-      {/* Timeline — fills remaining vertical space, centered */}
-      <div className="flex-1 flex flex-col items-center justify-center">
+      {/* Timeline */}
+      <div className="mt-4 flex flex-col items-center">
         <PrizeTimeline
           currentLevel={currentLevel}
           prizes={prizes}
@@ -152,36 +152,50 @@ export default function PrizesPage() {
 
         {/* Empty state for user prizes */}
         {prizes.length === 0 && (
-          <p className="text-xs text-stone-400 mt-2">
-            No prizes set yet. Tap + to add your first reward!
-          </p>
+          <div className="mt-6 flex flex-col items-center gap-2">
+            <div className="rounded-xl border-2 border-dashed border-amber-200 bg-amber-50/40 px-5 py-4 text-center max-w-[200px]">
+              <Gift size={20} className="mx-auto mb-1.5 text-amber-300" />
+              <p className="text-xs font-semibold text-amber-500">
+                Set your first reward!
+              </p>
+              <p className="text-[10px] text-stone-400 mt-1">
+                Pick something you want to earn as you level up
+              </p>
+            </div>
+          </div>
         )}
       </div>
 
       {/* Add Prize FAB */}
-      <button
-        onClick={openAddForm}
-        disabled={atLimit}
-        className={`fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all z-40 ${
-          atLimit
-            ? "bg-stone-300 cursor-not-allowed"
-            : "bg-amber-500 hover:bg-amber-600 active:scale-95"
-        }`}
-        title={atLimit ? `Prize limit reached (${MAX_USER_PRIZES})` : "Add a prize"}
-      >
-        <Plus size={24} className="text-white" />
-      </button>
+      <div className="fixed bottom-6 right-6 z-40">
+        {/* Pulse ring when no prizes yet */}
+        {prizes.length === 0 && (
+          <div className="absolute inset-0 rounded-full bg-amber-400 animate-ping opacity-30" />
+        )}
+        <button
+          onClick={openAddForm}
+          disabled={atLimit}
+          className={`relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all ${
+            atLimit
+              ? "bg-stone-300 cursor-not-allowed"
+              : "bg-amber-500 hover:bg-amber-600 active:scale-95"
+          }`}
+          title={atLimit ? `Prize limit reached (${MAX_USER_PRIZES})` : "Add a prize"}
+        >
+          <Plus size={24} className="text-white" />
+        </button>
+      </div>
 
       {/* Prize Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
+        <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-12">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/30"
+            className="absolute inset-0 bg-black/10"
             onClick={closeForm}
           />
-          {/* Modal */}
-          <div className="relative w-full max-w-lg bg-[#FDF8F4] rounded-t-2xl p-5 animate-modalSlideUp">
+          {/* Modal — sits at bottom so timeline stays visible above */}
+          <div className="relative w-full max-w-lg bg-[#FDF8F4] rounded-2xl p-5 animate-modalSlideUp shadow-xl">
             {/* Close button */}
             <button
               onClick={closeForm}
@@ -234,9 +248,24 @@ export default function PrizesPage() {
                   {formState.unlockLevel}
                 </span>
               </div>
-              <span className="text-[10px] text-stone-400 mt-0.5 block">
-                {getRankTitle(formState.unlockLevel)} rank
-              </span>
+              <div className="flex items-center justify-between mt-0.5">
+                <span className="text-[10px] text-stone-400">
+                  {getRankTitle(formState.unlockLevel)} rank
+                </span>
+                <span
+                  className={`text-[10px] font-semibold ${
+                    formState.unlockLevel <= currentLevel
+                      ? "text-emerald-500"
+                      : "text-amber-500"
+                  }`}
+                >
+                  {formState.unlockLevel <= currentLevel
+                    ? "Already unlocked!"
+                    : formState.unlockLevel - currentLevel === 1
+                    ? "1 level away"
+                    : `${formState.unlockLevel - currentLevel} levels away`}
+                </span>
+              </div>
             </label>
 
             {/* Link field */}

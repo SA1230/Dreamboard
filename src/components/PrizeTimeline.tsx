@@ -4,7 +4,7 @@ import { useRef, useEffect } from "react";
 import { Prize } from "@/lib/types";
 import { SYSTEM_REWARDS, getVisibleRange, SystemReward } from "@/lib/prizes";
 import { getRankColorPair } from "@/lib/ranks";
-import { Lock, Trophy, ExternalLink, Gift } from "lucide-react";
+import { Lock, Trophy, ExternalLink, Gift, Check } from "lucide-react";
 
 interface PrizeTimelineProps {
   currentLevel: number;
@@ -85,26 +85,62 @@ export function PrizeTimeline({ currentLevel, prizes, onEditPrize }: PrizeTimeli
     (level) => getNodeState(level, currentLevel, visibleRange) !== "hidden"
   );
 
+  // Progress percentage: how far along the current level node sits
+  // With justify-between, first node is at 0% and last is at 100%
+  const currentIndex = visiblePositions.indexOf(currentLevel);
+  const lastIndex = visiblePositions.length - 1;
+  const progressPercent =
+    lastIndex > 0 && currentIndex >= 0
+      ? (currentIndex / lastIndex) * 100
+      : currentIndex === 0 && lastIndex === 0
+      ? 100
+      : 0;
+
   return (
     <div
       ref={scrollContainerRef}
       className="overflow-x-auto w-full"
       style={{ WebkitOverflowScrolling: "touch" }}
     >
-      {/* Flex container — nodes spread evenly across full width */}
-      <div className="relative flex justify-evenly items-start w-full min-w-[400px]">
-        {/* Center line — spans from first to last node */}
+      {/* Flex container — nodes spread across full width, edge to edge */}
+      {/* pt-3/pb-2 gives room for checkmark badges that overflow card edges */}
+      <div
+        className="relative flex justify-between items-start w-full pt-3 pb-2"
+        style={{ minWidth: Math.max(400, visiblePositions.length * 140), paddingLeft: 24, paddingRight: 24 }}
+      >
+        {/* Center line — gray base + amber progress fill */}
         <div
-          className="absolute left-0 right-0 h-[2px] bg-stone-200"
-          style={{ top: 160 }}
+          className="absolute h-[2px] bg-stone-200"
+          style={{ top: 176, left: 24, right: 24 }}
+        />
+        {/* Amber fill — scales from left edge to current level position */}
+        <div
+          className="absolute h-[2px] bg-amber-400"
+          style={{
+            top: 176,
+            left: 24,
+            right: 24,
+            transformOrigin: "left",
+            transform: `scaleX(${progressPercent / 100})`,
+          }}
         />
 
         {/* Dashed continuation if there's more beyond teased */}
         {visibleRange.teased && (
-          <div
-            className="absolute right-0 h-[2px] border-t-2 border-dashed border-stone-200"
-            style={{ top: 160, width: 40 }}
-          />
+          <>
+            <div
+              className="absolute right-0 h-[2px] border-t-2 border-dashed border-stone-200"
+              style={{ top: 176, width: 24 }}
+            />
+            {/* Fog gradient overlay on teased nodes */}
+            <div
+              className="absolute top-0 bottom-0 right-0 pointer-events-none z-20"
+              style={{
+                width: 120,
+                background: "linear-gradient(to right, transparent, #FDF8F4 90%)",
+              }}
+            />
+          </>
         )}
 
         {/* Level nodes */}
@@ -122,51 +158,74 @@ export function PrizeTimeline({ currentLevel, prizes, onEditPrize }: PrizeTimeli
           return (
             <div
               key={level}
-              className="flex flex-col items-center flex-1 min-w-[130px]"
+              className="flex flex-col items-center shrink-0"
               style={{
-                opacity: isTeased ? 0.4 : 1,
-                filter: isTeased ? "grayscale(0.6)" : "none",
+                width: 140,
+                opacity: isTeased ? 0.45 : 1,
+                filter: isTeased ? "grayscale(0.5) blur(0.5px)" : "none",
               }}
               ref={isCurrent ? currentLevelRef : undefined}
             >
               {/* Top track: System rewards */}
-              <div className="h-[148px] flex flex-col justify-end items-center pb-3">
+              <div className="h-[148px] flex flex-col justify-end items-center pb-0 overflow-visible">
                 {systemReward && (
-                  <div
-                    className={`rounded-xl px-3 py-2.5 text-center w-[116px] border ${
-                      isUnlocked
-                        ? "border-stone-300 bg-white/80"
-                        : "border-stone-200 bg-stone-50"
-                    }`}
-                  >
-                    {isTeased ? (
-                      <Lock size={18} className="mx-auto text-stone-300 mb-1" />
-                    ) : (
-                      <Trophy
-                        size={18}
-                        className="mx-auto mb-1"
-                        style={{ color: isUnlocked ? rankStartColor : "#a8a29e" }}
-                      />
-                    )}
-                    <p
-                      className="text-xs font-bold leading-tight"
-                      style={{ color: isUnlocked ? rankStartColor : "#a8a29e" }}
+                  <>
+                    <div
+                      className={`relative rounded-xl px-3 py-2.5 text-center w-[116px] border overflow-visible ${
+                        isUnlocked
+                          ? "border-stone-300 bg-white/80"
+                          : "border-stone-200 bg-stone-50"
+                      }`}
                     >
-                      {systemReward.title}
-                    </p>
-                    <p className="text-[10px] text-stone-400 leading-tight mt-0.5">
-                      Lv. {systemReward.level}
-                    </p>
-                  </div>
+                      {/* Earned badge — shows for completed AND current rank */}
+                      {isUnlocked && !isTeased && (
+                        <div className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-emerald-400 flex items-center justify-center z-10">
+                          <Check size={12} className="text-white" strokeWidth={3} />
+                        </div>
+                      )}
+                      {isTeased ? (
+                        <Lock size={18} className="mx-auto text-stone-300 mb-1" />
+                      ) : (
+                        <Trophy
+                          size={18}
+                          className="mx-auto mb-1"
+                          style={{ color: isUnlocked ? rankStartColor : "#a8a29e" }}
+                        />
+                      )}
+                      <p
+                        className="text-xs font-bold leading-tight"
+                        style={{ color: isUnlocked ? rankStartColor : "#a8a29e" }}
+                      >
+                        {systemReward.title}
+                      </p>
+                      <p className="text-[10px] text-stone-400 leading-tight mt-0.5">
+                        Lv. {systemReward.level}
+                      </p>
+                    </div>
+                    {/* Connector line down to dot */}
+                    <div
+                      className="w-[1px] flex-1 min-h-[8px]"
+                      style={{
+                        backgroundColor: isUnlocked ? "#d6d3d1" : "#e7e5e4",
+                      }}
+                    />
+                  </>
                 )}
               </div>
 
               {/* Center: Level marker */}
-              <div className="relative flex items-center justify-center h-[24px]">
+              <div className="relative flex items-center justify-center h-[32px]">
+                {/* Outer glow ring for current level */}
+                {isCurrent && (
+                  <div
+                    className="absolute w-10 h-10 rounded-full animate-ping"
+                    style={{ backgroundColor: "rgba(245, 158, 11, 0.2)" }}
+                  />
+                )}
                 <div
-                  className={`rounded-full transition-all ${
+                  className={`rounded-full transition-all relative z-10 ${
                     isCurrent
-                      ? "w-6 h-6 animate-levelPulse"
+                      ? "w-8 h-8"
                       : isCompleted
                       ? "w-3.5 h-3.5"
                       : "w-3.5 h-3.5"
@@ -175,23 +234,26 @@ export function PrizeTimeline({ currentLevel, prizes, onEditPrize }: PrizeTimeli
                     backgroundColor: isCurrent
                       ? "#f59e0b"
                       : isCompleted
-                      ? "#a8a29e"
+                      ? "#d6b060"
                       : isTeased
                       ? "#e7e5e4"
                       : "#d6d3d1",
-                    border: isCurrent ? "2px solid #d97706" : "none",
+                    border: isCurrent ? "3px solid #d97706" : "none",
+                    boxShadow: isCurrent
+                      ? "0 0 12px rgba(245, 158, 11, 0.4)"
+                      : "none",
                   }}
                 />
                 {/* Level number below the marker */}
                 <span
-                  className={`absolute top-full mt-1 text-[10px] font-semibold ${
+                  className={`absolute top-full mt-1 font-bold ${
                     isCurrent
-                      ? "text-amber-600"
+                      ? "text-xs text-amber-600"
                       : isCompleted
-                      ? "text-stone-400"
+                      ? "text-[10px] text-stone-400"
                       : isTeased
-                      ? "text-stone-200"
-                      : "text-stone-300"
+                      ? "text-[10px] text-stone-200"
+                      : "text-[10px] text-stone-300"
                   }`}
                 >
                   {level}
@@ -199,33 +261,63 @@ export function PrizeTimeline({ currentLevel, prizes, onEditPrize }: PrizeTimeli
               </div>
 
               {/* Bottom track: User prizes */}
-              <div className="h-[148px] flex flex-col justify-start items-center pt-5">
+              <div className="h-[148px] flex flex-col justify-start items-center pt-0 overflow-visible">
+                {levelPrizes.length > 0 && (
+                  <div
+                    className="w-[1px] min-h-[8px] h-[16px]"
+                    style={{
+                      backgroundColor: isUnlocked ? "#fbbf24" : "#e7e5e4",
+                    }}
+                  />
+                )}
                 {levelPrizes.map((prize) => (
-                  <button
-                    key={prize.id}
-                    onClick={() => onEditPrize(prize)}
-                    className={`rounded-xl px-3 py-2.5 text-center w-[116px] border cursor-pointer transition-colors mb-1 ${
-                      isUnlocked
-                        ? "border-amber-200 bg-amber-50/80 hover:bg-amber-100/80"
-                        : "border-stone-200 bg-stone-50 hover:bg-stone-100"
-                    }`}
-                  >
-                    {isUnlocked ? (
-                      <Gift size={18} className="mx-auto mb-1 text-amber-500" />
-                    ) : (
-                      <Lock size={18} className="mx-auto mb-1 text-stone-300" />
-                    )}
-                    <p
-                      className={`text-xs font-bold leading-tight line-clamp-2 ${
-                        isUnlocked ? "text-amber-700" : "text-stone-400"
+                  <div key={prize.id} className="relative mb-1 overflow-visible">
+                    <button
+                      onClick={() => onEditPrize(prize)}
+                      className={`relative rounded-xl px-3 py-2.5 text-center w-[116px] border cursor-pointer transition-colors overflow-visible ${
+                        isUnlocked
+                          ? "border-amber-300 bg-amber-50/80 hover:bg-amber-100/80"
+                          : "border-stone-200 bg-stone-50 hover:bg-stone-100"
                       }`}
+                      style={{
+                        boxShadow: isUnlocked
+                          ? "0 0 8px rgba(245, 158, 11, 0.15)"
+                          : "none",
+                      }}
                     >
-                      {prize.name}
-                    </p>
-                    {prize.link && (
-                      <ExternalLink size={10} className="mx-auto mt-1 text-stone-300" />
+                      {/* Unlocked badge */}
+                      {isUnlocked && (
+                        <div className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-emerald-400 flex items-center justify-center z-10">
+                          <Check size={12} className="text-white" strokeWidth={3} />
+                        </div>
+                      )}
+                      {isUnlocked ? (
+                        <Gift size={18} className="mx-auto mb-1 text-amber-500" />
+                      ) : (
+                        <Lock size={18} className="mx-auto mb-1 text-stone-300" />
+                      )}
+                      <p
+                        className={`text-xs font-bold leading-tight line-clamp-2 ${
+                          isUnlocked ? "text-amber-700" : "text-stone-400"
+                        }`}
+                      >
+                        {prize.name}
+                      </p>
+                    </button>
+                    {/* Visit link button — only for unlocked prizes with a URL */}
+                    {isUnlocked && prize.link && (
+                      <a
+                        href={prize.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center justify-center gap-1 mt-1 py-1 rounded-lg text-[10px] font-semibold text-amber-500 hover:text-amber-600 hover:bg-amber-50 transition-colors"
+                      >
+                        <ExternalLink size={10} />
+                        Visit
+                      </a>
                     )}
-                  </button>
+                  </div>
                 ))}
               </div>
             </div>
