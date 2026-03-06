@@ -35,7 +35,6 @@ export const ITEM_CATALOG: ShopItem[] = [
     rarity: "common",
     cost: 3,
     svgAssetKey: "leather-cap",
-    thumbnailSrc: "/items/thumbnails/leather-cap.png",
   },
   {
     id: "iron-helm",
@@ -46,7 +45,6 @@ export const ITEM_CATALOG: ShopItem[] = [
     cost: 8,
     levelRequirement: 5,
     svgAssetKey: "iron-helm",
-    thumbnailSrc: "/items/thumbnails/iron-helm.png",
   },
   {
     id: "cloth-tunic",
@@ -56,7 +54,6 @@ export const ITEM_CATALOG: ShopItem[] = [
     rarity: "common",
     cost: 3,
     svgAssetKey: "cloth-tunic",
-    thumbnailSrc: "/items/thumbnails/cloth-tunic.png",
   },
   {
     id: "chain-mail",
@@ -67,7 +64,6 @@ export const ITEM_CATALOG: ShopItem[] = [
     cost: 15,
     levelRequirement: 10,
     svgAssetKey: "chain-mail",
-    thumbnailSrc: "/items/thumbnails/chain-mail.png",
   },
   {
     id: "wooden-sword",
@@ -77,7 +73,6 @@ export const ITEM_CATALOG: ShopItem[] = [
     rarity: "common",
     cost: 2,
     svgAssetKey: "wooden-sword",
-    thumbnailSrc: "/items/thumbnails/wooden-sword.png",
   },
   {
     id: "crystal-staff",
@@ -88,7 +83,6 @@ export const ITEM_CATALOG: ShopItem[] = [
     cost: 25,
     levelRequirement: 15,
     svgAssetKey: "crystal-staff",
-    thumbnailSrc: "/items/thumbnails/crystal-staff.png",
   },
   {
     id: "buckler-shield",
@@ -98,7 +92,6 @@ export const ITEM_CATALOG: ShopItem[] = [
     rarity: "common",
     cost: 3,
     svgAssetKey: "buckler-shield",
-    thumbnailSrc: "/items/thumbnails/buckler-shield.png",
   },
   {
     id: "wanderer-boots",
@@ -108,7 +101,6 @@ export const ITEM_CATALOG: ShopItem[] = [
     rarity: "uncommon",
     cost: 5,
     svgAssetKey: "wanderer-boots",
-    thumbnailSrc: "/items/thumbnails/wanderer-boots.png",
   },
 ];
 
