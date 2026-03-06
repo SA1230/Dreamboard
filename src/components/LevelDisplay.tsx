@@ -6,6 +6,8 @@ import { useLevelUpAnimation } from "@/hooks/useLevelUpAnimation";
 import { useParallaxTilt } from "@/hooks/useParallaxTilt";
 import { SkipperCharacter } from "@/components/SkipperCharacter";
 import { PlayerInventory } from "@/lib/types";
+import { isMascotNameUnlocked } from "@/lib/storage";
+import { Info } from "lucide-react";
 
 export function LevelDisplay({
   level,
@@ -16,6 +18,7 @@ export function LevelDisplay({
   previousOverallLevel,
   onShake,
   equippedItems,
+  mascotName,
 }: {
   level: number;
   progressPercent: number;
@@ -25,9 +28,11 @@ export function LevelDisplay({
   previousOverallLevel?: number;
   onShake?: () => void;
   equippedItems?: PlayerInventory["equippedItems"];
+  mascotName?: string;
 }) {
   const numberRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const displayName = mascotName ?? "Skipper";
 
   const { animPhase, displayedLevel, displayedRank, rankChanging, shatterFragments } =
     useLevelUpAnimation({ level, isLevelingUp, previousOverallLevel, onShake });
@@ -275,13 +280,28 @@ export function LevelDisplay({
         </span>
       </span>
 
+      {/* Mascot name — static display, with info teaser at level 3-4 */}
+      <div className="flex items-center justify-center gap-1 mt-1">
+        <span className="text-sm font-bold text-stone-600">
+          {displayName}
+        </span>
+        {level >= 3 && !isMascotNameUnlocked(level) && (
+          <div className="relative group">
+            <Info size={12} className="text-stone-300 cursor-help" />
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-medium text-stone-500 bg-stone-100 border border-stone-200 whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-10">
+              Name change unlocks at Lv. 5
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* XP text */}
       {!isMaxLevel ? (
-        <span className="text-xs text-stone-400 mt-3 font-medium">
+        <span className="text-xs text-stone-400 mt-2 font-medium">
           {xpIntoLevel} / {xpForNextLevel} XP to Level {level + 1}
         </span>
       ) : (
-        <span className="text-xs text-amber-600 font-bold mt-3 uppercase tracking-wider">
+        <span className="text-xs text-amber-600 font-bold mt-2 uppercase tracking-wider">
           Max Level
         </span>
       )}
