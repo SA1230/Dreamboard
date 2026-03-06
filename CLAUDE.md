@@ -62,7 +62,7 @@ src/
 - **HiddenSlot** — inventory-only slots (rings, ears, neck, shoulders, back, bracers, ranged) — no visual on character, for future stat items
 - **EquipmentSlot** — `VisibleSlot | HiddenSlot`
 - **ItemRarity** — `"common" | "uncommon" | "rare" | "epic" | "legendary"`
-- **ShopItem** — `{ id, name, description, slot, rarity, cost, levelRequirement?, svgAssetKey?, thumbnailSrc, overridesSlots? }` — item definition. `overridesSlots` lets robes hide chest+legs visuals
+- **ShopItem** — `{ id, name, description, slot, rarity, cost, levelRequirement?, svgAssetKey?, overridesSlots? }` — item definition. `overridesSlots` lets robes hide chest+legs visuals
 - **PlayerInventory** — `{ ownedItemIds: string[], equippedItems: Partial<Record<EquipmentSlot, string>> }` — owned items + slot-to-itemId mapping
 - **GameData** — the root object stored in localStorage: `{ stats, activities, customDefinitions?, healthyHabits?, enabledHabits?, dailyDamage?, enabledDamage?, pointsWallet?, mascotOverrides?, feedEvents?, inventory? }`
   - `healthyHabits` maps each `HabitKey` to an array of `"YYYY-MM-DD"` date strings (days the habit was completed)
@@ -123,7 +123,8 @@ src/
 
 ## Key exports in `itemSvgs.ts`
 
-- `ITEM_SVG_REGISTRY: Record<string, string>` — raw SVG strings for each item, keyed by `svgAssetKey`. Designed in Skipper's coordinate space (viewBox `330 245 450 665`). Phase 1 uses colored placeholder shapes
+- `ITEM_SVG_REGISTRY: Record<string, string>` — raw SVG strings for each item, keyed by `svgAssetKey`. Designed in Skipper's coordinate space (viewBox `330 245 450 665`). Hand-crafted paths using Skipper's 4-color palette + rarity accent colors
+- `ITEM_THUMBNAIL_REGISTRY: Record<string, string>` — standalone SVG strings for shop card icons (viewBox `0 0 64 64`). Separate compositions from on-character art, optimized for small card display
 
 ## Key exports in `storage.ts`
 
