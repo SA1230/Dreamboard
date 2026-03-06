@@ -579,7 +579,7 @@ export function exportGameData(data: GameData): void {
 
 export const DAMAGE_KEYS: DamageKey[] = ["substance", "screentime", "junkfood", "badsleep"];
 
-const DEFAULT_ENABLED_DAMAGE: DamageKey[] = ["substance", "screentime", "junkfood", "badsleep"];
+const DEFAULT_ENABLED_DAMAGE: DamageKey[] = [];
 
 export function isDamageMarkedToday(data: GameData, damageKey: DamageKey): boolean {
   const dates = data.dailyDamage?.[damageKey];

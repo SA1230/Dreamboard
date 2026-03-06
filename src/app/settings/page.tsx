@@ -23,6 +23,7 @@ export default function SettingsPage() {
   const [editingStat, setEditingStat] = useState<StatKey | null>(null);
   const [saved, setSaved] = useState(false);
   const [showResetDataConfirm, setShowResetDataConfirm] = useState(false);
+  const [pendingDamageKey, setPendingDamageKey] = useState<DamageKey | null>(null);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -114,12 +115,27 @@ export default function SettingsPage() {
 
   function toggleDamageItem(damageKey: DamageKey) {
     if (!gameData) return;
-    const updated = enabledDamage.includes(damageKey)
-      ? enabledDamage.filter((k) => k !== damageKey)
-      : [...enabledDamage, damageKey];
+    const isEnabling = !enabledDamage.includes(damageKey);
+    // Show confirmation when enabling the first damage type
+    if (isEnabling && enabledDamage.length === 0) {
+      setPendingDamageKey(damageKey);
+      return;
+    }
+    const updated = isEnabling
+      ? [...enabledDamage, damageKey]
+      : enabledDamage.filter((k) => k !== damageKey);
     setEnabledDamage(updated);
     const newData = saveEnabledDamage(gameData, updated);
     setGameData(newData);
+  }
+
+  function confirmEnableDamage() {
+    if (!gameData || !pendingDamageKey) return;
+    const updated = [...enabledDamage, pendingDamageKey];
+    setEnabledDamage(updated);
+    const newData = saveEnabledDamage(gameData, updated);
+    setGameData(newData);
+    setPendingDamageKey(null);
   }
 
   function handleProfilePictureUpload(event: React.ChangeEvent<HTMLInputElement>) {
@@ -533,6 +549,42 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>
+
+      {/* Enable Damage Confirmation Modal */}
+      {pendingDamageKey && (
+        <ModalBackdrop onClose={() => setPendingDamageKey(null)} backdropStyle="dark">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-modalSlideUp">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+                <svg width="28" height="28" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M11.5 1L4 11h5.5L8.5 19 16 9h-5.5L11.5 1z" fill="#f59e0b" stroke="#d97706" strokeWidth="1.2" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-extrabold text-stone-700 mb-2">
+                Enable Daily Damage?
+              </h3>
+              <p className="text-sm text-stone-500 mb-6">
+                When you log negative behaviors, each one <span className="font-bold text-red-500">deducts 1 Power Point</span>. You can disable this anytime.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setPendingDamageKey(null)}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-stone-500 bg-stone-100 hover:bg-stone-200 transition-colors"
+                >
+                  Never mind
+                </button>
+                <button
+                  onClick={confirmEnableDamage}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
+                  style={{ background: 'linear-gradient(135deg, #d97706, #f59e0b)' }}
+                >
+                  Enable it
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalBackdrop>
+      )}
 
       {/* Reset Data Confirmation Modal */}
       {showResetDataConfirm && (
