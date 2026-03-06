@@ -331,6 +331,21 @@ export function JudgeModal({
             >
               Accept Verdict (+{totalXP} XP)
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                const disputeMessage: ChatMessage = {
+                  role: "assistant",
+                  content: "Alright, tell me more. What am I missing?",
+                };
+                setMessages((prev) => [...prev, disputeMessage]);
+                setVerdict(null);
+                setTimeout(() => inputRef.current?.focus(), 100);
+              }}
+              className="w-full mt-2 py-2 text-xs text-stone-400 hover:text-stone-600 transition-colors"
+            >
+              Wait, let me explain...
+            </button>
           </div>
         )}
 
