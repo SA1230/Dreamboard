@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { GameData, StatKey, HabitKey, DamageKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForToday, toggleDamageForToday, getPointsBalance, formatRelativeTime, getInventory, getMascotName } from "@/lib/storage";
+import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForToday, toggleDamageForToday, getPointsBalance, formatRelativeTime, getInventory, getMascotName, checkPrizeUnlocks } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
 import { StatIcon } from "@/components/StatIcons";
 import { JudgeModal } from "@/components/JudgeModal";
@@ -13,7 +13,7 @@ import { HealthyHabits } from "@/components/HealthyHabits";
 import { DailyDamage } from "@/components/DailyDamage";
 import { LevelDisplay } from "@/components/LevelDisplay";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
-import { Download, Settings, CalendarDays, ShoppingBag } from "lucide-react";
+import { Download, Settings, CalendarDays, ShoppingBag, Trophy } from "lucide-react";
 import Link from "next/link";
 import { getRankTitle } from "@/lib/ranks";
 
@@ -43,9 +43,13 @@ export default function Home() {
     overallNewRank?: string;
   } | null>(null);
 
-  // Load data from localStorage on mount
+  // Load data from localStorage on mount + check for newly unlocked prizes
   useEffect(() => {
-    setGameData(loadGameData());
+    const data = loadGameData();
+    const totalXP = getTotalLifetimeXP(data);
+    const { level } = getOverallLevel(totalXP);
+    const updated = checkPrizeUnlocks(data, level);
+    setGameData(updated);
   }, []);
 
   // Merge custom overrides with defaults
@@ -255,6 +259,14 @@ export default function Home() {
             aria-label="Shop"
           >
             <ShoppingBag size={18} />
+          </Link>
+          <Link
+            href="/prizes"
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
+            title="Prize Track"
+            aria-label="Prize Track"
+          >
+            <Trophy size={18} />
           </Link>
           <Link
             href="/settings"

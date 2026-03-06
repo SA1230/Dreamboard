@@ -435,6 +435,16 @@
   100% { transform: scale(1) translateY(0); }
 }
 
+/* Prize Track: pulsing current-level indicator */
+.animate-levelPulse {
+  animation: levelPulse 2s ease-in-out infinite;
+}
+
+@keyframes levelPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  50% { box-shadow: 0 0 8px 4px rgba(245, 158, 11, 0.2); }
+}
+
 body {
   background: #FDF8F4;
 }

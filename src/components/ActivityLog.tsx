@@ -5,6 +5,7 @@ import { StatDefinition } from "@/lib/stats";
 import { HABIT_DEFINITIONS } from "@/lib/habits";
 import { DAMAGE_DEFINITIONS } from "@/lib/damage";
 import { StatIcon } from "./StatIcons";
+import { Trophy } from "lucide-react";
 
 interface ActivityLogProps {
   feedEvents: FeedEvent[];
@@ -322,6 +323,31 @@ function RankUpRow({ event }: { event: Extract<FeedEvent, { type: "rank_up" }> }
   );
 }
 
+function PrizeUnlockedRow({ event }: { event: Extract<FeedEvent, { type: "prize_unlocked" }> }) {
+  return (
+    <div
+      className="flex items-center gap-3 px-4 py-3 rounded-xl border-2"
+      style={{
+        background: "rgba(245, 158, 11, 0.08)",
+        borderColor: "#e5c880",
+      }}
+    >
+      <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-amber-50 border border-amber-200">
+        <Trophy size={16} className="text-amber-500" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <span className="text-xs font-bold text-amber-700">Prize Unlocked!</span>
+        <p className="text-xs text-amber-600/80">
+          {event.prizeName} <span className="text-stone-300">at Lv. {event.unlockLevel}</span>
+        </p>
+      </div>
+      <span className="text-xs text-stone-300 flex-shrink-0">
+        {formatTimestamp(event.timestamp)}
+      </span>
+    </div>
+  );
+}
+
 function ActivityGroupCard({ group, definitions }: { group: ActivityGroup; definitions: Record<StatKey, StatDefinition> }) {
   const totalXP = group.xpGains.reduce((sum, e) => sum + (e.amount ?? 1), 0);
   const hasLevelUps = group.levelUps.length > 0 || group.overallLevelUps.length > 0 || group.rankUps.length > 0;
@@ -440,6 +466,8 @@ export function ActivityLog({ feedEvents, definitions }: ActivityLogProps) {
             return <OverallLevelUpRow key={event.id} event={event} />;
           case "rank_up":
             return <RankUpRow key={event.id} event={event} />;
+          case "prize_unlocked":
+            return <PrizeUnlockedRow key={event.id} event={event} />;
           default:
             return null;
         }
