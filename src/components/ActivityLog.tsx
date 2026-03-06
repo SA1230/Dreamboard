@@ -17,6 +17,89 @@ const HABIT_EMOJI = Object.fromEntries(HABIT_DEFINITIONS.map((h) => [h.key, h.em
 const DAMAGE_LABELS = Object.fromEntries(DAMAGE_DEFINITIONS.map((d) => [d.key, d.label]));
 const DAMAGE_EMOJI = Object.fromEntries(DAMAGE_DEFINITIONS.map((d) => [d.key, d.emoji]));
 
+// --- Grouping types ---
+
+interface ActivityGroup {
+  kind: "activity_group";
+  note: string;
+  timestamp: string;
+  xpGains: Extract<FeedEvent, { type: "xp_gain" }>[];
+  levelUps: Extract<FeedEvent, { type: "level_up" }>[];
+  overallLevelUps: Extract<FeedEvent, { type: "overall_level_up" }>[];
+  rankUps: Extract<FeedEvent, { type: "rank_up" }>[];
+}
+
+interface UngroupedEvent {
+  kind: "ungrouped";
+  event: FeedEvent;
+}
+
+type FeedItem = ActivityGroup | UngroupedEvent;
+
+const GROUPING_WINDOW_MS = 5000;
+
+function isWithinWindow(timestampA: string, timestampB: string): boolean {
+  return Math.abs(new Date(timestampA).getTime() - new Date(timestampB).getTime()) <= GROUPING_WINDOW_MS;
+}
+
+function groupFeedEvents(events: FeedEvent[]): FeedItem[] {
+  const result: FeedItem[] = [];
+  let currentGroup: ActivityGroup | null = null;
+
+  for (const event of events) {
+    if (event.type === "xp_gain") {
+      // Try to add to current group if same note and within time window
+      if (currentGroup && currentGroup.note === event.note && isWithinWindow(currentGroup.timestamp, event.timestamp)) {
+        currentGroup.xpGains.push(event);
+      } else {
+        // Flush previous group and start a new one
+        if (currentGroup) result.push(currentGroup);
+        currentGroup = {
+          kind: "activity_group",
+          note: event.note,
+          timestamp: event.timestamp,
+          xpGains: [event],
+          levelUps: [],
+          overallLevelUps: [],
+          rankUps: [],
+        };
+      }
+    } else if (event.type === "level_up") {
+      // Attach to current group if within time window
+      if (currentGroup && isWithinWindow(currentGroup.timestamp, event.timestamp)) {
+        currentGroup.levelUps.push(event);
+      } else {
+        if (currentGroup) { result.push(currentGroup); currentGroup = null; }
+        result.push({ kind: "ungrouped", event });
+      }
+    } else if (event.type === "overall_level_up") {
+      if (currentGroup && isWithinWindow(currentGroup.timestamp, event.timestamp)) {
+        currentGroup.overallLevelUps.push(event);
+      } else {
+        if (currentGroup) { result.push(currentGroup); currentGroup = null; }
+        result.push({ kind: "ungrouped", event });
+      }
+    } else if (event.type === "rank_up") {
+      if (currentGroup && isWithinWindow(currentGroup.timestamp, event.timestamp)) {
+        currentGroup.rankUps.push(event);
+      } else {
+        if (currentGroup) { result.push(currentGroup); currentGroup = null; }
+        result.push({ kind: "ungrouped", event });
+      }
+    } else {
+      // Habits/damage — flush current group, then add as ungrouped
+      if (currentGroup) { result.push(currentGroup); currentGroup = null; }
+      result.push({ kind: "ungrouped", event });
+    }
+  }
+
+  // Flush final group
+  if (currentGroup) result.push(currentGroup);
+  return result;
+}
+
+// --- Formatting ---
+
 function formatTimestamp(isoString: string): string {
   const date = new Date(isoString);
   const now = new Date();
@@ -239,6 +322,82 @@ function RankUpRow({ event }: { event: Extract<FeedEvent, { type: "rank_up" }> }
   );
 }
 
+function ActivityGroupCard({ group, definitions }: { group: ActivityGroup; definitions: Record<StatKey, StatDefinition> }) {
+  const totalXP = group.xpGains.reduce((sum, e) => sum + (e.amount ?? 1), 0);
+  const hasLevelUps = group.levelUps.length > 0 || group.overallLevelUps.length > 0 || group.rankUps.length > 0;
+
+  return (
+    <div className="px-4 py-3 rounded-xl bg-white/60">
+      {/* Activity description */}
+      {group.note && (
+        <p className="text-xs text-stone-500 mb-1.5">{group.note}</p>
+      )}
+
+      {/* XP pills row */}
+      <div className="flex flex-wrap items-center gap-x-1 gap-y-1">
+        {group.xpGains.map((event, index) => {
+          const definition = definitions[event.stat];
+          return (
+            <span key={event.id} className="inline-flex items-center gap-1">
+              {index > 0 && <span className="text-stone-200 text-xs mr-0.5">&middot;</span>}
+              <span style={{ color: definition.color }} className="flex-shrink-0">
+                <StatIcon iconKey={definition.iconKey} className="w-3.5 h-3.5" />
+              </span>
+              <span className="text-xs font-semibold" style={{ color: definition.color }}>
+                {definition.name}
+              </span>
+              <span className="text-xs text-stone-300">+{event.amount ?? 1}</span>
+            </span>
+          );
+        })}
+        {group.xpGains.length > 1 && (
+          <span className="text-xs font-semibold text-stone-400 ml-1">{totalXP} XP</span>
+        )}
+      </div>
+
+      {/* Level-up sub-items */}
+      {hasLevelUps && (
+        <div className="border-t border-stone-100 mt-2 pt-2 space-y-1">
+          {group.levelUps.map((event) => {
+            const definition = definitions[event.stat];
+            return (
+              <div key={event.id} className="flex items-center gap-1.5">
+                <span style={{ color: definition.color }} className="flex-shrink-0">
+                  <StatIcon iconKey={definition.iconKey} className="w-3.5 h-3.5" />
+                </span>
+                <span className="text-xs font-bold" style={{ color: definition.color }}>
+                  {definition.name} reached level {event.newLevel}!
+                </span>
+              </div>
+            );
+          })}
+          {group.overallLevelUps.map((event) => (
+            <div key={event.id} className="flex items-center gap-1.5">
+              <span className="text-xs">&#x2B50;</span>
+              <span className="text-xs font-bold text-amber-700">
+                Level {event.previousLevel} &rarr; {event.newLevel}
+              </span>
+            </div>
+          ))}
+          {group.rankUps.map((event) => (
+            <div key={event.id} className="flex items-center gap-1.5">
+              <span className="text-xs">&#x2B50;</span>
+              <span className="text-xs font-bold text-amber-700">
+                Promoted to {event.newRank}!
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Timestamp */}
+      <div className="flex justify-end mt-1.5">
+        <span className="text-xs text-stone-300">{formatTimestamp(group.timestamp)}</span>
+      </div>
+    </div>
+  );
+}
+
 export function ActivityLog({ feedEvents, definitions }: ActivityLogProps) {
   const recentEvents = feedEvents.slice(0, 30);
 
@@ -250,9 +409,22 @@ export function ActivityLog({ feedEvents, definitions }: ActivityLogProps) {
     );
   }
 
+  const feedItems = groupFeedEvents(recentEvents);
+
   return (
     <div className="space-y-2">
-      {recentEvents.map((event) => {
+      {feedItems.map((item, index) => {
+        if (item.kind === "activity_group") {
+          return (
+            <ActivityGroupCard
+              key={item.xpGains[0]?.id ?? `group-${index}`}
+              group={item}
+              definitions={definitions}
+            />
+          );
+        }
+
+        const event = item.event;
         switch (event.type) {
           case "xp_gain":
             return <XPGainRow key={event.id} event={event} definitions={definitions} />;
