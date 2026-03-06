@@ -2,7 +2,7 @@
 
 import { StatProgress } from "@/lib/types";
 import { StatDefinition } from "@/lib/stats";
-import { getXPForNextLevel, formatRelativeTime } from "@/lib/storage";
+import { getXPForNextLevel } from "@/lib/storage";
 import { StatIcon } from "./StatIcons";
 import { Flame } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
@@ -14,15 +14,14 @@ interface StatCardProps {
   justGainedXP: boolean;
   streak: number;
   isActiveThisMonth: boolean;
-  lastLoggedTimestamp: string | null;
   previousLevel?: number;
 }
 
-// SVG ring constants
-const RING_SIZE = 56;
-const STROKE_WIDTH = 4;
-const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2; // 26
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS; // ~163.36
+// SVG ring constants (compact)
+const RING_SIZE = 44;
+const STROKE_WIDTH = 3.5;
+const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 export function StatCard({
   definition,
@@ -31,7 +30,6 @@ export function StatCard({
   justGainedXP,
   streak,
   isActiveThisMonth,
-  lastLoggedTimestamp,
   previousLevel,
 }: StatCardProps) {
   const xpNeeded = getXPForNextLevel(progress.level);
@@ -114,12 +112,43 @@ export function StatCard({
 
   const gradientId = `statRing-${definition.key}`;
 
+  // Inactive cards render as a compact single-line row
+  if (!isActiveThisMonth) {
+    return (
+      <div
+        ref={cardRef}
+        className="relative rounded-xl px-3 py-2.5 transition-all duration-300 opacity-50 saturate-[0.3] hover:opacity-70"
+        style={{ backgroundColor: definition.backgroundColor }}
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="flex-shrink-0 w-5 h-5" style={{ color: `${definition.color}60` }}>
+            <StatIcon iconKey={definition.iconKey} className="w-5 h-5" />
+          </div>
+          <span className="font-semibold text-sm flex-1 min-w-0" style={{ color: definition.color }}>
+            {definition.name}
+          </span>
+          <span
+            className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+            style={{
+              backgroundColor: `${definition.color}10`,
+              color: `${definition.color}90`,
+              border: `1px solid ${definition.color}20`,
+            }}
+          >
+            Lv.{displayedLevel}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // Active cards render as compact cards with ring, name, and XP
   return (
     <div
       ref={cardRef}
-      className={`relative rounded-2xl p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${
-        !isActiveThisMonth ? "opacity-50 saturate-[0.3]" : ""
-      } ${beat === 3 ? "animate-cardLift" : ""} ${beat === 3 ? "animate-saturationBoost" : ""}`}
+      className={`relative rounded-2xl p-3 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${
+        beat === 3 ? "animate-cardLift" : ""
+      } ${beat === 3 ? "animate-saturationBoost" : ""}`}
       style={{
         backgroundColor: definition.backgroundColor,
         "--lift-shadow": `${definition.color}25`,
@@ -201,10 +230,10 @@ export function StatCard({
 
           {/* Icon centered inside ring */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="relative w-8 h-8">
+            <div className="relative w-6 h-6">
               {/* Ghost icon layer */}
               <div style={{ color: `${definition.color}30` }} className="absolute inset-0">
-                <StatIcon iconKey={definition.iconKey} className="w-8 h-8" />
+                <StatIcon iconKey={definition.iconKey} className="w-6 h-6" />
               </div>
               {/* Filled icon layer — clips from bottom up based on XP progress */}
               <div
@@ -214,7 +243,7 @@ export function StatCard({
                   clipPath: `inset(${100 - progressPercent}% 0 0 0)`,
                 }}
               >
-                <StatIcon iconKey={definition.iconKey} className="w-8 h-8" />
+                <StatIcon iconKey={definition.iconKey} className="w-6 h-6" />
               </div>
             </div>
           </div>
@@ -240,15 +269,12 @@ export function StatCard({
           </span>
         </div>
 
-        {/* Stat name, description, XP, streak */}
+        {/* Stat name + XP + streak (no description, no timestamp) */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-base" style={{ color: definition.color }}>
+          <h3 className="font-bold text-sm" style={{ color: definition.color }}>
             {definition.name}
           </h3>
-          <p className="text-xs opacity-60" style={{ color: definition.color }}>
-            {definition.description}
-          </p>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2 mt-0.5">
             <span className="text-xs opacity-50" style={{ color: definition.color }}>
               {progress.xp} / {xpNeeded} XP
             </span>
@@ -264,16 +290,6 @@ export function StatCard({
           </div>
         </div>
       </div>
-
-      {/* Last logged timestamp */}
-      {lastLoggedTimestamp && (
-        <p
-          className="text-[10px] mt-2 text-right"
-          style={{ color: `${definition.color}50` }}
-        >
-          {formatRelativeTime(lastLoggedTimestamp)}
-        </p>
-      )}
     </div>
   );
 }
