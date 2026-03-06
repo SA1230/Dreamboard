@@ -1,5 +1,6 @@
 import { GameData, StatKey, HabitKey, DamageKey, Activity, StatProgress, CustomStatOverride, FeedEvent } from "./types";
 import { STAT_KEYS, STAT_DEFINITIONS, StatDefinition, COLOR_PRESETS } from "./stats";
+import { getRankTitle } from "./ranks";
 
 const STORAGE_KEY = "dreamboard-data";
 
@@ -150,8 +151,8 @@ export function addXP(
     });
 
     // Check if rank title also changed
-    const rankBefore = getRankTitleForLevel(overallBefore.level);
-    const rankAfter = getRankTitleForLevel(overallAfter.level);
+    const rankBefore = getRankTitle(overallBefore.level);
+    const rankAfter = getRankTitle(overallAfter.level);
     if (rankAfter !== rankBefore) {
       newData = pushFeedEvent(newData, {
         type: "rank_up",
@@ -218,21 +219,7 @@ export function getOverallLevel(totalXP: number): {
   return { level: MAX_OVERALL_LEVEL, xpIntoLevel: 0, xpForNextLevel: 0 };
 }
 
-// Rank titles — duplicated from page.tsx so storage can detect rank transitions
-const RANK_TITLES_STORAGE: [number, string][] = [
-  [1, "Novice"], [5, "Apprentice"], [10, "Journeyman"], [15, "Adept"],
-  [20, "Expert"], [25, "Veteran"], [30, "Elite"], [35, "Master"],
-  [40, "Grandmaster"], [45, "Champion"], [50, "Legend"], [55, "Mythic"],
-  [60, "Transcendent"],
-];
-
-function getRankTitleForLevel(level: number): string {
-  let title = "Novice";
-  for (const [threshold, name] of RANK_TITLES_STORAGE) {
-    if (level >= threshold) title = name;
-  }
-  return title;
-}
+// getRankTitle is imported from ./ranks (single source of truth for rank definitions)
 
 // Push a feed event onto the front of the feedEvents array (newest first)
 function pushFeedEvent(data: GameData, event: FeedEvent): GameData {
