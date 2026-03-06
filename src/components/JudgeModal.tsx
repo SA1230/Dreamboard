@@ -204,9 +204,36 @@ export function JudgeModal({
         {/* Chat area */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3" style={{ minHeight: "200px" }}>
           {messages.length === 0 && !isLoading && (
-            <p className="text-sm text-stone-300 text-center italic pt-8">
-              Tell the Captain what you accomplished...
-            </p>
+            <div className="space-y-4">
+              {/* Captain welcome bubble */}
+              <div className="flex items-end gap-2 justify-start">
+                <img
+                  src="/mascots/judge-hero.svg"
+                  alt=""
+                  className="w-6 h-6 rounded-full bg-amber-50 border border-amber-200 p-0.5 flex-shrink-0"
+                />
+                <div className="max-w-[80%] rounded-2xl rounded-bl-md bg-stone-100 text-stone-700 px-4 py-2.5 text-sm leading-relaxed">
+                  What did you get up to? Tell me about something you accomplished — big or small. I&apos;ll ask a few questions and award you XP.
+                </div>
+              </div>
+
+              {/* Suggestion chips */}
+              <div className="flex flex-wrap gap-2 pl-8">
+                {["I worked out", "I learned something", "I was productive"].map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => {
+                      setInputValue(suggestion);
+                      inputRef.current?.focus();
+                    }}
+                    className="px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 text-stone-500 border border-stone-200 hover:bg-stone-100 hover:text-stone-700 hover:border-stone-300 transition-colors"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
 
           {messages.map((msg, index) => (
