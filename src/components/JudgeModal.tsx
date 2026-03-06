@@ -350,7 +350,16 @@ export function JudgeModal({
               <button
                 type="submit"
                 disabled={isLoading || !inputValue.trim()}
-                className="px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-stone-700 hover:bg-stone-800 disabled:opacity-30 disabled:hover:bg-stone-700 transition-all active:scale-[0.98]"
+                className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ease-in-out active:scale-[0.98] ${
+                  inputValue.trim() && !isLoading
+                    ? "text-white shadow-sm hover:shadow-md hover:scale-105"
+                    : "bg-stone-300 text-stone-400 cursor-not-allowed"
+                }`}
+                style={
+                  inputValue.trim() && !isLoading
+                    ? { background: "linear-gradient(135deg, #C4943A, #B07830)" }
+                    : undefined
+                }
               >
                 Send
               </button>
