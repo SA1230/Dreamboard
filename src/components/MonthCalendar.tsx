@@ -158,6 +158,10 @@ interface MonthCalendarProps {
   damageByDay: Record<number, DamageKey[]>;
   definitions: Record<StatKey, StatDefinition>;
   gameData: GameData;
+  /** Called when a day cell with content is tapped. Passes the day number (1-31). */
+  onDayTap?: (day: number) => void;
+  /** The currently selected day (highlights the cell). */
+  selectedDay?: number | null;
 }
 
 export function MonthCalendar({
@@ -168,6 +172,8 @@ export function MonthCalendar({
   damageByDay,
   definitions,
   gameData,
+  onDayTap,
+  selectedDay,
 }: MonthCalendarProps) {
   const enabledHabits = getEnabledHabits(gameData);
   const enabledDamage = getEnabledDamage(gameData);
@@ -217,19 +223,32 @@ export function MonthCalendar({
             0
           );
           const isToday = isCurrentMonth && day === todayDate;
+          const dayHabits = habitsByDay[day] ?? [];
+          const dayDamage = damageByDay[day] ?? [];
+          const hasContent = totalXP > 0 || dayHabits.length > 0 || dayDamage.length > 0;
+          const isSelected = selectedDay === day;
 
           return (
             <div
               key={day}
-              className="min-h-[120px] rounded-xl p-2.5 flex flex-col transition-colors duration-200"
+              className={`min-h-[120px] rounded-xl p-2.5 flex flex-col transition-colors duration-200 ${
+                hasContent ? "cursor-pointer" : ""
+              }`}
               style={{
-                backgroundColor: isToday
-                  ? "rgba(201, 148, 62, 0.08)"
-                  : totalXP > 0
-                    ? "rgba(255, 255, 255, 0.6)"
-                    : "rgba(255, 255, 255, 0.3)",
-                border: isToday ? "2px solid rgba(201, 148, 62, 0.3)" : "2px solid transparent",
+                backgroundColor: isSelected
+                  ? "rgba(201, 148, 62, 0.14)"
+                  : isToday
+                    ? "rgba(201, 148, 62, 0.08)"
+                    : totalXP > 0
+                      ? "rgba(255, 255, 255, 0.6)"
+                      : "rgba(255, 255, 255, 0.3)",
+                border: isSelected
+                  ? "2px solid rgba(201, 148, 62, 0.5)"
+                  : isToday
+                    ? "2px solid rgba(201, 148, 62, 0.3)"
+                    : "2px solid transparent",
               }}
+              onClick={hasContent && onDayTap ? () => onDayTap(day) : undefined}
             >
               {/* Day number */}
               <div
