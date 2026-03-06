@@ -116,14 +116,15 @@ src/
 
 - `RARITY_COLORS: Record<ItemRarity, { text, background, border }>` — color scheme per rarity tier
 - `VISIBLE_SLOTS: { slot, label }[]` — all visible slot names for shop UI tabs
-- `ITEM_CATALOG: ShopItem[]` — full item catalog (8 starter items in Phase 1)
+- `ITEM_CATALOG: ShopItem[]` — full item catalog (13 items across all 8 visible slots)
 - `getItemById(id)` — lookup a single item by ID
 - `getItemsBySlot(slot)` — filter items by equipment slot
 - `getAffordableItems(balance, level)` — items the player can buy right now
 
 ## Key exports in `itemSvgs.ts`
 
-- `ITEM_SVG_REGISTRY: Record<string, string>` — raw SVG strings for each item, keyed by `svgAssetKey`. Designed in Skipper's coordinate space (viewBox `330 245 450 665`). Phase 1 uses colored placeholder shapes
+- `ITEM_SVG_REGISTRY: Record<string, string>` — raw SVG strings for each item, keyed by `svgAssetKey`. Designed in Skipper's coordinate space (viewBox `330 245 450 665`). Hand-crafted paths using Skipper's 4-color palette + rarity accent colors
+- `ITEM_THUMBNAIL_REGISTRY: Record<string, string>` — standalone SVG strings for shop card icons (viewBox `0 0 64 64`). Separate compositions from on-character art, optimized for small card display
 
 ## Key exports in `storage.ts`
 
