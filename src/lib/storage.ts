@@ -1,4 +1,5 @@
-import { GameData, StatKey, HabitKey, DamageKey, Activity, StatProgress, CustomStatOverride, FeedEvent } from "./types";
+import { GameData, StatKey, HabitKey, DamageKey, Activity, StatProgress, CustomStatOverride, FeedEvent, PlayerInventory, EquipmentSlot } from "./types";
+import { getItemById } from "./items";
 import { STAT_KEYS, STAT_DEFINITIONS, StatDefinition, COLOR_PRESETS } from "./stats";
 import { getRankTitle } from "./ranks";
 
@@ -720,4 +721,79 @@ export function saveProfilePicture(data: GameData, base64DataUrl: string | null)
 /** Get the profile picture data URL, or null if none is set. */
 export function getProfilePicture(data: GameData): string | null {
   return data.profilePicture ?? null;
+}
+
+// --- Inventory & Equipment ---
+
+/** Returns the player's inventory, with safe defaults if none exists yet. */
+export function getInventory(data: GameData): PlayerInventory {
+  return data.inventory ?? { ownedItemIds: [], equippedItems: {} };
+}
+
+/** Purchase an item from the shop. Returns updated GameData, or null if can't afford / already owned / level too low. */
+export function purchaseItem(data: GameData, itemId: string): GameData | null {
+  const item = getItemById(itemId);
+  if (!item) return null;
+
+  const inventory = getInventory(data);
+  if (inventory.ownedItemIds.includes(itemId)) return null;
+
+  // Level requirement check
+  if (item.levelRequirement) {
+    const totalXP = getTotalLifetimeXP(data);
+    const { level } = getOverallLevel(totalXP);
+    if (level < item.levelRequirement) return null;
+  }
+
+  // Check balance
+  const { balance } = getPointsBalance(data);
+  if (item.cost > balance) return null;
+
+  // Single atomic save: deduct points + add item in one write
+  const currentSpent = data.pointsWallet?.lifetimeSpent ?? 0;
+  const newData: GameData = {
+    ...data,
+    pointsWallet: {
+      lifetimeEarned: calculateLifetimePoints(data),
+      lifetimeSpent: currentSpent + item.cost,
+    },
+    inventory: {
+      ...inventory,
+      ownedItemIds: [...inventory.ownedItemIds, itemId],
+    },
+  };
+  saveGameData(newData);
+  return newData;
+}
+
+/** Equip an owned item into its slot. Returns updated GameData, or null if not owned. */
+export function equipItem(data: GameData, itemId: string): GameData | null {
+  const item = getItemById(itemId);
+  if (!item) return null;
+
+  const inventory = getInventory(data);
+  if (!inventory.ownedItemIds.includes(itemId)) return null;
+
+  const newInventory: PlayerInventory = {
+    ...inventory,
+    equippedItems: { ...inventory.equippedItems, [item.slot]: itemId },
+  };
+
+  const newData: GameData = { ...data, inventory: newInventory };
+  saveGameData(newData);
+  return newData;
+}
+
+/** Unequip an item from a slot. */
+export function unequipSlot(data: GameData, slot: EquipmentSlot): GameData {
+  const inventory = getInventory(data);
+  const newEquipped = { ...inventory.equippedItems };
+  delete newEquipped[slot];
+
+  const newData: GameData = {
+    ...data,
+    inventory: { ...inventory, equippedItems: newEquipped },
+  };
+  saveGameData(newData);
+  return newData;
 }
