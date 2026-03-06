@@ -151,9 +151,9 @@ export default function PrizesPage() {
 
       {/* Empty state for user prizes */}
       {prizes.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-sm text-stone-400 mb-3">
-            No prizes set yet. Add your first reward!
+        <div className="text-center pt-2 pb-4">
+          <p className="text-xs text-stone-400">
+            No prizes set yet. Tap + to add your first reward!
           </p>
         </div>
       )}

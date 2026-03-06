@@ -4,7 +4,7 @@ import { useRef, useEffect } from "react";
 import { Prize } from "@/lib/types";
 import { SYSTEM_REWARDS, getVisibleRange, SystemReward } from "@/lib/prizes";
 import { getRankColorPair } from "@/lib/ranks";
-import { Lock, Trophy, ExternalLink, Gift, Pencil } from "lucide-react";
+import { Lock, Trophy, ExternalLink, Gift } from "lucide-react";
 
 interface PrizeTimelineProps {
   currentLevel: number;
@@ -80,7 +80,7 @@ export function PrizeTimeline({ currentLevel, prizes, onEditPrize }: PrizeTimeli
     }
   }, []);
 
-  const NODE_WIDTH = 80;
+  const NODE_WIDTH = 100;
   const totalWidth = Math.max(positions.length * NODE_WIDTH + 40, 400);
 
   return (
@@ -89,18 +89,18 @@ export function PrizeTimeline({ currentLevel, prizes, onEditPrize }: PrizeTimeli
       className="overflow-x-auto -mx-4 px-4"
       style={{ WebkitOverflowScrolling: "touch" }}
     >
-      <div className="relative" style={{ width: totalWidth, minHeight: 280 }}>
+      <div className="relative" style={{ width: totalWidth, minHeight: 230 }}>
         {/* Center line */}
         <div
           className="absolute left-0 right-0 h-[2px] bg-stone-200"
-          style={{ top: 130 }}
+          style={{ top: 110 }}
         />
 
         {/* Dashed continuation if there's more beyond teased */}
         {visibleRange.teased && (
           <div
             className="absolute right-0 h-[2px] border-t-2 border-dashed border-stone-200"
-            style={{ top: 130, width: 40 }}
+            style={{ top: 110, width: 40 }}
           />
         )}
 
@@ -131,10 +131,10 @@ export function PrizeTimeline({ currentLevel, prizes, onEditPrize }: PrizeTimeli
               ref={isCurrent ? currentLevelRef : undefined}
             >
               {/* Top track: System rewards */}
-              <div className="h-[120px] flex flex-col justify-end items-center pb-2">
+              <div className="h-[100px] flex flex-col justify-end items-center pb-2">
                 {systemReward && (
                   <div
-                    className={`rounded-lg px-2 py-1.5 text-center w-[72px] border ${
+                    className={`rounded-lg px-2 py-1.5 text-center w-[88px] border ${
                       isUnlocked
                         ? "border-stone-300 bg-white/80"
                         : "border-stone-200 bg-stone-50"
@@ -186,7 +186,13 @@ export function PrizeTimeline({ currentLevel, prizes, onEditPrize }: PrizeTimeli
                 {/* Level number below the marker */}
                 <span
                   className={`absolute top-full mt-0.5 text-[8px] font-semibold ${
-                    isCurrent ? "text-amber-600" : "text-stone-300"
+                    isCurrent
+                      ? "text-amber-600"
+                      : isCompleted
+                      ? "text-stone-400"
+                      : isTeased
+                      ? "text-stone-200"
+                      : "text-stone-300"
                   }`}
                 >
                   {level}
@@ -194,12 +200,12 @@ export function PrizeTimeline({ currentLevel, prizes, onEditPrize }: PrizeTimeli
               </div>
 
               {/* Bottom track: User prizes */}
-              <div className="h-[120px] flex flex-col justify-start items-center pt-4">
+              <div className="h-[100px] flex flex-col justify-start items-center pt-4">
                 {levelPrizes.map((prize) => (
                   <button
                     key={prize.id}
                     onClick={() => onEditPrize(prize)}
-                    className={`rounded-lg px-2 py-1.5 text-center w-[72px] border cursor-pointer transition-colors mb-1 ${
+                    className={`rounded-lg px-2 py-1.5 text-center w-[88px] border cursor-pointer transition-colors mb-1 ${
                       isUnlocked
                         ? "border-amber-200 bg-amber-50/80 hover:bg-amber-100/80"
                         : "border-stone-200 bg-stone-50 hover:bg-stone-100"
@@ -211,7 +217,7 @@ export function PrizeTimeline({ currentLevel, prizes, onEditPrize }: PrizeTimeli
                       <Lock size={14} className="mx-auto mb-0.5 text-stone-300" />
                     )}
                     <p
-                      className={`text-[9px] font-bold leading-tight truncate ${
+                      className={`text-[10px] font-bold leading-tight line-clamp-2 ${
                         isUnlocked ? "text-amber-700" : "text-stone-400"
                       }`}
                     >
@@ -220,7 +226,6 @@ export function PrizeTimeline({ currentLevel, prizes, onEditPrize }: PrizeTimeli
                     {prize.link && (
                       <ExternalLink size={8} className="mx-auto mt-0.5 text-stone-300" />
                     )}
-                    <Pencil size={8} className="mx-auto mt-0.5 text-stone-300" />
                   </button>
                 ))}
               </div>
