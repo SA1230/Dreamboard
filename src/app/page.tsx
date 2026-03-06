@@ -355,6 +355,48 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Points Balance */}
+      {pointsBalance && (() => {
+        const today = new Date().toISOString().split("T")[0];
+        const habitsToday = Object.values(gameData.healthyHabits ?? {}).filter(
+          (dates) => (dates as string[]).includes(today)
+        ).length;
+        const damageToday = Object.values(gameData.dailyDamage ?? {}).filter(
+          (dates) => (dates as string[]).includes(today)
+        ).length;
+        const todayNet = habitsToday - damageToday;
+        return (
+          <section className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-stone-600 flex items-center gap-2">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M11.5 1L4 11h5.5L8.5 19 16 9h-5.5L11.5 1z" fill="#f59e0b" stroke="#d97706" strokeWidth="1.2" strokeLinejoin="round" />
+                </svg>
+                Power Points
+              </h2>
+              <Link
+                href="/shop"
+                className="px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest rounded-full no-underline text-white"
+                style={{
+                  background: 'linear-gradient(135deg, #d97706, #f59e0b)',
+                }}
+              >
+                Visit Shop
+              </Link>
+            </div>
+            <div className="flex items-center justify-center gap-3 py-5 px-6 rounded-2xl bg-stone-50 border border-stone-200">
+              <svg width="24" height="24" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11.5 1L4 11h5.5L8.5 19 16 9h-5.5L11.5 1z" fill="#f59e0b" stroke="#d97706" strokeWidth="1.2" strokeLinejoin="round" />
+              </svg>
+              <span className="text-3xl font-extrabold text-amber-600">{pointsBalance.balance}</span>
+              {todayNet > 0 && (
+                <span className="text-sm font-bold text-emerald-500">+{todayNet} today</span>
+              )}
+            </div>
+          </section>
+        );
+      })()}
+
       {/* Healthy Habits */}
       <HealthyHabits gameData={gameData} onToggleHabit={handleToggleHabit} />
 
@@ -424,51 +466,6 @@ export default function Home() {
         )}
       </section>
 
-      {/* Points Balance */}
-      {pointsBalance && (
-        <section className="mb-12">
-        <h2 className="text-lg font-bold text-stone-600 mb-4 flex items-center gap-2">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M11.5 1L4 11h5.5L8.5 19 16 9h-5.5L11.5 1z" fill="#f59e0b" stroke="#d97706" strokeWidth="1.2" strokeLinejoin="round" />
-          </svg>
-          Power Points
-          <Link
-            href="/shop"
-            className="ml-2 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-full border border-amber-300/60 no-underline"
-            style={{
-              background: 'linear-gradient(90deg, #d97706, #f59e0b, #fbbf24, #f59e0b, #d97706)',
-              backgroundSize: '200% auto',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              animation: 'shopTextShimmer 3s linear infinite, shopPulse 2.5s ease-in-out infinite',
-            }}
-          >
-            Visit Shop
-          </Link>
-        </h2>
-        <div className="flex items-center justify-center gap-4 py-4 px-6 rounded-2xl bg-stone-50 border border-stone-200 mx-auto w-fit">
-          {/* Earned */}
-          <div className="flex flex-col items-center gap-0.5">
-            <span className="text-lg font-bold text-emerald-600">+{pointsBalance.lifetimeEarned}</span>
-            <span className="text-[10px] font-medium text-stone-400 uppercase tracking-wide">earned</span>
-          </div>
-          {/* Divider */}
-          <div className="w-px h-8 bg-stone-200" />
-          {/* Balance (hero number) */}
-          <div className="flex flex-col items-center gap-0.5 px-3">
-            <span className="text-3xl font-extrabold text-amber-600">{pointsBalance.balance}</span>
-            <span className="text-[10px] font-medium text-stone-400 uppercase tracking-wide">balance</span>
-          </div>
-          {/* Divider */}
-          <div className="w-px h-8 bg-stone-200" />
-          {/* Damage */}
-          <div className="flex flex-col items-center gap-0.5">
-            <span className="text-lg font-bold text-red-500">-{pointsBalance.lifetimeDamage}</span>
-            <span className="text-[10px] font-medium text-stone-400 uppercase tracking-wide">damage</span>
-          </div>
-        </div>
-        </section>
-      )}
 
 
       {/* Post-verdict XP toasts */}
