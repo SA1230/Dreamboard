@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { HABIT_DEFINITIONS } from "@/lib/habits";
 import { DAMAGE_DEFINITIONS } from "@/lib/damage";
+import { ModalBackdrop } from "@/components/ModalBackdrop";
 
 const ALL_HABITS = HABIT_DEFINITIONS;
 const ALL_DAMAGE = DAMAGE_DEFINITIONS;
@@ -534,12 +535,8 @@ export default function SettingsPage() {
 
       {/* Reset Data Confirmation Modal */}
       {showResetDataConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setShowResetDataConfirm(false)}
-          />
-          <div className="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-modalSlideUp">
+        <ModalBackdrop onClose={() => setShowResetDataConfirm(false)} backdropStyle="dark">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-modalSlideUp">
             <div className="flex flex-col items-center text-center">
               <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">
                 <Trash2 size={28} className="text-red-500" />
@@ -569,7 +566,7 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-        </div>
+        </ModalBackdrop>
       )}
     </main>
   );

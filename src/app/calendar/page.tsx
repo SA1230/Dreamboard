@@ -8,6 +8,7 @@ import { MonthCalendar } from "@/components/MonthCalendar";
 import { StatIcon } from "@/components/StatIcons";
 import { ArrowLeft, ChevronLeft, ChevronRight, X } from "lucide-react";
 import Link from "next/link";
+import { ModalBackdrop } from "@/components/ModalBackdrop";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -68,21 +69,13 @@ function DayDetailModal({
   const dateLabel = `${MONTH_NAMES[month]} ${day}, ${year}`;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
-      onClick={onClose}
-    >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/30" style={{ animation: "fadeIn 0.2s ease" }} />
-
-      {/* Modal panel */}
+    <ModalBackdrop onClose={onClose} align="bottom" backdropStyle="medium">
       <div
-        className="relative w-full max-w-lg rounded-t-2xl p-6 pb-8 max-h-[70vh] overflow-y-auto"
+        className="w-full max-w-lg rounded-t-2xl p-6 pb-8 max-h-[70vh] overflow-y-auto"
         style={{
           backgroundColor: "#faf8f5",
           animation: "modalSlideUp 0.25s ease",
         }}
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
@@ -183,7 +176,7 @@ function DayDetailModal({
           <p className="text-sm text-stone-400 text-center py-4">No activity recorded this day.</p>
         )}
       </div>
-    </div>
+    </ModalBackdrop>
   );
 }
 
