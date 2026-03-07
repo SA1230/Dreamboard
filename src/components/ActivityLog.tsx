@@ -17,6 +17,37 @@ interface ActivityLogProps {
 const HABIT_EMOJI = Object.fromEntries(HABIT_DEFINITIONS.map((h) => [h.key, h.emoji]));
 const DAMAGE_EMOJI = Object.fromEntries(DAMAGE_DEFINITIONS.map((d) => [d.key, d.emoji]));
 
+const VERDICT_TRUNCATE_LENGTH = 100;
+
+function VerdictQuote({ message }: { message: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const needsTruncation = message.length > VERDICT_TRUNCATE_LENGTH;
+  const displayText = needsTruncation && !expanded
+    ? message.slice(0, VERDICT_TRUNCATE_LENGTH) + "..."
+    : message;
+
+  return (
+    <div className="flex items-start gap-2">
+      <img
+        src="/mascots/judge-hero.svg"
+        alt=""
+        className="w-5 h-5 rounded-full bg-amber-50 border border-amber-200 p-0.5 flex-shrink-0 mt-0.5"
+      />
+      <p className="text-xs text-stone-400 italic leading-relaxed">
+        {displayText}
+        {needsTruncation && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="ml-1 text-amber-500 font-semibold not-italic hover:text-amber-600 transition-colors"
+          >
+            {expanded ? "Less" : "More"}
+          </button>
+        )}
+      </p>
+    </div>
+  );
+}
+
 // --- Grouping types ---
 
 interface ActivityGroup {
@@ -143,13 +174,8 @@ function XPGainRow({ event, definitions }: { event: Extract<FeedEvent, { type: "
         </span>
       </div>
       {event.verdictMessage && (
-        <div className="flex items-start gap-2 mt-2 pt-2 border-t border-stone-100">
-          <img
-            src="/mascots/judge-hero.svg"
-            alt=""
-            className="w-5 h-5 rounded-full bg-amber-50 border border-amber-200 p-0.5 flex-shrink-0 mt-0.5"
-          />
-          <p className="text-xs text-stone-400 italic leading-relaxed">{event.verdictMessage}</p>
+        <div className="mt-2 pt-2 border-t border-stone-100">
+          <VerdictQuote message={event.verdictMessage} />
         </div>
       )}
     </div>
@@ -425,13 +451,8 @@ function ActivityGroupCard({ group, definitions }: { group: ActivityGroup; defin
 
       {/* Captain's verdict quote */}
       {verdictMessage && (
-        <div className="flex items-start gap-2 mb-2">
-          <img
-            src="/mascots/judge-hero.svg"
-            alt=""
-            className="w-5 h-5 rounded-full bg-amber-50 border border-amber-200 p-0.5 flex-shrink-0 mt-0.5"
-          />
-          <p className="text-xs text-stone-400 italic leading-relaxed">{verdictMessage}</p>
+        <div className="mb-2">
+          <VerdictQuote message={verdictMessage} />
         </div>
       )}
 

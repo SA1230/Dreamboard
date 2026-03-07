@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { GameData, StatKey, HabitKey, DamageKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForDate, toggleDamageForDate, isHabitCompletedForDate, isDamageMarkedForDate, getYesterdayString, formatRelativeTime, getInventory, getMascotName, checkPrizeUnlocks, issueChallenge, issueChallengeChain, completeChallenge, dismissChallenge } from "@/lib/storage";
+import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForDate, toggleDamageForDate, isHabitCompletedForDate, isDamageMarkedForDate, formatRelativeTime, getInventory, getMascotName, checkPrizeUnlocks, issueChallenge, issueChallengeChain, completeChallenge, dismissChallenge } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
 import { StatIcon } from "@/components/StatIcons";
 import { JudgeModal } from "@/components/JudgeModal";
@@ -255,24 +255,22 @@ export default function Home() {
     setTimeout(() => setPpToast(null), 1200);
   }, []);
 
-  const handleToggleYesterdayHabit = useCallback(
-    (habitKey: HabitKey) => {
+  const handleToggleHabit = useCallback(
+    (habitKey: HabitKey, dateString: string) => {
       if (!gameData) return;
-      const yesterday = getYesterdayString();
-      const wasCompleted = isHabitCompletedForDate(gameData, habitKey, yesterday);
-      const newData = toggleHabitForDate(gameData, habitKey, yesterday);
+      const wasCompleted = isHabitCompletedForDate(gameData, habitKey, dateString);
+      const newData = toggleHabitForDate(gameData, habitKey, dateString);
       setGameData(newData);
       showPpToast(wasCompleted ? "-1 PP" : "+1 PP", wasCompleted ? "#ef4444" : "#10b981");
     },
     [gameData, showPpToast]
   );
 
-  const handleToggleYesterdayDamage = useCallback(
-    (damageKey: DamageKey) => {
+  const handleToggleDamage = useCallback(
+    (damageKey: DamageKey, dateString: string) => {
       if (!gameData) return;
-      const yesterday = getYesterdayString();
-      const wasMarked = isDamageMarkedForDate(gameData, damageKey, yesterday);
-      const newData = toggleDamageForDate(gameData, damageKey, yesterday);
+      const wasMarked = isDamageMarkedForDate(gameData, damageKey, dateString);
+      const newData = toggleDamageForDate(gameData, damageKey, dateString);
       setGameData(newData);
       showPpToast(wasMarked ? "+1 PP" : "-1 PP", wasMarked ? "#10b981" : "#ef4444");
     },
@@ -373,8 +371,8 @@ export default function Home() {
         <div className="mt-14 mb-4 animate-fadeIn">
           <YesterdayReview
             gameData={gameData}
-            onToggleHabit={handleToggleYesterdayHabit}
-            onToggleDamage={handleToggleYesterdayDamage}
+            onToggleHabit={handleToggleHabit}
+            onToggleDamage={handleToggleDamage}
             ppToast={ppToast}
           />
         </div>

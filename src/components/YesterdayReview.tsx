@@ -1,8 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { GameData, HabitKey, DamageKey } from "@/lib/types";
 import {
-  getYesterdayString,
   isHabitCompletedForDate,
   isDamageMarkedForDate,
   getEnabledHabits,
@@ -11,17 +11,17 @@ import {
 } from "@/lib/storage";
 import { HABIT_DEFINITIONS } from "@/lib/habits";
 import { DAMAGE_DEFINITIONS } from "@/lib/damage";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface YesterdayReviewProps {
   gameData: GameData;
-  onToggleHabit: (habitKey: HabitKey) => void;
-  onToggleDamage: (damageKey: DamageKey) => void;
+  onToggleHabit: (habitKey: HabitKey, dateString: string) => void;
+  onToggleDamage: (damageKey: DamageKey, dateString: string) => void;
   ppToast?: { text: string; color: string } | null;
 }
 
-/** Format yesterday's date as "Wed, March 5" */
-function formatYesterdayDate(dateString: string): string {
-  // Parse YYYY-MM-DD as local date (not UTC)
+/** Format a date string as "Wed, March 5" */
+function formatDate(dateString: string): string {
   const [year, month, day] = dateString.split("-").map(Number);
   const date = new Date(year, month - 1, day);
   const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
@@ -29,21 +29,35 @@ function formatYesterdayDate(dateString: string): string {
   return `${dayName}, ${monthName} ${day}`;
 }
 
+/** Get a date string N days ago from today */
+function getDaysAgoString(daysAgo: number): string {
+  const now = new Date();
+  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysAgo);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+const MAX_DAYS_BACK = 7;
+
 export function YesterdayReview({ gameData, onToggleHabit, onToggleDamage, ppToast }: YesterdayReviewProps) {
-  // Compute once — stable even if clock passes midnight while page is open
-  const yesterdayString = getYesterdayString();
+  // daysAgo: 1 = yesterday (default), 2 = two days ago, etc. Max 7.
+  const [daysAgo, setDaysAgo] = useState(1);
+  const reviewDateString = getDaysAgoString(daysAgo);
+  const isYesterday = daysAgo === 1;
 
   const enabledHabits = getEnabledHabits(gameData);
   const enabledDamage = getEnabledDamage(gameData);
 
-  // Count yesterday's habits and damage for the PP summary
+  // Count this day's habits and damage for the PP summary
   const habitsCompletedCount = enabledHabits.filter(
-    (key) => isHabitCompletedForDate(gameData, key, yesterdayString)
+    (key) => isHabitCompletedForDate(gameData, key, reviewDateString)
   ).length;
   const damageMarkedCount = enabledDamage.filter(
-    (key) => isDamageMarkedForDate(gameData, key, yesterdayString)
+    (key) => isDamageMarkedForDate(gameData, key, reviewDateString)
   ).length;
-  const yesterdayNet = habitsCompletedCount - damageMarkedCount;
+  const dayNet = habitsCompletedCount - damageMarkedCount;
 
   const pointsBalance = getPointsBalance(gameData);
 
@@ -56,12 +70,32 @@ export function YesterdayReview({ gameData, onToggleHabit, onToggleDamage, ppToa
         className="rounded-2xl border border-stone-200 overflow-hidden"
         style={{ backgroundColor: "#FDFBF7" }}
       >
-        {/* Header */}
+        {/* Header with day navigation */}
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <h2 className="text-base font-bold text-stone-700">How was yesterday?</h2>
-          <span className="text-xs font-medium text-stone-400">
-            {formatYesterdayDate(yesterdayString)}
-          </span>
+          <h2 className="text-base font-bold text-stone-700">
+            {isYesterday ? "How was yesterday?" : "Catch up"}
+          </h2>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setDaysAgo((d) => Math.min(d + 1, MAX_DAYS_BACK))}
+              disabled={daysAgo >= MAX_DAYS_BACK}
+              className="p-0.5 rounded text-stone-400 hover:text-stone-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              aria-label="Previous day"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className="text-xs font-medium text-stone-400 min-w-[100px] text-center">
+              {formatDate(reviewDateString)}
+            </span>
+            <button
+              onClick={() => setDaysAgo((d) => Math.max(d - 1, 1))}
+              disabled={isYesterday}
+              className="p-0.5 rounded text-stone-400 hover:text-stone-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              aria-label="Next day"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Habit checklist */}
@@ -72,14 +106,14 @@ export function YesterdayReview({ gameData, onToggleHabit, onToggleDamage, ppToa
             </p>
             <div className="grid grid-cols-2 gap-x-3 gap-y-1">
               {enabledHabits.map((habitKey) => {
-                const completed = isHabitCompletedForDate(gameData, habitKey, yesterdayString);
+                const completed = isHabitCompletedForDate(gameData, habitKey, reviewDateString);
                 const definition = HABIT_DEFINITIONS.find((h) => h.key === habitKey);
                 if (!definition) return null;
 
                 return (
                   <button
                     key={habitKey}
-                    onClick={() => onToggleHabit(habitKey)}
+                    onClick={() => onToggleHabit(habitKey, reviewDateString)}
                     className="flex items-center gap-2 py-1.5 rounded-lg transition-colors cursor-pointer text-left"
                   >
                     {/* Checkbox */}
@@ -118,14 +152,14 @@ export function YesterdayReview({ gameData, onToggleHabit, onToggleDamage, ppToa
             </p>
             <div className="grid grid-cols-2 gap-x-3 gap-y-1">
               {enabledDamage.map((damageKey) => {
-                const marked = isDamageMarkedForDate(gameData, damageKey, yesterdayString);
+                const marked = isDamageMarkedForDate(gameData, damageKey, reviewDateString);
                 const definition = DAMAGE_DEFINITIONS.find((d) => d.key === damageKey);
                 if (!definition) return null;
 
                 return (
                   <button
                     key={damageKey}
-                    onClick={() => onToggleDamage(damageKey)}
+                    onClick={() => onToggleDamage(damageKey, reviewDateString)}
                     className="flex items-center gap-2 py-1.5 rounded-lg transition-colors cursor-pointer text-left"
                   >
                     {/* Checkbox */}
@@ -174,8 +208,8 @@ export function YesterdayReview({ gameData, onToggleHabit, onToggleDamage, ppToa
             {(habitsCompletedCount > 0 || damageMarkedCount > 0) && (
               <>
                 <span className="text-stone-300">&middot;</span>
-                <span className={`font-semibold ${yesterdayNet >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-                  {yesterdayNet >= 0 ? "+" : ""}{yesterdayNet} PP
+                <span className={`font-semibold ${dayNet >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                  {dayNet >= 0 ? "+" : ""}{dayNet} PP
                 </span>
               </>
             )}
