@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { GameData, StatKey, HabitKey, DamageKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForDate, toggleDamageForDate, getYesterdayString, formatRelativeTime, getInventory, getMascotName, checkPrizeUnlocks } from "@/lib/storage";
+import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForDate, toggleDamageForDate, isHabitCompletedForDate, isDamageMarkedForDate, getYesterdayString, formatRelativeTime, getInventory, getMascotName, checkPrizeUnlocks } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
 import { StatIcon } from "@/components/StatIcons";
 import { JudgeModal } from "@/components/JudgeModal";
@@ -31,6 +31,9 @@ export default function Home() {
   const [xpToasts, setXpToasts] = useState<{ id: string; statKey: StatKey; amount: number; color: string; iconKey: string; name: string }[]>([]);
   // Today XP pill pulse after verdict
   const [todayXPPulsing, setTodayXPPulsing] = useState(false);
+
+  // Power Points toggle toast (shown in YesterdayReview PP summary)
+  const [ppToast, setPpToast] = useState<{ text: string; color: string } | null>(null);
 
   // Celebration overlay state
   const [celebrationInfo, setCelebrationInfo] = useState<{
@@ -195,22 +198,33 @@ export default function Home() {
     [gameData, definitions, celebrationInfo]
   );
 
+  const showPpToast = useCallback((text: string, color: string) => {
+    setPpToast({ text, color });
+    setTimeout(() => setPpToast(null), 1200);
+  }, []);
+
   const handleToggleYesterdayHabit = useCallback(
     (habitKey: HabitKey) => {
       if (!gameData) return;
-      const newData = toggleHabitForDate(gameData, habitKey, getYesterdayString());
+      const yesterday = getYesterdayString();
+      const wasCompleted = isHabitCompletedForDate(gameData, habitKey, yesterday);
+      const newData = toggleHabitForDate(gameData, habitKey, yesterday);
       setGameData(newData);
+      showPpToast(wasCompleted ? "-1 PP" : "+1 PP", wasCompleted ? "#ef4444" : "#10b981");
     },
-    [gameData]
+    [gameData, showPpToast]
   );
 
   const handleToggleYesterdayDamage = useCallback(
     (damageKey: DamageKey) => {
       if (!gameData) return;
-      const newData = toggleDamageForDate(gameData, damageKey, getYesterdayString());
+      const yesterday = getYesterdayString();
+      const wasMarked = isDamageMarkedForDate(gameData, damageKey, yesterday);
+      const newData = toggleDamageForDate(gameData, damageKey, yesterday);
       setGameData(newData);
+      showPpToast(wasMarked ? "+1 PP" : "-1 PP", wasMarked ? "#10b981" : "#ef4444");
     },
-    [gameData]
+    [gameData, showPpToast]
   );
 
   // Show nothing while loading from localStorage (prevents hydration flash)
@@ -285,11 +299,12 @@ export default function Home() {
       </header>
 
       {/* Yesterday Review — retrospective habit/damage checklist */}
-      <div className="mt-14 mb-4">
+      <div className="mt-14 mb-4 animate-fadeIn">
         <YesterdayReview
           gameData={gameData}
           onToggleHabit={handleToggleYesterdayHabit}
           onToggleDamage={handleToggleYesterdayDamage}
+          ppToast={ppToast}
         />
       </div>
 

@@ -24,7 +24,7 @@ The core loop: User tells the Judge what they did → Judge interviews them (1-3
 ```
 src/
 ├── app/
-│   ├── page.tsx            # Homepage — stat cards, overall level display, monthly XP, healthy habits, activity log
+│   ├── page.tsx            # Homepage — YesterdayReview, Judge CTA, level display, monthly XP, stat cards, activity log
 │   ├── layout.tsx          # Root layout with Nunito font + global styles
 │   ├── globals.css         # Tailwind base + 6 custom keyframe animations
 │   ├── api/judge/route.ts  # POST endpoint — sends activity to AI judge, returns XP verdict
@@ -39,8 +39,9 @@ src/
 │   ├── ActivityLog.tsx      # Unified feed of all events (XP gains, habits, damage, level-ups, rank-ups, prize unlocks) with distinct visuals per type
 │   ├── PrizeTimeline.tsx    # Horizontal scrollable dual-track timeline — system rewards (top) + user prizes (bottom) with fog of war
 │   ├── MonthCalendar.tsx    # Calendar grid with per-day XP breakdown + habit/damage icons
-│   ├── HealthyHabits.tsx    # Daily toggle cards for 6 habits (water, nails, brush, nosugar, floss, steps) — filtered by enabledHabits
-│   ├── DailyDamage.tsx      # Daily toggle cards for 4 damage types (substance, screentime, junkfood, badsleep) — red-themed
+│   ├── YesterdayReview.tsx   # Compact yesterday checklist — habit/damage toggles with emoji labels, PP summary row with toast
+│   ├── HealthyHabits.tsx    # Daily toggle cards for 6 habits (water, nails, brush, nosugar, floss, steps) — used by calendar page only
+│   ├── DailyDamage.tsx      # Daily toggle cards for 4 damage types (substance, screentime, junkfood, badsleep) — used by calendar page only
 │   ├── SkipperCharacter.tsx # Inline SVG paper-doll — renders Skipper with layered equipment overlays
 │   └── StatIcons.tsx        # 20 SVG icons (8 stat defaults + 12 extras for customization)
 └── lib/
@@ -93,9 +94,10 @@ src/
 - Stat definitions (names, colors, icons) have defaults in `stats.ts` but can be overridden via `customDefinitions` in settings
 - **Stat card dormancy:** Cards dim (opacity + desaturation) if the stat has zero activity this month (`isActiveThisMonth` prop)
 - **Icon fill effect:** StatCard layers an unfilled ghost icon behind a filled icon that clips from bottom-up based on XP progress
-- **Healthy Habits:** A separate system from stat XP — boolean-per-day toggles that don't award XP. Stored as date strings in `healthyHabits`. Users can enable/disable which habits appear via settings (`enabledHabits`)
-- **Daily Damage:** Mirrors healthy habits but tracks negative behaviors. Same date-string storage pattern. Red-themed toggle cards on dashboard. Each habit completed = +1 Power Point, each damage marked = -1 Power Point
-- **Power Points (AA System):** Inspired by EverQuest's Alternate Advancement. `lifetimeEarned` is always derived from source data (total habit completions minus total damage marks), never stored incrementally. `lifetimeSpent` is persisted. Balance = earned - spent. Spent via the Power-Up Store (`/shop`)
+- **Healthy Habits:** A separate system from stat XP — boolean-per-day toggles that don't award XP. Stored as date strings in `healthyHabits`. Users can enable/disable which habits appear via settings (`enabledHabits`). On the homepage, habits are reviewed retrospectively via `YesterdayReview` (yesterday only). The calendar page still uses `HealthyHabits.tsx` for per-day viewing
+- **Daily Damage:** Mirrors healthy habits but tracks negative behaviors. Same date-string storage pattern. Same retrospective-only pattern on homepage via `YesterdayReview`. Each habit completed = +1 Power Point, each damage marked = -1 Power Point
+- **YesterdayReview panel:** Compact checklist at the top of the homepage — emoji + label checkboxes for yesterday's habits and damage, with a PP summary row. Uses `getYesterdayString()` computed once at render time (handles midnight edge case). Toggles trigger a brief PP toast animation (+1 PP / -1 PP) inline next to the balance
+- **Power Points (AA System):** Inspired by EverQuest's Alternate Advancement. `lifetimeEarned` is always derived from source data (total habit completions), never stored incrementally. `lifetimeSpent` is persisted. Balance is calculated day-by-day chronologically (habits minus damage per day, floored at 0 each day — no debt carries forward), then subtracts `lifetimeSpent`. Spent via the Power-Up Store (`/shop`)
 - **Equipment system (EQ-inspired):** Visible slots (head, chest, legs, robe, hands, feet, primary, secondary) render as SVG overlays on Skipper. Hidden slots (rings, ears, neck, etc.) are inventory-only for future stat items. Robes use `overridesSlots` to visually hide chest+legs when equipped
 - **SkipperCharacter component:** Inline SVG paper-doll that renders Skipper with layered equipment. Items are `<g>` groups from `itemSvgs.ts` inserted at z-order positions (feet → arms → weapons → body → armor → head → face). Uses `dangerouslySetInnerHTML` for item SVGs (safe — content is from our own registry)
 - **`LevelDisplay` component** now uses `SkipperCharacter` instead of `<img>`. Lives in `src/components/LevelDisplay.tsx`. Accepts `equippedItems` prop. Shows Skipper inside SVG progress ring with level badge and rank title. Parallax tilt + shatter animation on level-up
@@ -255,8 +257,7 @@ These are documented product-level issues. Reference this section when working o
 
 - **Dashboard label inconsistencies:** Daily Damage labels on the dashboard don't match the settings labels. Dashboard shows positive-sounding names ("No substances," "Screen time OK," "Slept well") but the section says "tap if you took damage." These should all describe the damage itself ("Substances," "Excess screen time," "Bad sleep") since tapping = logging damage.
 - **Month comparison edge case:** When the previous month has 0 XP, `MonthlyXPSummary` shows "+100%" which is mathematically meaningless. Should show something like "First active month!" instead.
-- **Dashboard density:** The homepage currently stacks: Judge CTA → XP summary + chart → 8 stat cards → Healthy Habits → Daily Damage → Power Points → Activity Log. This is a lot of scrolling. Habits and damage (daily actionable items) are buried below 8 stat cards.
-- **Habits/Damage disconnected from XP:** Healthy Habits and Daily Damage are a separate system from stat XP. They earn/subtract Power Points but this connection isn't visible to users. The two halves of the app (Judge + stats vs. habits + damage) feel like different products.
+- **Habits/Damage disconnected from XP:** Healthy Habits and Daily Damage are a separate system from stat XP. They earn/subtract Power Points but this connection isn't fully visible to users. The YesterdayReview panel helps by showing PP impact inline, but the two halves (Judge + stats vs. habits + damage) still feel like parallel systems.
 - **Judge CTA redundancy:** The + nav button and the golden CTA card on the dashboard both open JudgeModal. Two paths to the same action with very different visual weights.
 - **Calendar empty state:** Calendar shows full 31-day grid but early in the month most cells are empty. Looks barren for new users.
 - **Activity feed repetition:** A single activity that earns XP in 4 categories creates 4+ separate feed entries plus level-up cards. Could be grouped by activity for a cleaner feed.

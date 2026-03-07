@@ -16,6 +16,7 @@ interface YesterdayReviewProps {
   gameData: GameData;
   onToggleHabit: (habitKey: HabitKey) => void;
   onToggleDamage: (damageKey: DamageKey) => void;
+  ppToast?: { text: string; color: string } | null;
 }
 
 /** Format yesterday's date as "Wed, March 5" */
@@ -28,7 +29,7 @@ function formatYesterdayDate(dateString: string): string {
   return `${dayName}, ${monthName} ${day}`;
 }
 
-export function YesterdayReview({ gameData, onToggleHabit, onToggleDamage }: YesterdayReviewProps) {
+export function YesterdayReview({ gameData, onToggleHabit, onToggleDamage, ppToast }: YesterdayReviewProps) {
   // Compute once — stable even if clock passes midnight while page is open
   const yesterdayString = getYesterdayString();
 
@@ -184,6 +185,14 @@ export function YesterdayReview({ gameData, onToggleHabit, onToggleDamage }: Yes
               <path d="M11.5 1L4 11h5.5L8.5 19 16 9h-5.5L11.5 1z" fill="#f59e0b" stroke="#d97706" strokeWidth="1.2" strokeLinejoin="round" />
             </svg>
             <span className="text-sm font-bold text-amber-600">{pointsBalance.balance} PP</span>
+            {ppToast && (
+              <span
+                className="text-xs font-bold animate-[xpPop_0.6s_ease-out_forwards]"
+                style={{ color: ppToast.color }}
+              >
+                {ppToast.text}
+              </span>
+            )}
           </div>
         </div>
       </div>
