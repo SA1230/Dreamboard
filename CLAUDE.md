@@ -26,7 +26,7 @@ The core loop: User tells the Judge what they did → Judge interviews them (1-3
 ```
 src/
 ├── app/
-│   ├── page.tsx            # Homepage — YesterdayReview, Judge CTA, level display, monthly XP, stat cards, activity log
+│   ├── page.tsx            # Homepage — YesterdayReview, Judge CTA, level display, stat cards, monthly XP, activity log
 │   ├── layout.tsx          # Root layout with Nunito font + global styles
 │   ├── globals.css         # Tailwind base + 6 custom keyframe animations
 │   ├── api/judge/route.ts  # POST endpoint — sends activity to AI judge, returns XP verdict
@@ -113,7 +113,7 @@ src/
 - **Mascot system:** Skipper the penguin base SVG paths are inlined in `SkipperCharacter.tsx`. `getMascotForLevel()` in `storage.ts` still exists for future per-level base variants via `mascotOverrides` in GameData
 - **XP Judge:** The sole way to earn XP. A conversational AI (via `/api/judge`) evaluates user-described activities, asks up to 3 follow-up questions, then awards 1-10 XP per stat. Triggered from a centered CTA card on the homepage (hero penguin avatar from `public/mascots/judge-hero.svg`). The hero avatar also appears in the JudgeModal header and next to each judge message
 - **Prize Track:** Separate from the Shop (level-based rewards vs currency-based purchases). Dual-track horizontal timeline: system rewards (rank titles) on top, user-created IRL prizes on bottom, level progression line in the center. Fog of war hides future brackets — current rank bracket is fully visible, next bracket is teased/dimmed, beyond is hidden. Auto-unlock when level is reached (no claim step), generates `prize_unlocked` feed event. `checkPrizeUnlocks` is called on homepage mount and prizes page mount
-- **Challenge system (Side Quests):** The Judge occasionally issues challenges alongside verdicts — one at a time, ~1 in 4-5 verdicts, only when contextually clever. Two formats: standalone (single challenge) and chains (2-3 progressive steps that build on each other). Chains store the first step as `activeChallenge` (with `chainId`, `chainIndex`, `chainTotal`) and remaining steps in `pendingChainSteps`. When a chain step completes, the next step auto-issues. The Judge detects completion during normal activity evaluation. ChallengeCard renders between the Captain CTA and Monthly XP Summary on the homepage — shows "Step X of Y" with progress dots for chains. Challenges generate `challenge_issued` and `challenge_completed` feed events in the ActivityLog
+- **Challenge system (Side Quests):** The Judge occasionally issues challenges alongside verdicts — one at a time, ~1 in 4-5 verdicts, only when contextually clever. Two formats: standalone (single challenge) and chains (2-3 progressive steps that build on each other). Chains store the first step as `activeChallenge` (with `chainId`, `chainIndex`, `chainTotal`) and remaining steps in `pendingChainSteps`. When a chain step completes, the next step auto-issues. The Judge detects completion during normal activity evaluation. Challenge card is rendered inline in `page.tsx` between the Captain CTA and LevelDisplay — shows "Step X of Y" with progress dots for chains. Challenges generate `challenge_issued` and `challenge_completed` feed events in the ActivityLog
 - **Error handling:** Errors in `JudgeModal` are caught and displayed as a red system message inline in the chat thread, with a "Dismiss" button. Loading state always resets. Follow this pattern (in-place error display, no retry logic, user-dismissable) for any new API-dependent features
 
 ## Key exports in `stats.ts`
@@ -270,7 +270,7 @@ This section governs the AI system prompt in `/api/judge/route.ts` and how `Judg
 These are documented product-level issues. Reference this section when working on related features to avoid reintroducing them or building on top of broken patterns.
 
 - **Habits/Damage disconnected from XP:** Healthy Habits and Daily Damage are a separate system from stat XP. They earn/subtract Power Points but this connection isn't fully visible to users. The YesterdayReview panel helps by showing PP impact inline, but the two halves (Judge + stats vs. habits + damage) still feel like parallel systems.
-- **Judge CTA redundancy:** The + nav button and the golden CTA card on the dashboard both open JudgeModal. Two paths to the same action with very different visual weights.
+- **Judge CTA redundancy:** The compact CTA bar and the floating FAB both open JudgeModal. FAB is hidden for first-run users (they see the hero CTA), but returning users see both the CTA bar and the FAB.
 - **Calendar empty state:** Calendar shows full 31-day grid but early in the month most cells are empty. Looks barren for new users.
 
 ## ⚠ Using this context correctly
