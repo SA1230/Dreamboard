@@ -47,7 +47,7 @@ const STREAK_QUIPS = [
 ];
 
 const CHALLENGE_QUIPS = [
-  "That side quest isn't going to complete itself, you know.",
+  "That challenge isn't going to complete itself, you know.",
   "I'm still waiting on that challenge. No pressure. Well, some pressure.",
   "You've got an open quest. I don't forget, and neither should you.",
   "About that challenge I gave you — any progress, adventurer?",

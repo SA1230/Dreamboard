@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { GameData, StatKey, HabitKey, DamageKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForDate, toggleDamageForDate, isHabitCompletedForDate, isDamageMarkedForDate, getYesterdayString, formatRelativeTime, getInventory, getMascotName, checkPrizeUnlocks, issueChallenge, completeChallenge, dismissChallenge } from "@/lib/storage";
+import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForDate, toggleDamageForDate, isHabitCompletedForDate, isDamageMarkedForDate, getYesterdayString, formatRelativeTime, getInventory, getMascotName, checkPrizeUnlocks, issueChallenge, issueChallengeChain, completeChallenge, dismissChallenge } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
 import { StatIcon } from "@/components/StatIcons";
 import { JudgeModal } from "@/components/JudgeModal";
@@ -38,11 +38,14 @@ export default function Home() {
   // Power Points toggle toast (shown in YesterdayReview PP summary)
   const [ppToast, setPpToast] = useState<{ text: string; color: string } | null>(null);
 
-  // Challenge completion celebration (briefly shows "Quest Complete" card before fading)
+  // Challenge completion celebration (briefly shows "Quest Complete" or "Step Complete" card before fading)
   const [completedChallengeInfo, setCompletedChallengeInfo] = useState<{
     description: string;
     stat: StatKey;
     bonusXP: number;
+    isChainStep: boolean;
+    chainIndex?: number;
+    chainTotal?: number;
   } | null>(null);
 
   // Celebration overlay state
@@ -143,23 +146,30 @@ export default function Home() {
       summary: string,
       verdictMessage: string,
       challenge?: { text: string; stat: string; bonusXP: number },
-      challengeCompleted?: boolean
+      challengeCompleted?: boolean,
+      challengeChain?: { text: string; stat: string; bonusXP: number }[]
     ) => {
       if (!gameData || !definitions) return;
 
       // Complete the active challenge first (before issuing a new one)
       let currentData = gameData;
       if (challengeCompleted && currentData.activeChallenge) {
-        // Save challenge info for the celebration card before it's cleared
-        setCompletedChallengeInfo({
-          description: currentData.activeChallenge.description,
-          stat: currentData.activeChallenge.stat as StatKey,
-          bonusXP: currentData.activeChallenge.bonusXP,
-        });
-        setTimeout(() => setCompletedChallengeInfo(null), 3500);
-
+        const activeChallenge = currentData.activeChallenge;
         const result = completeChallenge(currentData);
-        if (result) currentData = result.newData;
+        if (result) {
+          currentData = result.newData;
+
+          // Show celebration card — "Step Complete" for mid-chain, "Quest Complete" for final/standalone
+          setCompletedChallengeInfo({
+            description: activeChallenge.description,
+            stat: activeChallenge.stat as StatKey,
+            bonusXP: activeChallenge.bonusXP,
+            isChainStep: result.nextChainStep,
+            chainIndex: activeChallenge.chainIndex,
+            chainTotal: activeChallenge.chainTotal,
+          });
+          setTimeout(() => setCompletedChallengeInfo(null), 3500);
+        }
       }
 
       // Apply each award sequentially — each addXP call updates the data
@@ -195,9 +205,16 @@ export default function Home() {
         }
       }
 
-      // Issue new challenge if the Judge provided one
-      if (challenge && !currentData.activeChallenge) {
-        currentData = issueChallenge(currentData, challenge.text, challenge.stat as StatKey, challenge.bonusXP);
+      // Issue new challenge or challenge chain if the Judge provided one
+      if (!currentData.activeChallenge) {
+        if (challengeChain && challengeChain.length >= 2) {
+          currentData = issueChallengeChain(
+            currentData,
+            challengeChain.map((step) => ({ description: step.text, stat: step.stat as StatKey, bonusXP: step.bonusXP }))
+          );
+        } else if (challenge) {
+          currentData = issueChallenge(currentData, challenge.text, challenge.stat as StatKey, challenge.bonusXP);
+        }
       }
 
       setGameData(currentData);
@@ -485,10 +502,32 @@ export default function Home() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Side Quest</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600">
+                    {gameData.activeChallenge.chainTotal
+                      ? `Challenge Chain — Step ${gameData.activeChallenge.chainIndex} of ${gameData.activeChallenge.chainTotal}`
+                      : "Challenge"}
+                  </span>
                   <span className="text-[10px] font-medium text-stone-300">+{gameData.activeChallenge.bonusXP} bonus XP</span>
                 </div>
                 <p className="text-sm text-stone-600 leading-snug">{gameData.activeChallenge.description}</p>
+                {/* Chain progress dots */}
+                {gameData.activeChallenge.chainTotal && gameData.activeChallenge.chainIndex && (
+                  <div className="flex gap-1 mt-2">
+                    {Array.from({ length: gameData.activeChallenge.chainTotal }, (_, i) => (
+                      <div
+                        key={i}
+                        className="h-1.5 rounded-full flex-1"
+                        style={{
+                          backgroundColor: i < gameData.activeChallenge!.chainIndex!
+                            ? (definitions[gameData.activeChallenge!.stat]?.color ?? "#d4a44a")
+                            : i === gameData.activeChallenge!.chainIndex! - 1
+                            ? (definitions[gameData.activeChallenge!.stat]?.color ?? "#d4a44a")
+                            : `${definitions[gameData.activeChallenge!.stat]?.color ?? "#d4a44a"}20`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
               <button
                 onClick={() => {
@@ -534,7 +573,13 @@ export default function Home() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-xs font-bold uppercase tracking-wider" style={{ color: definitions[completedChallengeInfo.stat]?.color ?? "#d4a44a" }}>Quest Complete</span>
+                  <span className="text-xs font-bold uppercase tracking-wider" style={{ color: definitions[completedChallengeInfo.stat]?.color ?? "#d4a44a" }}>
+                    {completedChallengeInfo.isChainStep
+                      ? `Step ${completedChallengeInfo.chainIndex} Complete`
+                      : completedChallengeInfo.chainTotal
+                        ? "Chain Complete"
+                        : "Quest Complete"}
+                  </span>
                   <span className="text-xs font-bold text-amber-600">+{completedChallengeInfo.bonusXP} bonus XP</span>
                 </div>
                 <p className="text-sm text-stone-500 leading-snug line-through decoration-1">{completedChallengeInfo.description}</p>

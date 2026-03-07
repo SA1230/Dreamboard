@@ -30,6 +30,7 @@ interface JudgeVerdict {
   summary: string;
   awards: Award[];
   challenge?: ChallengeData;
+  challengeChain?: ChallengeData[];
   challengeCompleted?: boolean;
 }
 
@@ -39,7 +40,7 @@ interface JudgeModalProps {
   overallLevel: number;
   rank: string;
   profilePicture: string | null;
-  onAcceptVerdict: (awards: Award[], summary: string, verdictMessage: string, challenge?: ChallengeData, challengeCompleted?: boolean) => void;
+  onAcceptVerdict: (awards: Award[], summary: string, verdictMessage: string, challenge?: ChallengeData, challengeCompleted?: boolean, challengeChain?: ChallengeData[]) => void;
   onCancel: () => void;
 }
 
@@ -95,6 +96,8 @@ function buildGameContext(
         stat: gameData.activeChallenge.stat,
         bonusXP: gameData.activeChallenge.bonusXP,
         issuedAt: gameData.activeChallenge.issuedAt,
+        chainIndex: gameData.activeChallenge.chainIndex,
+        chainTotal: gameData.activeChallenge.chainTotal,
       }
     : undefined;
 
@@ -162,6 +165,7 @@ export function JudgeModal({
             summary: data.summary || "Judged activity",
             awards: data.awards,
             challenge: data.challenge,
+            challengeChain: data.challengeChain,
             challengeCompleted: data.challengeCompleted,
           });
         } else {
@@ -404,7 +408,7 @@ export function JudgeModal({
               })}
             </div>
             <button
-              onClick={() => onAcceptVerdict(verdict.awards, verdict.summary, verdict.message, verdict.challenge, verdict.challengeCompleted)}
+              onClick={() => onAcceptVerdict(verdict.awards, verdict.summary, verdict.message, verdict.challenge, verdict.challengeCompleted, verdict.challengeChain)}
               className="w-full py-2.5 rounded-xl text-sm font-bold text-white bg-stone-700 hover:bg-stone-800 transition-colors active:scale-[0.98]"
             >
               Accept Verdict (+{totalXP} XP)
