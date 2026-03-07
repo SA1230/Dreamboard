@@ -31,7 +31,7 @@ interface JudgeModalProps {
   overallLevel: number;
   rank: string;
   profilePicture: string | null;
-  onAcceptVerdict: (awards: Award[], summary: string) => void;
+  onAcceptVerdict: (awards: Award[], summary: string, verdictMessage: string) => void;
   onCancel: () => void;
 }
 
@@ -370,7 +370,7 @@ export function JudgeModal({
               })}
             </div>
             <button
-              onClick={() => onAcceptVerdict(verdict.awards, verdict.summary)}
+              onClick={() => onAcceptVerdict(verdict.awards, verdict.summary, verdict.message)}
               className="w-full py-2.5 rounded-xl text-sm font-bold text-white bg-stone-700 hover:bg-stone-800 transition-colors active:scale-[0.98]"
             >
               Accept Verdict (+{totalXP} XP)

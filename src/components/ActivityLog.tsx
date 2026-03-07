@@ -121,24 +121,36 @@ function formatTimestamp(isoString: string): string {
 function XPGainRow({ event, definitions }: { event: Extract<FeedEvent, { type: "xp_gain" }>; definitions: Record<StatKey, StatDefinition> }) {
   const definition = definitions[event.stat];
   return (
-    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/60">
-      <div style={{ color: definition.color }} className="flex-shrink-0">
-        <StatIcon iconKey={definition.iconKey} className="w-5 h-5" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold" style={{ color: definition.color }}>
-            {definition.name}
-          </span>
-          <span className="text-xs text-stone-300">+{event.amount ?? 1} XP</span>
+    <div className="px-4 py-3 rounded-xl bg-white/60">
+      <div className="flex items-center gap-3">
+        <div style={{ color: definition.color }} className="flex-shrink-0">
+          <StatIcon iconKey={definition.iconKey} className="w-5 h-5" />
         </div>
-        {event.note && (
-          <p className="text-xs text-stone-400 truncate">{event.note}</p>
-        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold" style={{ color: definition.color }}>
+              {definition.name}
+            </span>
+            <span className="text-xs text-stone-300">+{event.amount ?? 1} XP</span>
+          </div>
+          {event.note && (
+            <p className="text-xs text-stone-400 truncate">{event.note}</p>
+          )}
+        </div>
+        <span className="text-xs text-stone-300 flex-shrink-0">
+          {formatTimestamp(event.timestamp)}
+        </span>
       </div>
-      <span className="text-xs text-stone-300 flex-shrink-0">
-        {formatTimestamp(event.timestamp)}
-      </span>
+      {event.verdictMessage && (
+        <div className="flex items-start gap-2 mt-2 pt-2 border-t border-stone-100">
+          <img
+            src="/mascots/judge-hero.svg"
+            alt=""
+            className="w-5 h-5 rounded-full bg-amber-50 border border-amber-200 p-0.5 flex-shrink-0 mt-0.5"
+          />
+          <p className="text-xs text-stone-400 italic leading-relaxed">{event.verdictMessage}</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -349,12 +361,25 @@ function PrizeUnlockedRow({ event }: { event: Extract<FeedEvent, { type: "prize_
 function ActivityGroupCard({ group, definitions }: { group: ActivityGroup; definitions: Record<StatKey, StatDefinition> }) {
   const totalXP = group.xpGains.reduce((sum, e) => sum + (e.amount ?? 1), 0);
   const hasLevelUps = group.levelUps.length > 0 || group.overallLevelUps.length > 0 || group.rankUps.length > 0;
+  const verdictMessage = group.xpGains[0]?.verdictMessage;
 
   return (
     <div className="px-4 py-3 rounded-xl bg-white/60">
       {/* Activity description */}
       {group.note && (
         <p className="text-xs text-stone-500 mb-1.5">{group.note}</p>
+      )}
+
+      {/* Captain's verdict quote */}
+      {verdictMessage && (
+        <div className="flex items-start gap-2 mb-2">
+          <img
+            src="/mascots/judge-hero.svg"
+            alt=""
+            className="w-5 h-5 rounded-full bg-amber-50 border border-amber-200 p-0.5 flex-shrink-0 mt-0.5"
+          />
+          <p className="text-xs text-stone-400 italic leading-relaxed">{verdictMessage}</p>
+        </div>
       )}
 
       {/* XP pills row */}

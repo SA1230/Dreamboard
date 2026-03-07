@@ -86,7 +86,8 @@ export function addXP(
   data: GameData,
   statKey: StatKey,
   note: string,
-  amount: number = 1
+  amount: number = 1,
+  verdictMessage?: string
 ): { newData: GameData; leveledUp: boolean; previousLevel: number } {
   const previousLevel = data.stats[statKey].level;
   const stat = { ...data.stats[statKey] };
@@ -110,6 +111,7 @@ export function addXP(
     note,
     amount,
     timestamp: now,
+    ...(verdictMessage ? { verdictMessage } : {}),
   };
 
   let newData: GameData = {
@@ -126,6 +128,7 @@ export function addXP(
     stat: statKey,
     note,
     amount,
+    ...(verdictMessage ? { verdictMessage } : {}),
   });
 
   // Push level-up feed event if stat leveled up

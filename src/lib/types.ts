@@ -20,6 +20,8 @@ export interface Activity {
   timestamp: string;
   /** XP amount awarded (defaults to 1 for backward compat with pre-judge activities) */
   amount?: number;
+  /** The Judge's full verdict text (sassy flavor text) — only present for Judge-awarded XP */
+  verdictMessage?: string;
 }
 
 export interface CustomStatOverride {
@@ -84,7 +86,7 @@ export interface Prize {
 
 // Discriminated union for all events that appear in the activity feed
 export type FeedEvent =
-  | { type: "xp_gain"; id: string; timestamp: string; stat: StatKey; note: string; amount?: number }
+  | { type: "xp_gain"; id: string; timestamp: string; stat: StatKey; note: string; amount?: number; verdictMessage?: string }
   | { type: "habit_completed"; id: string; timestamp: string; habitKey: HabitKey }
   | { type: "habit_removed"; id: string; timestamp: string; habitKey: HabitKey }
   | { type: "damage_marked"; id: string; timestamp: string; damageKey: DamageKey }
