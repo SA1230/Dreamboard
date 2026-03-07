@@ -435,6 +435,17 @@ export async function POST(request: NextRequest) {
       result = await callOpenAI(systemPrompt, messages, forceVerdict);
     }
 
+    // Guarantee a challenge for first-time users even if the LLM didn't include one
+    const isFirstTimeUser = gameContext.recentActivities.length === 0;
+    if (isFirstTimeUser && result.type === "verdict" && !result.challenge && result.awards && result.awards.length > 0) {
+      const topAward = result.awards.reduce((best, a) => a.amount > best.amount ? a : best, result.awards[0]);
+      result.challenge = {
+        text: `Come back tomorrow and tell me about another ${topAward.stat} activity. Make it a streak — I dare you.`,
+        stat: topAward.stat,
+        bonusXP: 3,
+      };
+    }
+
     return NextResponse.json(result);
   } catch (error) {
     console.error("Judge API error:", error);

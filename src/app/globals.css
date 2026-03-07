@@ -445,6 +445,19 @@
   50% { box-shadow: 0 0 8px 4px rgba(245, 158, 11, 0.2); }
 }
 
+/* Quest Complete: golden glow + scale pop, then fade out */
+.animate-questComplete {
+  animation: questComplete 3.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes questComplete {
+  0% { opacity: 1; transform: scale(1); }
+  8% { transform: scale(1.03); }
+  15% { transform: scale(1); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: scale(0.97) translateY(-8px); }
+}
+
 body {
   background: #FDF8F4;
 }
