@@ -59,6 +59,10 @@ src/
 
 .claude/
 └── skills/
+    ├── kickoff/SKILL.md        # /kickoff — session start: sync main, read memory, check build/tests/PRs, present briefing
+    ├── protocol/SKILL.md       # /protocol — strategic review: 4-agent codebase analysis → tiered build list
+    ├── ship/SKILL.md           # /ship — commit + push + create PR in one step (invoking = push approval)
+    ├── wrapup/SKILL.md         # /wrapup — session end: sync main, check dangling work, update CLAUDE.md + memory
     ├── xp-debug/SKILL.md       # /xp-debug — injects temporary +5 XP debug button into page.tsx (never committed)
     └── xp-debug-off/SKILL.md   # /xp-debug-off — removes the debug button via git checkout
 ```
