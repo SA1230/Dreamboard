@@ -239,6 +239,7 @@ export default function CalendarPage() {
   }
 
   function goToNextMonth() {
+    if (isCurrentMonth) return;
     setSelectedDay(null);
     if (month === 11) {
       setMonth(0);
@@ -309,7 +310,12 @@ export default function CalendarPage() {
         </div>
         <button
           onClick={goToNextMonth}
-          className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-500"
+          disabled={isCurrentMonth}
+          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+            isCurrentMonth
+              ? "bg-stone-50 text-stone-200 cursor-not-allowed"
+              : "bg-stone-100 hover:bg-stone-200 text-stone-500"
+          }`}
           aria-label="Next month"
         >
           <ChevronRight size={18} />
