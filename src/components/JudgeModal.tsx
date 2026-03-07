@@ -274,7 +274,10 @@ export function JudgeModal({
                   className="w-6 h-6 rounded-full bg-amber-50 border border-amber-200 p-0.5 flex-shrink-0"
                 />
                 <div className="max-w-[80%] rounded-2xl rounded-bl-md bg-stone-100 text-stone-700 px-4 py-2.5 text-sm leading-relaxed">
-                  What did you get up to? Tell me about something you accomplished — big or small. I&apos;ll ask a few questions and award you XP.
+                  {gameData.activeChallenge
+                    ? <>Back already? Ready to tell me about your challenge — <em>&ldquo;{gameData.activeChallenge.description}&rdquo;</em>? Or tell me about anything else you&apos;ve been up to.</>
+                    : <>What did you get up to? Tell me about something you accomplished — big or small. I&apos;ll ask a few questions and award you XP.</>
+                  }
                 </div>
               </div>
 
