@@ -260,12 +260,9 @@ This section governs the AI system prompt in `/api/judge/route.ts` and how `Judg
 
 These are documented product-level issues. Reference this section when working on related features to avoid reintroducing them or building on top of broken patterns.
 
-- **Dashboard label inconsistencies:** Daily Damage labels on the dashboard don't match the settings labels. Dashboard shows positive-sounding names ("No substances," "Screen time OK," "Slept well") but the section says "tap if you took damage." These should all describe the damage itself ("Substances," "Excess screen time," "Bad sleep") since tapping = logging damage.
-- **Month comparison edge case:** When the previous month has 0 XP, `MonthlyXPSummary` shows "+100%" which is mathematically meaningless. Should show something like "First active month!" instead.
 - **Habits/Damage disconnected from XP:** Healthy Habits and Daily Damage are a separate system from stat XP. They earn/subtract Power Points but this connection isn't fully visible to users. The YesterdayReview panel helps by showing PP impact inline, but the two halves (Judge + stats vs. habits + damage) still feel like parallel systems.
 - **Judge CTA redundancy:** The + nav button and the golden CTA card on the dashboard both open JudgeModal. Two paths to the same action with very different visual weights.
 - **Calendar empty state:** Calendar shows full 31-day grid but early in the month most cells are empty. Looks barren for new users.
-- **Activity feed repetition:** A single activity that earns XP in 4 categories creates 4+ separate feed entries plus level-up cards. Could be grouped by activity for a cleaner feed.
 
 ## ⚠ Using this context correctly
 
