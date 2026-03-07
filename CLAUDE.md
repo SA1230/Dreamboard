@@ -96,6 +96,7 @@ src/
 
 .claude/
 └── skills/
+    ├── builder/SKILL.md        # /builder — agent architect: analyzes friction in git/memory/code, proposes new skills from evidence
     ├── delight/SKILL.md        # /delight — delight audit: 4-agent emotional/voice/craft/surprise analysis → ranked delight opportunities
     ├── devil/SKILL.md          # /devil — devil's advocate: 4-agent assumption/competition/dropout/technical analysis → pre-mortem failure scenarios
     ├── historian/SKILL.md      # /historian — development archaeology: 4-agent git history analysis → velocity, churn, decisions, growth narrative
