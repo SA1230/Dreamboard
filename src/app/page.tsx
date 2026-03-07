@@ -351,54 +351,81 @@ export default function Home() {
         </div>
       )}
 
-      {/* Captain CTA */}
-      <div className="mb-6">
-        <button
-          onClick={() => setShowJudge(true)}
-          className="relative w-full flex flex-col items-center pt-12 pb-4 px-8 rounded-2xl border border-amber-200/60 hover:border-amber-300 transition-all cursor-pointer group active:scale-[0.98]"
-          style={{
-            background: "radial-gradient(ellipse at 50% -10%, rgba(252, 211, 77, 0.15) 0%, transparent 60%), linear-gradient(to bottom, #FFF8EB, #FFF0D4)",
-            boxShadow: "0 2px 12px rgba(180, 130, 50, 0.08), inset 0 1px 0 rgba(255,255,255,0.6)",
-          }}
-        >
-          {/* Hero avatar with glow ring + bob */}
-          <div
-            className="absolute -top-8"
-            style={{ animation: "captainBob 3s ease-in-out infinite" }}
-          >
-            <div
-              className="relative flex items-center justify-center rounded-full"
-              style={{ animation: "captainGlow 2.5s ease-in-out infinite" }}
-            >
-              {/* Sonar ripple rings */}
-              <div
-                className="absolute w-20 h-20 rounded-full border-2 border-amber-400/40"
-                style={{ animation: "captainRipple 2.5s ease-out infinite" }}
-              />
-              <div
-                className="absolute w-20 h-20 rounded-full border-2 border-amber-400/40"
-                style={{ animation: "captainRipple 2.5s ease-out 1.25s infinite" }}
-              />
-              <img
-                src="/mascots/judge-hero.svg"
-                alt="The Captain"
-                className="w-20 h-20 rounded-full bg-white border-2 border-amber-300 p-1.5 shadow-sm group-hover:scale-110 transition-transform relative"
-              />
-            </div>
-          </div>
-          <span className="text-lg font-bold text-amber-800">What did you do today?</span>
-          <span
-            className="inline-block mt-2 px-5 py-1.5 text-sm font-bold text-white rounded-full shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all"
+      {/* Captain CTA — full hero card for first-run, compact bar for returning users */}
+      {isFirstRun ? (
+        <div className="mb-6">
+          <button
+            onClick={() => setShowJudge(true)}
+            className="relative w-full flex flex-col items-center pt-12 pb-4 px-8 rounded-2xl border border-amber-200/60 hover:border-amber-300 transition-all cursor-pointer group active:scale-[0.98]"
             style={{
-              background: "linear-gradient(90deg, #B4722A 0%, #D4A44A 30%, #F5D680 50%, #D4A44A 70%, #B4722A 100%)",
-              backgroundSize: "200% 100%",
-              animation: "ctaShimmer 4s ease-in-out infinite",
+              background: "radial-gradient(ellipse at 50% -10%, rgba(252, 211, 77, 0.15) 0%, transparent 60%), linear-gradient(to bottom, #FFF8EB, #FFF0D4)",
+              boxShadow: "0 2px 12px rgba(180, 130, 50, 0.08), inset 0 1px 0 rgba(255,255,255,0.6)",
             }}
           >
-            Log it &amp; earn XP
-          </span>
-        </button>
-      </div>
+            {/* Hero avatar with glow ring + bob */}
+            <div
+              className="absolute -top-8"
+              style={{ animation: "captainBob 3s ease-in-out infinite" }}
+            >
+              <div
+                className="relative flex items-center justify-center rounded-full"
+                style={{ animation: "captainGlow 2.5s ease-in-out infinite" }}
+              >
+                {/* Sonar ripple rings */}
+                <div
+                  className="absolute w-20 h-20 rounded-full border-2 border-amber-400/40"
+                  style={{ animation: "captainRipple 2.5s ease-out infinite" }}
+                />
+                <div
+                  className="absolute w-20 h-20 rounded-full border-2 border-amber-400/40"
+                  style={{ animation: "captainRipple 2.5s ease-out 1.25s infinite" }}
+                />
+                <img
+                  src="/mascots/judge-hero.svg"
+                  alt="The Captain"
+                  className="w-20 h-20 rounded-full bg-white border-2 border-amber-300 p-1.5 shadow-sm group-hover:scale-110 transition-transform relative"
+                />
+              </div>
+            </div>
+            <span className="text-lg font-bold text-amber-800">What did you do today?</span>
+            <span
+              className="inline-block mt-2 px-5 py-1.5 text-sm font-bold text-white rounded-full shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all"
+              style={{
+                background: "linear-gradient(90deg, #B4722A 0%, #D4A44A 30%, #F5D680 50%, #D4A44A 70%, #B4722A 100%)",
+                backgroundSize: "200% 100%",
+                animation: "ctaShimmer 4s ease-in-out infinite",
+              }}
+            >
+              Log it &amp; earn XP
+            </span>
+          </button>
+        </div>
+      ) : (
+        <div className="mb-4">
+          <button
+            onClick={() => setShowJudge(true)}
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border border-amber-200/50 hover:border-amber-300 transition-all cursor-pointer group active:scale-[0.98]"
+            style={{
+              background: "linear-gradient(to right, #FFF8EB, #FFF3E0)",
+            }}
+          >
+            <img
+              src="/mascots/judge-hero.svg"
+              alt="The Captain"
+              className="w-9 h-9 rounded-full bg-white border border-amber-200 p-0.5 group-hover:scale-110 transition-transform flex-shrink-0"
+            />
+            <span className="text-sm font-semibold text-amber-700 flex-1 text-left">What did you do today?</span>
+            <span
+              className="px-3 py-1 text-xs font-bold text-white rounded-full flex-shrink-0"
+              style={{
+                background: "linear-gradient(90deg, #B4722A, #D4A44A)",
+              }}
+            >
+              Log XP
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* Active Challenge Card */}
       {gameData.activeChallenge && definitions && (
