@@ -382,7 +382,7 @@ export default function Home() {
       {isFirstRun && (
         <div className="mt-14 mb-6 animate-fadeIn">
           <div className="rounded-2xl border border-stone-200 p-5 text-center" style={{ backgroundColor: "#FDFBF7" }}>
-            <h2 className="text-lg font-bold text-stone-700 mb-2">Welcome to Dreambound</h2>
+            <h2 className="text-lg font-bold text-stone-700 mb-2">Welcome to Dreamboard</h2>
             <p className="text-sm text-stone-500 leading-relaxed">
               Track your real-life accomplishments like an RPG character.
               Tell the Captain what you did today — they&apos;ll interview you,
@@ -516,10 +516,10 @@ export default function Home() {
                         key={i}
                         className="h-1.5 rounded-full flex-1"
                         style={{
-                          backgroundColor: i < gameData.activeChallenge!.chainIndex!
+                          backgroundColor: i < gameData.activeChallenge!.chainIndex! - 1
                             ? (definitions[gameData.activeChallenge!.stat]?.color ?? "#d4a44a")
                             : i === gameData.activeChallenge!.chainIndex! - 1
-                            ? (definitions[gameData.activeChallenge!.stat]?.color ?? "#d4a44a")
+                            ? `${definitions[gameData.activeChallenge!.stat]?.color ?? "#d4a44a"}80`
                             : `${definitions[gameData.activeChallenge!.stat]?.color ?? "#d4a44a"}20`,
                         }}
                       />
@@ -727,7 +727,7 @@ export default function Home() {
       )}
 
       {/* Floating Captain FAB — always visible in bottom-right corner */}
-      {!showJudge && (
+      {!showJudge && !isFirstRun && (
         <button
           onClick={() => setShowJudge(true)}
           className="fixed bottom-6 right-6 z-40 w-16 h-16 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-transform cursor-pointer"
