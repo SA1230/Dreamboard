@@ -241,6 +241,9 @@ export default function Home() {
   const { level: overallLevel, xpIntoLevel, xpForNextLevel } = getOverallLevel(getTotalLifetimeXP(gameData));
   const overallProgressPercent = xpForNextLevel > 0 ? Math.round((xpIntoLevel / xpForNextLevel) * 100) : 100;
 
+  // First-run detection — user has never logged XP via the Judge
+  const isFirstRun = gameData.activities.length === 0;
+
   // Weekly quote — hidden for now, may bring back later
   // const weeklyQuotes / currentWeekNumber / weeklyQuote removed from render
 
@@ -302,15 +305,34 @@ export default function Home() {
         </h1>
       </header>
 
-      {/* Yesterday Review — retrospective habit/damage checklist */}
-      <div className="mt-14 mb-4 animate-fadeIn">
-        <YesterdayReview
-          gameData={gameData}
-          onToggleHabit={handleToggleYesterdayHabit}
-          onToggleDamage={handleToggleYesterdayDamage}
-          ppToast={ppToast}
-        />
-      </div>
+      {/* Yesterday Review — retrospective habit/damage checklist (hidden for first-run users) */}
+      {!isFirstRun && (
+        <div className="mt-14 mb-4 animate-fadeIn">
+          <YesterdayReview
+            gameData={gameData}
+            onToggleHabit={handleToggleYesterdayHabit}
+            onToggleDamage={handleToggleYesterdayDamage}
+            ppToast={ppToast}
+          />
+        </div>
+      )}
+
+      {/* Welcome Card — shown only on first run */}
+      {isFirstRun && (
+        <div className="mt-14 mb-6 animate-fadeIn">
+          <div className="rounded-2xl border border-stone-200 p-5 text-center" style={{ backgroundColor: "#FDFBF7" }}>
+            <h2 className="text-lg font-bold text-stone-700 mb-2">Welcome to Dreambound</h2>
+            <p className="text-sm text-stone-500 leading-relaxed">
+              Track your real-life accomplishments like an RPG character.
+              Tell the Captain what you did today — they&apos;ll interview you,
+              judge your effort with some sass, and award XP across your stats.
+            </p>
+            <p className="text-xs text-stone-400 mt-3">
+              Tap below to log your first activity and start leveling up.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Captain CTA */}
       <div className="mb-6">
@@ -362,18 +384,20 @@ export default function Home() {
       </div>
 
       {/* Monthly XP Summary + Level Display — wider than card grid */}
-      <div className="flex flex-col sm:flex-row sm:items-stretch gap-4 mb-8 sm:-mx-12">
-        <div className="flex-1 min-w-0">
-          <MonthlyXPSummary
-            currentMonthXP={monthlyXP.currentMonthXP}
-            lastMonthXP={monthlyXP.lastMonthXP}
-            activitiesByDay={activitiesByDayForMonth}
-            habitsByDay={habitsByDayForMonth}
-            statDefinitions={definitions}
-            todayXP={dailyXPForMonth[new Date().getDate() - 1] ?? 0}
-            todayXPPulsing={todayXPPulsing}
-          />
-        </div>
+      <div className={`flex flex-col sm:flex-row sm:items-stretch gap-4 mb-8 sm:-mx-12${isFirstRun ? " justify-center" : ""}`}>
+        {!isFirstRun && (
+          <div className="flex-1 min-w-0">
+            <MonthlyXPSummary
+              currentMonthXP={monthlyXP.currentMonthXP}
+              lastMonthXP={monthlyXP.lastMonthXP}
+              activitiesByDay={activitiesByDayForMonth}
+              habitsByDay={habitsByDayForMonth}
+              statDefinitions={definitions}
+              todayXP={dailyXPForMonth[new Date().getDate() - 1] ?? 0}
+              todayXPPulsing={todayXPPulsing}
+            />
+          </div>
+        )}
         <div className="flex" style={{ transform: "scale(1.05)", transformOrigin: "center center" }}>
           <LevelDisplay
             level={overallLevel}
@@ -406,52 +430,55 @@ export default function Home() {
             streak={streaks[key]}
             isActiveThisMonth={activeStatsThisMonth.has(key)}
             previousLevel={undefined}
+            isFirstRun={isFirstRun}
           />
         ))}
       </div>
 
-      {/* Activity Log */}
-      <section>
-        <div className="flex items-center mb-4">
-          <button
-            onClick={() => setIsActivityExpanded(!isActivityExpanded)}
-            className="flex items-center gap-2 group"
-          >
-            <h2 className="text-lg font-bold text-stone-600 group-hover:text-stone-700 transition-colors">Recent Activity</h2>
-            <span
-              className="text-stone-400 text-xs transition-transform duration-200 inline-block"
-              style={{ transform: isActivityExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
-            >
-              ▶
-            </span>
-          </button>
-          <span className="text-xs text-stone-300 font-medium ml-2">
-            {gameData.activities.length} activit{gameData.activities.length === 1 ? "y" : "ies"}
-            {(() => {
-              const latestActivity = gameData.activities[0]?.timestamp;
-              const latestFeed = gameData.feedEvents?.[0]?.timestamp;
-              const mostRecent = latestActivity && latestFeed
-                ? (latestActivity > latestFeed ? latestActivity : latestFeed)
-                : latestActivity || latestFeed;
-              return mostRecent ? <> · {formatRelativeTime(mostRecent)}</> : null;
-            })()}
-          </span>
-          <div className="ml-auto" />
-          {isActivityExpanded && (
+      {/* Activity Log — hidden for first-run users */}
+      {!isFirstRun && (
+        <section>
+          <div className="flex items-center mb-4">
             <button
-              onClick={() => exportGameData(gameData)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-400 bg-stone-100 hover:bg-stone-200 transition-colors duration-200"
-              title="Export your data as JSON"
+              onClick={() => setIsActivityExpanded(!isActivityExpanded)}
+              className="flex items-center gap-2 group"
             >
-              <Download size={14} />
-              Export
+              <h2 className="text-lg font-bold text-stone-600 group-hover:text-stone-700 transition-colors">Recent Activity</h2>
+              <span
+                className="text-stone-400 text-xs transition-transform duration-200 inline-block"
+                style={{ transform: isActivityExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
+              >
+                ▶
+              </span>
             </button>
+            <span className="text-xs text-stone-300 font-medium ml-2">
+              {gameData.activities.length} activit{gameData.activities.length === 1 ? "y" : "ies"}
+              {(() => {
+                const latestActivity = gameData.activities[0]?.timestamp;
+                const latestFeed = gameData.feedEvents?.[0]?.timestamp;
+                const mostRecent = latestActivity && latestFeed
+                  ? (latestActivity > latestFeed ? latestActivity : latestFeed)
+                  : latestActivity || latestFeed;
+                return mostRecent ? <> · {formatRelativeTime(mostRecent)}</> : null;
+              })()}
+            </span>
+            <div className="ml-auto" />
+            {isActivityExpanded && (
+              <button
+                onClick={() => exportGameData(gameData)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-400 bg-stone-100 hover:bg-stone-200 transition-colors duration-200"
+                title="Export your data as JSON"
+              >
+                <Download size={14} />
+                Export
+              </button>
+            )}
+          </div>
+          {isActivityExpanded && (
+            <ActivityLog feedEvents={gameData.feedEvents ?? []} definitions={definitions} />
           )}
-        </div>
-        {isActivityExpanded && (
-          <ActivityLog feedEvents={gameData.feedEvents ?? []} definitions={definitions} />
-        )}
-      </section>
+        </section>
+      )}
 
 
 
