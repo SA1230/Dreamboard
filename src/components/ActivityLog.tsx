@@ -2,8 +2,8 @@
 
 import { FeedEvent, StatKey } from "@/lib/types";
 import { StatDefinition } from "@/lib/stats";
-import { HABIT_DEFINITIONS } from "@/lib/habits";
-import { DAMAGE_DEFINITIONS } from "@/lib/damage";
+import { HABIT_DEFINITIONS, HABIT_LABELS } from "@/lib/habits";
+import { DAMAGE_DEFINITIONS, DAMAGE_LABELS } from "@/lib/damage";
 import { StatIcon } from "./StatIcons";
 import { Trophy } from "lucide-react";
 
@@ -12,10 +12,8 @@ interface ActivityLogProps {
   definitions: Record<StatKey, StatDefinition>;
 }
 
-// Build lookup maps from shared definitions
-const HABIT_LABELS = Object.fromEntries(HABIT_DEFINITIONS.map((h) => [h.key, h.label]));
+// Build emoji lookup maps from shared definitions
 const HABIT_EMOJI = Object.fromEntries(HABIT_DEFINITIONS.map((h) => [h.key, h.emoji]));
-const DAMAGE_LABELS = Object.fromEntries(DAMAGE_DEFINITIONS.map((d) => [d.key, d.label]));
 const DAMAGE_EMOJI = Object.fromEntries(DAMAGE_DEFINITIONS.map((d) => [d.key, d.emoji]));
 
 // --- Grouping types ---
