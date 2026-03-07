@@ -137,6 +137,9 @@ export function StatCard({
           >
             Lv.{displayedLevel}
           </span>
+          <span className="text-[10px] text-stone-300 italic ml-1">
+            No activity this month
+          </span>
         </div>
       </div>
     );

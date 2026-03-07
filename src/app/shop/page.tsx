@@ -79,8 +79,12 @@ export default function ShopPage() {
           </svg>
           <span className="text-sm font-bold text-amber-700">{pointsBalance.balance}</span>
         </div>
-
       </div>
+
+      {/* PP explainer */}
+      <p className="text-[11px] text-stone-400 -mt-4 mb-4 text-right">
+        Earn PP by completing daily habits
+      </p>
 
       {/* Skipper Preview */}
       <div className="flex flex-col items-center mb-6 py-4 rounded-2xl"
