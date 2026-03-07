@@ -9,27 +9,13 @@ import { StatIcon } from "@/components/StatIcons";
 import { ArrowLeft, ChevronLeft, ChevronRight, X } from "lucide-react";
 import Link from "next/link";
 import { ModalBackdrop } from "@/components/ModalBackdrop";
+import { HABIT_PAST_LABELS } from "@/lib/habits";
+import { DAMAGE_LABELS } from "@/lib/damage";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
-
-const HABIT_LABELS: Record<HabitKey, string> = {
-  water: "Drank 64oz water",
-  nails: "No nail biting",
-  brush: "Brushed 2x",
-  nosugar: "No sugar",
-  floss: "Flossed teeth",
-  steps: "10k steps",
-};
-
-const DAMAGE_LABELS: Record<DamageKey, string> = {
-  substance: "Substances",
-  screentime: "Excess screen time",
-  junkfood: "Junk food",
-  badsleep: "Bad sleep",
-};
 
 function DayDetailModal({
   day,
@@ -143,7 +129,7 @@ function DayDetailModal({
                     color: "#059669",
                   }}
                 >
-                  {HABIT_LABELS[habitKey]}
+                  {HABIT_PAST_LABELS[habitKey]}
                 </span>
               ))}
             </div>
