@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { FeedEvent, StatKey } from "@/lib/types";
 import { StatDefinition } from "@/lib/stats";
 import { HABIT_DEFINITIONS, HABIT_LABELS } from "@/lib/habits";
@@ -500,7 +501,9 @@ function ActivityGroupCard({ group, definitions }: { group: ActivityGroup; defin
 }
 
 export function ActivityLog({ feedEvents, definitions }: ActivityLogProps) {
-  const recentEvents = feedEvents.slice(0, 30);
+  const [visibleCount, setVisibleCount] = useState(30);
+  const recentEvents = feedEvents.slice(0, visibleCount);
+  const hasMore = feedEvents.length > visibleCount;
 
   if (recentEvents.length === 0) {
     return (
@@ -551,6 +554,15 @@ export function ActivityLog({ feedEvents, definitions }: ActivityLogProps) {
             return null;
         }
       })}
+
+      {hasMore && (
+        <button
+          onClick={() => setVisibleCount((prev) => prev + 30)}
+          className="w-full py-2.5 rounded-xl text-xs font-semibold text-stone-400 bg-stone-50 border border-stone-200 hover:bg-stone-100 transition-colors mt-2"
+        >
+          Show more
+        </button>
+      )}
     </div>
   );
 }
