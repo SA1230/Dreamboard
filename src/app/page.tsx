@@ -362,7 +362,7 @@ export default function Home() {
           />
           <img
             src="/logos/dreambound-wordmark-blue.svg"
-            alt="Dreambound"
+            alt="Dreamboard"
             className="h-7 inline-block"
           />
         </h1>
