@@ -6,6 +6,43 @@ Dreamboard is a gamified personal habit tracker. Users earn XP by logging real-l
 
 The core loop: User tells the Judge what they did → Judge interviews them (1-3 follow-ups) → Judge delivers a sassy verdict with variable XP → Stats update → Level up over time.
 
+## Flight Control Protocol (multi-session coordination)
+
+Multiple Claude Code sessions may run in parallel on this repo. This protocol prevents collisions. **Follow it automatically in every session — no user invocation needed.**
+
+The shared state file lives at `~/.claude/projects/-Users-shiroy-Dreamboard-clone/memory/flight-manifest.md`. It is NOT in git — agents read/write it directly without merge conflicts.
+
+### Pre-flight (session start)
+
+1. **Read the flight manifest** — check Active Flights for tasks already claimed
+2. **Check open PRs** — run `gh pr list --state open` to see what's in flight
+3. **Check remote branches** — run `git branch -r` to see active work
+4. **Claim your task** — before starting any work, add a row to the manifest's Active Flights table with your branch name, task description, and timestamp
+5. **If your task is already claimed or has an open PR** — STOP. Tell the user: "This task is already being handled by [branch/PR]. Want me to do something else?"
+
+### In-flight (while working)
+
+1. **Controlled Airspace files** — do NOT edit `CLAUDE.md`, `MEMORY.md`, `package.json`, or `src/lib/types.ts` during active work. Accumulate your intended edits mentally and apply them during landing
+2. **Branch naming** — use `feat/<task-name>` format. If the branch already exists remotely, append a suffix (e.g., `feat/task-name-v2`)
+3. **Don't touch other agents' state** — if you see unfamiliar stashes, branches, or lock files, leave them alone. Report them to the user if they block you
+4. **If `git index.lock` exists** — wait 5 seconds and retry. If it persists, tell the user rather than deleting it
+
+### Landing (shipping)
+
+1. **Rebase on latest main** — `git fetch origin && git rebase origin/main` before committing
+2. **Apply controlled-airspace edits NOW** — after rebasing, you have the latest versions. Make your CLAUDE.md/MEMORY.md edits here, on top of whatever other agents have landed
+3. **Run build + tests** — `npm run build && npx vitest run` must both pass
+4. **Check for conflicts** — run `gh pr list --state open` again. If another open PR touches the same files you're editing, warn the user about potential merge conflicts
+5. **Ship** — commit, push, create PR
+6. **Update the manifest** — change your Active Flights status to "PR #X open"
+
+### Collision avoidance rules
+
+- **One task per session.** Don't combine unrelated changes in one branch/PR
+- **Never force-push.** If your push is rejected, rebase and try again
+- **If two PRs both need to edit CLAUDE.md** — the second PR should note in its description that it needs a rebase after the first merges. The user merges PRs one at a time and the second agent can rebase
+- **Stale flight detection** — if an Active Flight has been in the manifest for more than 24 hours with no status change, it's probably abandoned. Note it to the user but don't remove it yourself
+
 ## Tech stack
 
 - **Framework:** Next.js 15 (App Router) with React 19 and TypeScript
