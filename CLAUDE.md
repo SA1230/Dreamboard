@@ -12,7 +12,8 @@ The core loop: User tells the Judge what they did → Judge interviews them (1-3
 - **Styling:** Tailwind CSS 4 — warm earth tones, stone backgrounds, rounded cards
 - **Icons:** lucide-react + 20 hand-drawn SVG icons in `StatIcons.tsx` (no other UI library)
 - **Font:** Nunito (Google Font) loaded via `next/font/google` in `layout.tsx`
-- **Storage:** Browser localStorage only — no database, no backend API except `/api/judge`
+- **Auth:** NextAuth v5 (next-auth@5.0.0-beta.30) with Google OAuth — JWT sessions, no database yet
+- **Storage:** Browser localStorage only — no database, no backend API except `/api/judge` and `/api/auth`
 - **AI Judge:** Anthropic Claude Sonnet 4 (fallback: OpenAI GPT-4o) via `/api/judge` route — evaluates activities and awards variable XP
 - **Charts:** None — we build visualizations with plain CSS/SVG (no recharts, no d3)
 - **Animations:** 6 custom keyframe animations in `globals.css` (fadeIn, modalSlideUp, xpPop, levelUpGlow, levelUpText, particle)
@@ -28,6 +29,7 @@ src/
 │   ├── layout.tsx          # Root layout with Nunito font + global styles
 │   ├── globals.css         # Tailwind base + 6 custom keyframe animations
 │   ├── api/judge/route.ts  # POST endpoint — sends activity to AI judge, returns XP verdict
+│   ├── api/auth/[...nextauth]/route.ts  # NextAuth catch-all route — handles Google OAuth login/callback/session
 │   ├── calendar/           # Month-at-a-glance view — daily XP totals with habit/damage icons, tap a day to see detail modal
 │   ├── settings/           # Customize stat names, descriptions, colors, icons + enable/disable habits & damage
 │   ├── shop/               # Power-Up Store — buy and equip cosmetic items on Skipper
@@ -43,7 +45,9 @@ src/
 │   ├── HealthyHabits.tsx    # Daily toggle cards for 6 habits (water, nails, brush, nosugar, floss, steps) — used by calendar page only
 │   ├── DailyDamage.tsx      # Daily toggle cards for 4 damage types (substance, screentime, junkfood, badsleep) — used by calendar page only
 │   ├── SkipperCharacter.tsx # Inline SVG paper-doll — renders Skipper with layered equipment overlays
-│   └── StatIcons.tsx        # 20 SVG icons (8 stat defaults + 12 extras for customization)
+│   ├── StatIcons.tsx        # 20 SVG icons (8 stat defaults + 12 extras for customization)
+│   ├── AuthProvider.tsx     # Client wrapper for NextAuth SessionProvider (used in layout.tsx)
+│   └── UserMenu.tsx         # Login/logout button — shows Google avatar when signed in, "Sign in" when not
 └── lib/
     ├── types.ts             # TypeScript types: StatKey, HabitKey, Activity, GameData, etc.
     ├── stats.ts             # Stat definitions, ColorPreset palettes, STAT_KEYS array
@@ -51,7 +55,8 @@ src/
     ├── prizes.ts            # System reward constants (derived from ranks), fog-of-war bracket helpers, MAX_USER_PRIZES
     ├── items.ts             # Item catalog (ITEM_CATALOG), rarity colors, slot definitions, helpers
     ├── itemSvgs.ts          # SVG content registry for equippable items (placeholder art)
-    └── storage.ts           # All data logic: load/save, addXP, leveling, habits, streaks, inventory, export, etc.
+    ├── storage.ts           # All data logic: load/save, addXP, leveling, habits, streaks, inventory, export, etc.
+    └── auth.ts              # NextAuth v5 config — Google OAuth provider, JWT session strategy
 
 .claude/
 └── skills/
