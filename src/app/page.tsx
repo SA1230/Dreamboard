@@ -36,6 +36,13 @@ export default function Home() {
   // Power Points toggle toast (shown in YesterdayReview PP summary)
   const [ppToast, setPpToast] = useState<{ text: string; color: string } | null>(null);
 
+  // Challenge completion celebration (briefly shows "Quest Complete" card before fading)
+  const [completedChallengeInfo, setCompletedChallengeInfo] = useState<{
+    description: string;
+    stat: StatKey;
+    bonusXP: number;
+  } | null>(null);
+
   // Celebration overlay state
   const [celebrationInfo, setCelebrationInfo] = useState<{
     statKey: StatKey;
@@ -141,6 +148,14 @@ export default function Home() {
       // Complete the active challenge first (before issuing a new one)
       let currentData = gameData;
       if (challengeCompleted && currentData.activeChallenge) {
+        // Save challenge info for the celebration card before it's cleared
+        setCompletedChallengeInfo({
+          description: currentData.activeChallenge.description,
+          stat: currentData.activeChallenge.stat as StatKey,
+          bonusXP: currentData.activeChallenge.bonusXP,
+        });
+        setTimeout(() => setCompletedChallengeInfo(null), 3500);
+
         const result = completeChallenge(currentData);
         if (result) currentData = result.newData;
       }
@@ -471,6 +486,39 @@ export default function Home() {
             >
               Tell the Captain
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Challenge Completion Celebration */}
+      {completedChallengeInfo && definitions && (
+        <div className="mb-6 animate-questComplete">
+          <div
+            className="relative rounded-2xl border-2 px-4 py-4 overflow-hidden"
+            style={{
+              borderColor: definitions[completedChallengeInfo.stat]?.color ?? "#d4a44a",
+              background: `linear-gradient(135deg, ${definitions[completedChallengeInfo.stat]?.color ?? "#d4a44a"}12 0%, rgba(245, 158, 11, 0.04) 100%)`,
+              boxShadow: `0 0 20px 4px ${definitions[completedChallengeInfo.stat]?.color ?? "#d4a44a"}25`,
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center"
+                style={{
+                  backgroundColor: `${definitions[completedChallengeInfo.stat]?.color ?? "#d4a44a"}20`,
+                  color: definitions[completedChallengeInfo.stat]?.color ?? "#d4a44a",
+                }}
+              >
+                <StatIcon iconKey={definitions[completedChallengeInfo.stat]?.iconKey ?? "sword"} className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-xs font-bold uppercase tracking-wider" style={{ color: definitions[completedChallengeInfo.stat]?.color ?? "#d4a44a" }}>Quest Complete</span>
+                  <span className="text-xs font-bold text-amber-600">+{completedChallengeInfo.bonusXP} bonus XP</span>
+                </div>
+                <p className="text-sm text-stone-500 leading-snug line-through decoration-1">{completedChallengeInfo.description}</p>
+              </div>
+            </div>
           </div>
         </div>
       )}
