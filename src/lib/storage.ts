@@ -508,24 +508,6 @@ export function saveEnabledHabits(data: GameData, enabledHabits: HabitKey[]): Ga
   return newData;
 }
 
-// Get the most recent activity timestamp per stat
-// Returns null for stats that have never been logged
-export function getLastActivityTimestamps(
-  activities: Activity[]
-): Record<StatKey, string | null> {
-  const result = {} as Record<StatKey, string | null>;
-  for (const key of STAT_KEYS) {
-    result[key] = null;
-  }
-  // Activities are stored newest-first, so the first match per stat is the most recent
-  for (const activity of activities) {
-    if (result[activity.stat] === null) {
-      result[activity.stat] = activity.timestamp;
-    }
-  }
-  return result;
-}
-
 // Format a timestamp as relative time for display
 export function formatRelativeTime(timestamp: string): string {
   const now = new Date();
