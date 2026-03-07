@@ -230,7 +230,7 @@ export default function SettingsPage() {
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-stone-400 bg-stone-100 hover:bg-stone-200 transition-colors"
           >
             <RotateCcw size={14} />
-            Reset All
+            Reset Stats
           </button>
           <button
             onClick={handleSave}

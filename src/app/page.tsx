@@ -19,7 +19,7 @@ import { UserMenu } from "@/components/UserMenu";
 
 export default function Home() {
   const [gameData, setGameData] = useState<GameData | null>(null);
-  const [xpGainedStat, setXpGainedStat] = useState<StatKey | null>(null);
+  const [xpGainedStat, setXpGainedStat] = useState<{ stat: StatKey; amount: number } | null>(null);
   // Overall level-up animation state for the LevelDisplay ring
   const [isOverallLevelingUp, setIsOverallLevelingUp] = useState(false);
   const [previousOverallLevel, setPreviousOverallLevel] = useState<number | undefined>(undefined);
@@ -140,7 +140,7 @@ export default function Home() {
 
         // Trigger XP animation for the last award's stat
         if (award === awards[awards.length - 1]) {
-          setXpGainedStat(award.stat);
+          setXpGainedStat({ stat: award.stat, amount: award.amount });
           setTimeout(() => setXpGainedStat(null), 900);
         }
 
@@ -402,7 +402,7 @@ export default function Home() {
             definition={definitions[key]}
             progress={gameData.stats[key]}
             leveledUp={false}
-            justGainedXP={xpGainedStat === key}
+            justGainedXP={xpGainedStat?.stat === key ? xpGainedStat.amount : false}
             streak={streaks[key]}
             isActiveThisMonth={activeStatsThisMonth.has(key)}
             previousLevel={undefined}
