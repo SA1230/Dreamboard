@@ -22,6 +22,9 @@ import {
   equipItem,
   unequipSlot,
   getInventory,
+  getStatStreaks,
+  getMonthlyXPTotals,
+  formatRelativeTime,
 } from "../storage";
 import type { GameData, Activity, StatKey, EquipmentSlot } from "../types";
 import { STAT_KEYS } from "../stats";
@@ -833,5 +836,178 @@ describe("unequipSlot", () => {
     const result = unequipSlot(data, "primary");
     expect(getInventory(result).equippedItems.primary).toBeUndefined();
     expect(getInventory(result).equippedItems.head).toBe("leather-cap");
+  });
+});
+
+// ─── getStatStreaks ───
+
+describe("getStatStreaks", () => {
+  // Must match getStatStreaks internal logic: local midnight → toISOString
+  function localDateISO(daysAgo: number = 0): string {
+    const d = new Date();
+    d.setDate(d.getDate() - daysAgo);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString().split("T")[0];
+  }
+
+  it("returns 0 for all stats with no activities", () => {
+    const result = getStatStreaks([]);
+    for (const key of STAT_KEYS) {
+      expect(result[key]).toBe(0);
+    }
+  });
+
+  it("returns 1 for a single activity today", () => {
+    const activities = [makeActivity("strength", `${localDateISO()}T10:00:00Z`)];
+    const result = getStatStreaks(activities);
+    expect(result.strength).toBe(1);
+  });
+
+  it("counts consecutive days backwards from today", () => {
+    const activities = [
+      makeActivity("wisdom", `${localDateISO()}T10:00:00Z`),
+      makeActivity("wisdom", `${localDateISO(1)}T10:00:00Z`),
+      makeActivity("wisdom", `${localDateISO(2)}T10:00:00Z`),
+    ];
+    const result = getStatStreaks(activities);
+    expect(result.wisdom).toBe(3);
+  });
+
+  it("streak still alive if yesterday has activity but not today", () => {
+    const activities = [
+      makeActivity("craft", `${localDateISO(1)}T10:00:00Z`),
+      makeActivity("craft", `${localDateISO(2)}T10:00:00Z`),
+    ];
+    const result = getStatStreaks(activities);
+    expect(result.craft).toBe(2);
+  });
+
+  it("streak breaks when a day is skipped", () => {
+    const activities = [
+      makeActivity("vitality", `${localDateISO()}T10:00:00Z`),
+      // skip yesterday
+      makeActivity("vitality", `${localDateISO(2)}T10:00:00Z`),
+    ];
+    const result = getStatStreaks(activities);
+    expect(result.vitality).toBe(1); // only today counts
+  });
+
+  it("returns 0 when last activity was 2+ days ago", () => {
+    const activities = [
+      makeActivity("charisma", `${localDateISO(3)}T10:00:00Z`),
+    ];
+    const result = getStatStreaks(activities);
+    expect(result.charisma).toBe(0);
+  });
+
+  it("tracks streaks independently per stat", () => {
+    const activities = [
+      makeActivity("strength", `${localDateISO()}T10:00:00Z`),
+      makeActivity("strength", `${localDateISO(1)}T10:00:00Z`),
+      makeActivity("wisdom", `${localDateISO()}T12:00:00Z`),
+    ];
+    const result = getStatStreaks(activities);
+    expect(result.strength).toBe(2);
+    expect(result.wisdom).toBe(1);
+    expect(result.vitality).toBe(0);
+  });
+});
+
+// ─── getMonthlyXPTotals ───
+
+describe("getMonthlyXPTotals", () => {
+  it("returns 0 for both months with no activities", () => {
+    const result = getMonthlyXPTotals([]);
+    expect(result.currentMonthXP).toBe(0);
+    expect(result.lastMonthXP).toBe(0);
+  });
+
+  it("sums current month activities", () => {
+    const now = new Date();
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-05T10:00:00Z`;
+    const activities = [
+      makeActivity("strength", thisMonth, 3),
+      makeActivity("wisdom", thisMonth, 2),
+    ];
+    const result = getMonthlyXPTotals(activities);
+    expect(result.currentMonthXP).toBe(5);
+  });
+
+  it("sums last month activities separately", () => {
+    const now = new Date();
+    const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 5);
+    const lastMonth = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, "0")}-05T10:00:00Z`;
+    const activities = [makeActivity("vitality", lastMonth, 7)];
+    const result = getMonthlyXPTotals(activities);
+    expect(result.lastMonthXP).toBe(7);
+    expect(result.currentMonthXP).toBe(0);
+  });
+
+  it("ignores activities from 2+ months ago", () => {
+    const now = new Date();
+    const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 5);
+    const old = `${twoMonthsAgo.getFullYear()}-${String(twoMonthsAgo.getMonth() + 1).padStart(2, "0")}-05T10:00:00Z`;
+    const activities = [makeActivity("craft", old, 10)];
+    const result = getMonthlyXPTotals(activities);
+    expect(result.currentMonthXP).toBe(0);
+    expect(result.lastMonthXP).toBe(0);
+  });
+
+  it("defaults amount to 1 for legacy activities", () => {
+    const now = new Date();
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-10T10:00:00Z`;
+    const activities = [makeActivity("discipline", thisMonth)]; // no amount
+    const result = getMonthlyXPTotals(activities);
+    expect(result.currentMonthXP).toBe(1);
+  });
+});
+
+// ─── formatRelativeTime ───
+
+describe("formatRelativeTime", () => {
+  it("returns 'Just now' for timestamps less than 1 minute ago", () => {
+    const now = new Date().toISOString();
+    expect(formatRelativeTime(now)).toBe("Just now");
+  });
+
+  it("returns minutes for timestamps under 1 hour ago (same day)", () => {
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    expect(formatRelativeTime(fiveMinAgo)).toBe("5m ago");
+  });
+
+  it("returns 'Yesterday' for timestamps from yesterday", () => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(12, 0, 0, 0);
+    expect(formatRelativeTime(yesterday.toISOString())).toBe("Yesterday");
+  });
+
+  it("returns days for timestamps 2-6 days ago", () => {
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    threeDaysAgo.setHours(12, 0, 0, 0);
+    expect(formatRelativeTime(threeDaysAgo.toISOString())).toBe("3 days ago");
+  });
+
+  it("returns '1 week ago' for 7-13 days ago", () => {
+    const tenDaysAgo = new Date();
+    tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+    tenDaysAgo.setHours(12, 0, 0, 0);
+    expect(formatRelativeTime(tenDaysAgo.toISOString())).toBe("1 week ago");
+  });
+
+  it("returns weeks for 14-27 days ago", () => {
+    const twentyDaysAgo = new Date();
+    twentyDaysAgo.setDate(twentyDaysAgo.getDate() - 20);
+    twentyDaysAgo.setHours(12, 0, 0, 0);
+    const result = formatRelativeTime(twentyDaysAgo.toISOString());
+    expect(result).toMatch(/^\d weeks ago$/);
+  });
+
+  it("returns months for older timestamps", () => {
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    threeMonthsAgo.setHours(12, 0, 0, 0);
+    expect(formatRelativeTime(threeMonthsAgo.toISOString())).toBe("3 months ago");
   });
 });
