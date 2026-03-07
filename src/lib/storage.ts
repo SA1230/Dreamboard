@@ -387,7 +387,7 @@ export function getMonthlyXPTotals(activities: Activity[]): {
 
 // --- Healthy Habits ---
 
-function getTodayString(): string {
+export function getTodayString(): string {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -395,20 +395,30 @@ function getTodayString(): string {
   return `${year}-${month}-${day}`;
 }
 
-export function isHabitCompletedToday(data: GameData, habitKey: HabitKey): boolean {
-  const dates = data.healthyHabits?.[habitKey];
-  if (!dates) return false;
-  return dates.includes(getTodayString());
+export function getYesterdayString(): string {
+  const now = new Date();
+  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  const year = yesterday.getFullYear();
+  const month = String(yesterday.getMonth() + 1).padStart(2, "0");
+  const day = String(yesterday.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
-export function toggleHabitForToday(data: GameData, habitKey: HabitKey): GameData {
-  const today = getTodayString();
+// --- Date-parameterized habit functions ---
+
+export function isHabitCompletedForDate(data: GameData, habitKey: HabitKey, dateString: string): boolean {
+  const dates = data.healthyHabits?.[habitKey];
+  if (!dates) return false;
+  return dates.includes(dateString);
+}
+
+export function toggleHabitForDate(data: GameData, habitKey: HabitKey, dateString: string): GameData {
   const currentDates = data.healthyHabits?.[habitKey] ?? [];
-  const alreadyCompleted = currentDates.includes(today);
+  const alreadyCompleted = currentDates.includes(dateString);
 
   const updatedDates = alreadyCompleted
-    ? currentDates.filter((date) => date !== today)
-    : [...currentDates, today];
+    ? currentDates.filter((date) => date !== dateString)
+    : [...currentDates, dateString];
 
   let newData: GameData = {
     ...data,
@@ -428,6 +438,15 @@ export function toggleHabitForToday(data: GameData, habitKey: HabitKey): GameDat
 
   saveGameData(newData);
   return newData;
+}
+
+// Convenience wrappers for today
+export function isHabitCompletedToday(data: GameData, habitKey: HabitKey): boolean {
+  return isHabitCompletedForDate(data, habitKey, getTodayString());
+}
+
+export function toggleHabitForToday(data: GameData, habitKey: HabitKey): GameData {
+  return toggleHabitForDate(data, habitKey, getTodayString());
 }
 
 // Generic helper: group date-string entries by calendar day for a given month
@@ -601,20 +620,21 @@ export const DAMAGE_KEYS: DamageKey[] = ["substance", "screentime", "junkfood", 
 
 const DEFAULT_ENABLED_DAMAGE: DamageKey[] = [];
 
-export function isDamageMarkedToday(data: GameData, damageKey: DamageKey): boolean {
+// --- Date-parameterized damage functions ---
+
+export function isDamageMarkedForDate(data: GameData, damageKey: DamageKey, dateString: string): boolean {
   const dates = data.dailyDamage?.[damageKey];
   if (!dates) return false;
-  return dates.includes(getTodayString());
+  return dates.includes(dateString);
 }
 
-export function toggleDamageForToday(data: GameData, damageKey: DamageKey): GameData {
-  const today = getTodayString();
+export function toggleDamageForDate(data: GameData, damageKey: DamageKey, dateString: string): GameData {
   const currentDates = data.dailyDamage?.[damageKey] ?? [];
-  const alreadyMarked = currentDates.includes(today);
+  const alreadyMarked = currentDates.includes(dateString);
 
   const updatedDates = alreadyMarked
-    ? currentDates.filter((date) => date !== today)
-    : [...currentDates, today];
+    ? currentDates.filter((date) => date !== dateString)
+    : [...currentDates, dateString];
 
   let newData: GameData = {
     ...data,
@@ -634,6 +654,15 @@ export function toggleDamageForToday(data: GameData, damageKey: DamageKey): Game
 
   saveGameData(newData);
   return newData;
+}
+
+// Convenience wrappers for today
+export function isDamageMarkedToday(data: GameData, damageKey: DamageKey): boolean {
+  return isDamageMarkedForDate(data, damageKey, getTodayString());
+}
+
+export function toggleDamageForToday(data: GameData, damageKey: DamageKey): GameData {
+  return toggleDamageForDate(data, damageKey, getTodayString());
 }
 
 export function getDamageByDay(

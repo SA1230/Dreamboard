@@ -10,6 +10,12 @@ import {
   getDamageByDay,
   getEnabledHabits,
   getEnabledDamage,
+  getTodayString,
+  getYesterdayString,
+  isHabitCompletedForDate,
+  toggleHabitForDate,
+  isDamageMarkedForDate,
+  toggleDamageForDate,
 } from "../storage";
 import type { GameData, Activity, StatKey } from "../types";
 import { STAT_KEYS } from "../stats";
@@ -306,9 +312,131 @@ describe("getEnabledHabits", () => {
 });
 
 describe("getEnabledDamage", () => {
-  it("returns all 4 defaults when not set", () => {
+  it("returns empty array when not set (damage is opt-in)", () => {
     const data = makeGameData();
     const enabled = getEnabledDamage(data);
-    expect(enabled).toEqual(["substance", "screentime", "junkfood", "badsleep"]);
+    expect(enabled).toEqual([]);
+  });
+});
+
+// ─── Date-parameterized functions ───
+
+describe("getTodayString", () => {
+  it("returns a YYYY-MM-DD string for today", () => {
+    const result = getTodayString();
+    expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    // Should match today's local date
+    const now = new Date();
+    const expected = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    expect(result).toBe(expected);
+  });
+});
+
+describe("getYesterdayString", () => {
+  it("returns a YYYY-MM-DD string for yesterday", () => {
+    const result = getYesterdayString();
+    expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    const now = new Date();
+    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    const expected = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, "0")}-${String(yesterday.getDate()).padStart(2, "0")}`;
+    expect(result).toBe(expected);
+  });
+
+  it("returns a different date than getTodayString", () => {
+    expect(getYesterdayString()).not.toBe(getTodayString());
+  });
+});
+
+describe("isHabitCompletedForDate", () => {
+  it("returns false when no habits exist", () => {
+    const data = makeGameData();
+    expect(isHabitCompletedForDate(data, "water", "2026-03-05")).toBe(false);
+  });
+
+  it("returns true when habit is completed for that date", () => {
+    const data = makeGameData({
+      healthyHabits: { water: ["2026-03-05"], brush: [], nails: [], nosugar: [], floss: [], steps: [] },
+    });
+    expect(isHabitCompletedForDate(data, "water", "2026-03-05")).toBe(true);
+  });
+
+  it("returns false for a different date", () => {
+    const data = makeGameData({
+      healthyHabits: { water: ["2026-03-05"], brush: [], nails: [], nosugar: [], floss: [], steps: [] },
+    });
+    expect(isHabitCompletedForDate(data, "water", "2026-03-06")).toBe(false);
+  });
+});
+
+describe("toggleHabitForDate", () => {
+  it("adds date when habit is not completed", () => {
+    const data = makeGameData();
+    const result = toggleHabitForDate(data, "water", "2026-03-05");
+    expect(result.healthyHabits?.water).toContain("2026-03-05");
+  });
+
+  it("removes date when habit is already completed", () => {
+    const data = makeGameData({
+      healthyHabits: { water: ["2026-03-05"], brush: [], nails: [], nosugar: [], floss: [], steps: [] },
+    });
+    const result = toggleHabitForDate(data, "water", "2026-03-05");
+    expect(result.healthyHabits?.water).not.toContain("2026-03-05");
+  });
+
+  it("works with arbitrary date strings", () => {
+    const data = makeGameData();
+    const result = toggleHabitForDate(data, "brush", "2025-12-31");
+    expect(result.healthyHabits?.brush).toContain("2025-12-31");
+  });
+
+  it("adds a feed event", () => {
+    const data = makeGameData();
+    const result = toggleHabitForDate(data, "water", "2026-03-05");
+    expect(result.feedEvents?.length).toBe(1);
+    expect(result.feedEvents?.[0].type).toBe("habit_completed");
+  });
+});
+
+describe("isDamageMarkedForDate", () => {
+  it("returns false when no damage exists", () => {
+    const data = makeGameData();
+    expect(isDamageMarkedForDate(data, "substance", "2026-03-05")).toBe(false);
+  });
+
+  it("returns true when damage is marked for that date", () => {
+    const data = makeGameData({
+      dailyDamage: { substance: ["2026-03-05"], screentime: [], junkfood: [], badsleep: [] },
+    });
+    expect(isDamageMarkedForDate(data, "substance", "2026-03-05")).toBe(true);
+  });
+
+  it("returns false for a different date", () => {
+    const data = makeGameData({
+      dailyDamage: { substance: ["2026-03-05"], screentime: [], junkfood: [], badsleep: [] },
+    });
+    expect(isDamageMarkedForDate(data, "substance", "2026-03-06")).toBe(false);
+  });
+});
+
+describe("toggleDamageForDate", () => {
+  it("adds date when damage is not marked", () => {
+    const data = makeGameData();
+    const result = toggleDamageForDate(data, "substance", "2026-03-05");
+    expect(result.dailyDamage?.substance).toContain("2026-03-05");
+  });
+
+  it("removes date when damage is already marked", () => {
+    const data = makeGameData({
+      dailyDamage: { substance: ["2026-03-05"], screentime: [], junkfood: [], badsleep: [] },
+    });
+    const result = toggleDamageForDate(data, "substance", "2026-03-05");
+    expect(result.dailyDamage?.substance).not.toContain("2026-03-05");
+  });
+
+  it("adds a feed event", () => {
+    const data = makeGameData();
+    const result = toggleDamageForDate(data, "junkfood", "2026-03-05");
+    expect(result.feedEvents?.length).toBe(1);
+    expect(result.feedEvents?.[0].type).toBe("damage_marked");
   });
 });
