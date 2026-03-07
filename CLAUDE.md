@@ -59,6 +59,7 @@ src/
 
 .claude/
 └── skills/
+    ├── delight/SKILL.md        # /delight — delight audit: 4-agent emotional/voice/craft/surprise analysis → ranked delight opportunities
     ├── kickoff/SKILL.md        # /kickoff — session start: sync main, read memory, check build/tests/PRs, present briefing
     ├── protocol/SKILL.md       # /protocol — strategic review: 4-agent codebase analysis → tiered build list
     ├── ship/SKILL.md           # /ship — commit + push + create PR in one step (invoking = push approval)
