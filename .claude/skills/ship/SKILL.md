@@ -1,6 +1,6 @@
-# /ship — Commit, push, and create a PR in one step
+# /ship — Build, commit, push, merge in one step
 
-The user invoking `/ship` IS explicit approval to push. No extra confirmation needed.
+The user invoking `/ship` IS explicit approval to push AND merge. No extra confirmation needed.
 
 ## Steps
 
@@ -20,15 +20,18 @@ The user invoking `/ship` IS explicit approval to push. No extra confirmation ne
    - `gh pr create` with:
      - Short title (under 70 characters)
      - Body with `## Summary` (bullet points) and `## Test plan` (checklist)
-   - Return the PR link
 
-4. **Post-ship:**
-   - Switch back to main: `git checkout main`
-   - Do NOT merge the PR — user merges it themselves
+4. **Auto-merge:**
+   - `gh pr merge --squash --delete-branch` — squash-merge the PR and clean up the branch
+   - If merge fails (e.g. CI required, branch protection), report the error and return the PR link for manual merge
+
+5. **Post-ship:**
+   - `git checkout main && git pull origin main` — sync local main with the merge
+   - Suggest running `/wrapup` if this looks like the last task of the session
 
 ## Rules
 - If there's nothing to commit, say so and stop.
 - If the current branch is `main`, create a new branch first (ask the user for a name or generate one from the changes).
 - Always run build + tests before pushing. No exceptions.
 - One PR per branch. If there are unrelated changes, warn the user.
-- After returning the PR link, suggest running `/wrapup` if this looks like the last task of the session.
+- If auto-merge fails, don't panic — return the PR link and explain what blocked it.

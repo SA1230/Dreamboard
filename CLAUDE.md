@@ -65,7 +65,7 @@ src/
     ├── kickoff/SKILL.md        # /kickoff — session start: sync main, read memory, check build/tests/PRs, present briefing
     ├── persona/SKILL.md        # /persona — persona simulator: 4-agent user-type walkthrough → conflict map + core user verdict
     ├── protocol/SKILL.md       # /protocol — strategic review: 4-agent codebase analysis → tiered build list
-    ├── ship/SKILL.md           # /ship — commit + push + create PR in one step (invoking = push approval)
+    ├── ship/SKILL.md           # /ship — build, commit, push, auto-merge in one step (invoking = push + merge approval)
     ├── storyteller/SKILL.md    # /storyteller — narrative coherence audit: 4-agent timeline walk (Day 0 → Month 1) → arc map with chapter markers
     ├── stranger/SKILL.md       # /stranger — first-impression audit: 4-agent new-user simulation → clarity/friction/hook/jargon fixes
     ├── subtractor/SKILL.md     # /subtractor — deletion agent: 4-agent audit for dead code, unused features, over-abstractions → ranked removal list
