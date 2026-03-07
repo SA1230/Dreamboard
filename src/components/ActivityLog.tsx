@@ -398,7 +398,7 @@ function ChallengeCompletedRow({ event }: { event: Extract<FeedEvent, { type: "c
         <span className="text-sm">&#x2694;</span>
       </div>
       <div className="flex-1 min-w-0">
-        <span className="text-xs font-bold text-emerald-600">Quest Complete!</span>
+        <span className="text-xs font-bold text-emerald-600">Challenge Complete!</span>
         <p className="text-xs text-emerald-500/80 mt-0.5">
           {event.description} <span className="font-semibold">+{event.bonusXP} bonus XP</span>
         </p>
