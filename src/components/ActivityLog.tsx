@@ -358,6 +358,58 @@ function PrizeUnlockedRow({ event }: { event: Extract<FeedEvent, { type: "prize_
   );
 }
 
+function ChallengeIssuedRow({ event, definitions }: { event: Extract<FeedEvent, { type: "challenge_issued" }>; definitions: Record<StatKey, StatDefinition> }) {
+  const definition = definitions[event.stat];
+  return (
+    <div
+      className="flex items-center gap-3 px-4 py-3 rounded-xl border"
+      style={{
+        background: `${definition?.color ?? "#d4a44a"}08`,
+        borderColor: `${definition?.color ?? "#d4a44a"}30`,
+      }}
+    >
+      <div
+        className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+        style={{ backgroundColor: `${definition?.color ?? "#d4a44a"}15`, color: definition?.color ?? "#d4a44a" }}
+      >
+        <StatIcon iconKey={definition?.iconKey ?? "sword"} className="w-4 h-4" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Side Quest</span>
+        <p className="text-xs text-stone-500 mt-0.5">{event.description}</p>
+      </div>
+      <span className="text-xs text-stone-300 flex-shrink-0">
+        {formatTimestamp(event.timestamp)}
+      </span>
+    </div>
+  );
+}
+
+function ChallengeCompletedRow({ event }: { event: Extract<FeedEvent, { type: "challenge_completed" }> }) {
+  return (
+    <div
+      className="flex items-center gap-3 px-4 py-3 rounded-xl border-2"
+      style={{
+        background: "rgba(16, 185, 129, 0.08)",
+        borderColor: "#6ee7b7",
+      }}
+    >
+      <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-emerald-50 border border-emerald-200">
+        <span className="text-sm">&#x2694;</span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <span className="text-xs font-bold text-emerald-600">Quest Complete!</span>
+        <p className="text-xs text-emerald-500/80 mt-0.5">
+          {event.description} <span className="font-semibold">+{event.bonusXP} bonus XP</span>
+        </p>
+      </div>
+      <span className="text-xs text-stone-300 flex-shrink-0">
+        {formatTimestamp(event.timestamp)}
+      </span>
+    </div>
+  );
+}
+
 function ActivityGroupCard({ group, definitions }: { group: ActivityGroup; definitions: Record<StatKey, StatDefinition> }) {
   const totalXP = group.xpGains.reduce((sum, e) => sum + (e.amount ?? 1), 0);
   const hasLevelUps = group.levelUps.length > 0 || group.overallLevelUps.length > 0 || group.rankUps.length > 0;
@@ -491,6 +543,10 @@ export function ActivityLog({ feedEvents, definitions }: ActivityLogProps) {
             return <RankUpRow key={event.id} event={event} />;
           case "prize_unlocked":
             return <PrizeUnlockedRow key={event.id} event={event} />;
+          case "challenge_issued":
+            return <ChallengeIssuedRow key={event.id} event={event} definitions={definitions} />;
+          case "challenge_completed":
+            return <ChallengeCompletedRow key={event.id} event={event} />;
           default:
             return null;
         }

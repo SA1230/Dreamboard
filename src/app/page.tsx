@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { GameData, StatKey, HabitKey, DamageKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForDate, toggleDamageForDate, isHabitCompletedForDate, isDamageMarkedForDate, getYesterdayString, formatRelativeTime, getInventory, getMascotName, checkPrizeUnlocks } from "@/lib/storage";
+import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForDate, toggleDamageForDate, isHabitCompletedForDate, isDamageMarkedForDate, getYesterdayString, formatRelativeTime, getInventory, getMascotName, checkPrizeUnlocks, issueChallenge, completeChallenge, dismissChallenge } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
 import { StatIcon } from "@/components/StatIcons";
 import { JudgeModal } from "@/components/JudgeModal";
@@ -129,11 +129,23 @@ export default function Home() {
   }, []);
 
   const handleJudgeVerdict = useCallback(
-    (awards: { stat: StatKey; amount: number }[], summary: string, verdictMessage: string) => {
+    (
+      awards: { stat: StatKey; amount: number }[],
+      summary: string,
+      verdictMessage: string,
+      challenge?: { text: string; stat: string; bonusXP: number },
+      challengeCompleted?: boolean
+    ) => {
       if (!gameData || !definitions) return;
 
-      // Apply each award sequentially — each addXP call updates the data
+      // Complete the active challenge first (before issuing a new one)
       let currentData = gameData;
+      if (challengeCompleted && currentData.activeChallenge) {
+        const result = completeChallenge(currentData);
+        if (result) currentData = result.newData;
+      }
+
+      // Apply each award sequentially — each addXP call updates the data
       for (const award of awards) {
         const { newData, leveledUp } = addXP(currentData, award.stat, summary, award.amount, verdictMessage);
         currentData = newData;
@@ -164,6 +176,11 @@ export default function Home() {
             setIsOverallLevelingUp(true);
           }
         }
+      }
+
+      // Issue new challenge if the Judge provided one
+      if (challenge && !currentData.activeChallenge) {
+        currentData = issueChallenge(currentData, challenge.text, challenge.stat as StatKey, challenge.bonusXP);
       }
 
       setGameData(currentData);
@@ -382,6 +399,54 @@ export default function Home() {
           </span>
         </button>
       </div>
+
+      {/* Active Challenge Card */}
+      {gameData.activeChallenge && definitions && (
+        <div className="mb-6 animate-fadeIn">
+          <div
+            className="relative rounded-2xl border px-4 py-3.5 overflow-hidden"
+            style={{
+              borderColor: `${definitions[gameData.activeChallenge.stat]?.color ?? "#d4a44a"}40`,
+              background: `linear-gradient(135deg, ${definitions[gameData.activeChallenge.stat]?.color ?? "#d4a44a"}08 0%, transparent 100%)`,
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <div
+                className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-0.5"
+                style={{
+                  backgroundColor: `${definitions[gameData.activeChallenge.stat]?.color ?? "#d4a44a"}15`,
+                  color: definitions[gameData.activeChallenge.stat]?.color ?? "#d4a44a",
+                }}
+              >
+                <StatIcon iconKey={definitions[gameData.activeChallenge.stat]?.iconKey ?? "sword"} className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Side Quest</span>
+                  <span className="text-[10px] font-medium text-stone-300">+{gameData.activeChallenge.bonusXP} bonus XP</span>
+                </div>
+                <p className="text-sm text-stone-600 leading-snug">{gameData.activeChallenge.description}</p>
+              </div>
+              <button
+                onClick={() => {
+                  const updated = dismissChallenge(gameData);
+                  setGameData(updated);
+                }}
+                className="flex-shrink-0 text-stone-300 hover:text-stone-500 transition-colors text-lg leading-none mt-0.5"
+                aria-label="Dismiss challenge"
+              >
+                &times;
+              </button>
+            </div>
+            <button
+              onClick={() => setShowJudge(true)}
+              className="mt-3 w-full py-2 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200/60 hover:bg-amber-100 transition-colors active:scale-[0.98]"
+            >
+              Tell the Captain
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Monthly XP Summary + Level Display — wider than card grid */}
       <div className={`flex flex-col sm:flex-row sm:items-stretch gap-4 mb-8 sm:-mx-12${isFirstRun ? " justify-center" : ""}`}>

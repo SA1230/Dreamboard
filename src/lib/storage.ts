@@ -1,4 +1,4 @@
-import { GameData, StatKey, HabitKey, DamageKey, Activity, StatProgress, CustomStatOverride, FeedEvent, PlayerInventory, EquipmentSlot, Prize } from "./types";
+import { GameData, StatKey, HabitKey, DamageKey, Activity, StatProgress, CustomStatOverride, FeedEvent, PlayerInventory, EquipmentSlot, Prize, Challenge } from "./types";
 import { getItemById } from "./items";
 import { STAT_KEYS, STAT_DEFINITIONS, StatDefinition, COLOR_PRESETS } from "./stats";
 import { getRankTitle } from "./ranks";
@@ -983,4 +983,87 @@ export function checkPrizeUnlocks(data: GameData, currentLevel: number): GameDat
 
   saveGameData(updatedData);
   return updatedData;
+}
+
+// --- Challenges (Judge-issued side quests) ---
+
+/** Returns the current active challenge, or null if none. */
+export function getActiveChallenge(data: GameData): Challenge | null {
+  return data.activeChallenge ?? null;
+}
+
+/** Issue a new challenge from the Judge. Stores it as the active challenge and pushes a feed event. */
+export function issueChallenge(
+  data: GameData,
+  description: string,
+  stat: StatKey,
+  bonusXP: number
+): GameData {
+  const challenge: Challenge = {
+    id: crypto.randomUUID(),
+    description,
+    stat,
+    bonusXP,
+    issuedAt: new Date().toISOString(),
+  };
+
+  let newData: GameData = {
+    ...data,
+    activeChallenge: challenge,
+  };
+
+  newData = pushFeedEvent(newData, {
+    type: "challenge_issued",
+    id: crypto.randomUUID(),
+    timestamp: challenge.issuedAt,
+    challengeId: challenge.id,
+    description: challenge.description,
+    stat: challenge.stat,
+    bonusXP: challenge.bonusXP,
+  });
+
+  saveGameData(newData);
+  return newData;
+}
+
+/** Complete the active challenge — awards bonus XP and clears it. Returns null if no active challenge. */
+export function completeChallenge(data: GameData): { newData: GameData } | null {
+  const challenge = data.activeChallenge;
+  if (!challenge) return null;
+
+  const now = new Date().toISOString();
+  const completedChallenge: Challenge = { ...challenge, completedAt: now };
+
+  // Award the bonus XP
+  const { newData: afterXP } = addXP(data, challenge.stat, `Challenge: ${challenge.description}`, challenge.bonusXP);
+
+  // Push completion feed event and clear the active challenge
+  let newData: GameData = {
+    ...afterXP,
+    activeChallenge: undefined,
+  };
+
+  // Store the completed challenge info so the feed event has it
+  newData = pushFeedEvent(newData, {
+    type: "challenge_completed",
+    id: crypto.randomUUID(),
+    timestamp: now,
+    challengeId: completedChallenge.id,
+    description: completedChallenge.description,
+    stat: completedChallenge.stat,
+    bonusXP: completedChallenge.bonusXP,
+  });
+
+  saveGameData(newData);
+  return { newData };
+}
+
+/** Dismiss the active challenge without completing it. */
+export function dismissChallenge(data: GameData): GameData {
+  const newData: GameData = {
+    ...data,
+    activeChallenge: undefined,
+  };
+  saveGameData(newData);
+  return newData;
 }
