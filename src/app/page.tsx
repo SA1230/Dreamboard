@@ -589,22 +589,9 @@ export default function Home() {
         </div>
       )}
 
-      {/* Monthly XP Summary + Level Display — wider than card grid */}
-      <div className={`flex flex-col sm:flex-row sm:items-stretch gap-4 mb-8 sm:-mx-12${isFirstRun ? " justify-center" : ""}`}>
-        {!isFirstRun && (
-          <div className="flex-1 min-w-0">
-            <MonthlyXPSummary
-              currentMonthXP={monthlyXP.currentMonthXP}
-              lastMonthXP={monthlyXP.lastMonthXP}
-              activitiesByDay={activitiesByDayForMonth}
-              habitsByDay={habitsByDayForMonth}
-              statDefinitions={definitions}
-              todayXP={dailyXPForMonth[new Date().getDate() - 1] ?? 0}
-              todayXPPulsing={todayXPPulsing}
-            />
-          </div>
-        )}
-        <div className="flex" style={{ transform: "scale(1.05)", transformOrigin: "center center" }}>
+      {/* Level Display — Skipper character with progress ring */}
+      <div className={`flex justify-center mb-6${isFirstRun ? "" : ""}`}>
+        <div style={{ transform: "scale(1.05)", transformOrigin: "center center" }}>
           <LevelDisplay
             level={overallLevel}
             progressPercent={overallProgressPercent}
@@ -619,9 +606,8 @@ export default function Home() {
         </div>
       </div>
 
-
       {/* Stat Card Grid — active stats first, then inactive */}
-      <div className="grid grid-cols-2 gap-2.5 mb-12">
+      <div className="grid grid-cols-2 gap-2.5 mb-8">
         {[...STAT_KEYS].sort((a, b) => {
           const aActive = activeStatsThisMonth.has(a) ? 0 : 1;
           const bActive = activeStatsThisMonth.has(b) ? 0 : 1;
@@ -640,6 +626,21 @@ export default function Home() {
           />
         ))}
       </div>
+
+      {/* Monthly XP Summary — below stat cards for returning users */}
+      {!isFirstRun && (
+        <div className="mb-8">
+          <MonthlyXPSummary
+            currentMonthXP={monthlyXP.currentMonthXP}
+            lastMonthXP={monthlyXP.lastMonthXP}
+            activitiesByDay={activitiesByDayForMonth}
+            habitsByDay={habitsByDayForMonth}
+            statDefinitions={definitions}
+            todayXP={dailyXPForMonth[new Date().getDate() - 1] ?? 0}
+            todayXPPulsing={todayXPPulsing}
+          />
+        </div>
+      )}
 
       {/* Activity Log — hidden for first-run users */}
       {!isFirstRun && (
