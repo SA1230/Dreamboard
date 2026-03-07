@@ -62,6 +62,7 @@ src/
     ├── delight/SKILL.md        # /delight — delight audit: 4-agent emotional/voice/craft/surprise analysis → ranked delight opportunities
     ├── kickoff/SKILL.md        # /kickoff — session start: sync main, read memory, check build/tests/PRs, present briefing
     ├── protocol/SKILL.md       # /protocol — strategic review: 4-agent codebase analysis → tiered build list
+    ├── builder/SKILL.md        # /builder — agent architect: analyzes friction, proposes new skills from evidence in git/memory/code
     ├── ship/SKILL.md           # /ship — commit + push + create PR in one step (invoking = push approval)
     ├── wrapup/SKILL.md         # /wrapup — session end: sync main, check dangling work, update CLAUDE.md + memory
     ├── xp-debug/SKILL.md       # /xp-debug — injects temporary +5 XP debug button into page.tsx (never committed)
