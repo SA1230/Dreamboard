@@ -38,7 +38,7 @@ export default function Home() {
   // Power Points toggle toast (shown in YesterdayReview PP summary)
   const [ppToast, setPpToast] = useState<{ text: string; color: string } | null>(null);
 
-  // Challenge completion celebration (briefly shows "Quest Complete" or "Step Complete" card before fading)
+  // Challenge completion celebration (briefly shows "Challenge Complete" or "Step Complete" card before fading)
   const [completedChallengeInfo, setCompletedChallengeInfo] = useState<{
     description: string;
     stat: StatKey;
@@ -159,7 +159,7 @@ export default function Home() {
         if (result) {
           currentData = result.newData;
 
-          // Show celebration card — "Step Complete" for mid-chain, "Quest Complete" for final/standalone
+          // Show celebration card — "Step Complete" for mid-chain, "Challenge Complete" for final/standalone
           setCompletedChallengeInfo({
             description: activeChallenge.description,
             stat: activeChallenge.stat as StatKey,
@@ -531,6 +531,8 @@ export default function Home() {
               </div>
               <button
                 onClick={() => {
+                  const isChain = !!gameData.activeChallenge?.chainId;
+                  if (isChain && !window.confirm("This will dismiss the entire challenge chain. Are you sure?")) return;
                   const updated = dismissChallenge(gameData);
                   setGameData(updated);
                 }}
@@ -578,7 +580,7 @@ export default function Home() {
                       ? `Step ${completedChallengeInfo.chainIndex} Complete`
                       : completedChallengeInfo.chainTotal
                         ? "Chain Complete"
-                        : "Quest Complete"}
+                        : "Challenge Complete"}
                   </span>
                   <span className="text-xs font-bold text-amber-600">+{completedChallengeInfo.bonusXP} bonus XP</span>
                 </div>

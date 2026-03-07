@@ -209,6 +209,7 @@ export function JudgeModal({
           summary: data.summary || "Judged activity",
           awards: data.awards,
           challenge: data.challenge,
+          challengeChain: data.challengeChain,
           challengeCompleted: data.challengeCompleted,
         });
       } else {
