@@ -22,6 +22,7 @@ interface GameContext {
   rank: string;
   recentDamage: string[]; // damage type names from last 7 days
   recentActivities: { stat: string; note: string; amount: number; daysAgo: number }[];
+  activeChallenge?: { description: string; stat: string; bonusXP: number; issuedAt: string };
 }
 
 interface JudgeRequest {
@@ -34,6 +35,8 @@ interface JudgeResult {
   message: string;
   summary?: string;
   awards?: { stat: string; amount: number }[];
+  challenge?: { text: string; stat: string; bonusXP: number };
+  challengeCompleted?: boolean;
 }
 
 // --- Tool definitions ---
@@ -83,6 +86,30 @@ const AWARD_XP_TOOL_ANTHROPIC: Anthropic.Tool = {
           },
           required: ["stat", "amount"],
         },
+      },
+      challenge: {
+        type: "object",
+        description: "Optional: issue a follow-up challenge (side quest) for the player. Only issue one if there is NO active challenge and the activity naturally lends itself to a follow-up push.",
+        properties: {
+          text: {
+            type: "string",
+            description: "The challenge description — a specific, achievable follow-up goal. 1 sentence, action-oriented. Examples: 'Run 6 miles before the week is out', 'Cook a new recipe you've never tried', 'Read for 30 minutes every day this week'.",
+          },
+          stat: {
+            type: "string",
+            enum: ["strength", "wisdom", "vitality", "charisma", "craft", "discipline", "spirit", "wealth"],
+            description: "Which stat this challenge primarily targets",
+          },
+          bonus_xp: {
+            type: "integer",
+            description: "Bonus XP awarded on completion (3-5 XP)",
+          },
+        },
+        required: ["text", "stat", "bonus_xp"],
+      },
+      challenge_completed: {
+        type: "boolean",
+        description: "Set to true if the player's activity fulfills their active challenge. Only use this if there IS an active challenge and this activity clearly satisfies it.",
       },
     },
     required: ["message", "summary", "awards"],
@@ -137,6 +164,30 @@ const AWARD_XP_TOOL_OPENAI: OpenAI.Chat.Completions.ChatCompletionTool = {
             required: ["stat", "amount"],
           },
         },
+        challenge: {
+          type: "object",
+          description: "Optional: issue a follow-up challenge (side quest) for the player. Only issue one if there is NO active challenge and the activity naturally lends itself to a follow-up push.",
+          properties: {
+            text: {
+              type: "string",
+              description: "The challenge description — a specific, achievable follow-up goal. 1 sentence, action-oriented.",
+            },
+            stat: {
+              type: "string",
+              enum: ["strength", "wisdom", "vitality", "charisma", "craft", "discipline", "spirit", "wealth"],
+              description: "Which stat this challenge primarily targets",
+            },
+            bonus_xp: {
+              type: "integer",
+              description: "Bonus XP awarded on completion (3-5 XP)",
+            },
+          },
+          required: ["text", "stat", "bonus_xp"],
+        },
+        challenge_completed: {
+          type: "boolean",
+          description: "Set to true if the player's activity fulfills their active challenge. Only use this if there IS an active challenge and this activity clearly satisfies it.",
+        },
       },
       required: ["message", "summary", "awards"],
     },
@@ -167,6 +218,10 @@ function buildSystemPrompt(gameContext: GameContext, questionCount: number): str
           )
           .join("\n")
       : "No recent activity. This adventurer could use a win.";
+
+  const challengeText = gameContext.activeChallenge
+    ? `\n\nActive Challenge: "${gameContext.activeChallenge.description}" (${gameContext.activeChallenge.stat}, +${gameContext.activeChallenge.bonusXP} bonus XP). If this activity satisfies it, set challenge_completed to true. Do NOT issue a new challenge while this one is active.`
+    : "\n\nNo active challenge — you may issue one if the activity warrants it.";
 
   const forceVerdict =
     questionCount >= 3
@@ -216,6 +271,27 @@ If the activity is clear enough from the description, skip questions and go stra
 - If someone argues with your ruling, stand firm or lower it. Never raise it because they complained.
 - Keep your follow-up questions to ONE at a time — don't ask multiple questions in one message
 
+## Challenges (Side Quests)
+You can issue OPTIONAL challenges — follow-up goals that push the adventurer to do more. Think of them as side quests.
+
+Rules for issuing challenges:
+- Challenges should be RARE and delightful. Issue one roughly 1 in every 4-5 verdicts at most. Most verdicts should NOT include a challenge.
+- Only issue when the activity is substantial (3+ XP total) AND naturally lends itself to a specific follow-up push.
+- NEVER issue a challenge if there's already an active one (check the status below).
+- NEVER issue a challenge for trivial activities (1-2 XP). Save them for when someone does something worth building on.
+- The challenge should feel like YOU had a clever idea inspired by what they told you — not a generic "do more of that" push.
+- Reference specific details from their activity. If they ran 5 miles, challenge them to try a new route or beat their time. If they cooked dinner, dare them to cook something from a cuisine they've never tried.
+- Inject your personality — be witty, provocative, or warmly competitive. "I bet you can't do that two days in a row" hits different than "Try to exercise again."
+- Bonus XP should be 3-5 (proportional to difficulty).
+- Keep the challenge text to ONE sentence, action-oriented and punchy.
+- Good: "I dare you to cook something you can't even pronounce" / "Beat that 5-mile time — I'll know if you sandbagged it"
+- Bad: "Keep exercising" / "Do more stuff" / "Try harder next time" (too vague, no personality)
+
+Rules for completing challenges:
+- If the player has an active challenge AND their current activity clearly satisfies it, set challenge_completed to true.
+- Be fair but not overly strict — if the spirit of the challenge is met, count it.
+- When completing a challenge, be genuinely impressed or amusingly grudging about it in your verdict — make it feel like a moment.
+
 ## This Adventurer's Status
 Overall Level: ${gameContext.overallLevel} (${gameContext.rank})
 ${statLines}
@@ -223,7 +299,7 @@ ${statLines}
 ${recentDamageText}
 
 Recent activity:
-${recentActivityText}${forceVerdict}`;
+${recentActivityText}${challengeText}${forceVerdict}`;
 }
 
 // --- Provider-specific API calls ---
@@ -235,7 +311,7 @@ async function callAnthropic(
 ): Promise<JudgeResult> {
   const response = await anthropic.messages.create({
     model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514",
-    max_tokens: 500,
+    max_tokens: 600,
     system: systemPrompt,
     messages: messages,
     tools: [AWARD_XP_TOOL_ANTHROPIC],
@@ -246,8 +322,21 @@ async function callAnthropic(
   const textBlock = response.content.find((block) => block.type === "text");
 
   if (toolUseBlock && toolUseBlock.type === "tool_use") {
-    const input = toolUseBlock.input as { message: string; summary?: string; awards: { stat: string; amount: number }[] };
-    return { type: "verdict", message: input.message, summary: input.summary, awards: input.awards };
+    const input = toolUseBlock.input as {
+      message: string;
+      summary?: string;
+      awards: { stat: string; amount: number }[];
+      challenge?: { text: string; stat: string; bonus_xp: number };
+      challenge_completed?: boolean;
+    };
+    return {
+      type: "verdict",
+      message: input.message,
+      summary: input.summary,
+      awards: input.awards,
+      challenge: input.challenge ? { text: input.challenge.text, stat: input.challenge.stat, bonusXP: input.challenge.bonus_xp } : undefined,
+      challengeCompleted: input.challenge_completed,
+    };
   }
 
   if (textBlock && textBlock.type === "text") {
@@ -269,7 +358,7 @@ async function callOpenAI(
 
   const response = await openai.chat.completions.create({
     model: process.env.OPENAI_MODEL || "gpt-4o",
-    max_tokens: 500,
+    max_tokens: 600,
     messages: openaiMessages,
     tools: [AWARD_XP_TOOL_OPENAI],
     tool_choice: forceVerdict ? { type: "function", function: { name: "award_xp" } } : "auto",
@@ -281,8 +370,21 @@ async function callOpenAI(
   // Check for tool call (verdict)
   if (message.tool_calls && message.tool_calls.length > 0) {
     const toolCall = message.tool_calls[0];
-    const input = JSON.parse(toolCall.function.arguments) as { message: string; summary?: string; awards: { stat: string; amount: number }[] };
-    return { type: "verdict", message: input.message, summary: input.summary, awards: input.awards };
+    const input = JSON.parse(toolCall.function.arguments) as {
+      message: string;
+      summary?: string;
+      awards: { stat: string; amount: number }[];
+      challenge?: { text: string; stat: string; bonus_xp: number };
+      challenge_completed?: boolean;
+    };
+    return {
+      type: "verdict",
+      message: input.message,
+      summary: input.summary,
+      awards: input.awards,
+      challenge: input.challenge ? { text: input.challenge.text, stat: input.challenge.stat, bonusXP: input.challenge.bonus_xp } : undefined,
+      challengeCompleted: input.challenge_completed,
+    };
   }
 
   // Text response (follow-up question)

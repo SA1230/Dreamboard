@@ -121,24 +121,36 @@ function formatTimestamp(isoString: string): string {
 function XPGainRow({ event, definitions }: { event: Extract<FeedEvent, { type: "xp_gain" }>; definitions: Record<StatKey, StatDefinition> }) {
   const definition = definitions[event.stat];
   return (
-    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/60">
-      <div style={{ color: definition.color }} className="flex-shrink-0">
-        <StatIcon iconKey={definition.iconKey} className="w-5 h-5" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold" style={{ color: definition.color }}>
-            {definition.name}
-          </span>
-          <span className="text-xs text-stone-300">+{event.amount ?? 1} XP</span>
+    <div className="px-4 py-3 rounded-xl bg-white/60">
+      <div className="flex items-center gap-3">
+        <div style={{ color: definition.color }} className="flex-shrink-0">
+          <StatIcon iconKey={definition.iconKey} className="w-5 h-5" />
         </div>
-        {event.note && (
-          <p className="text-xs text-stone-400 truncate">{event.note}</p>
-        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold" style={{ color: definition.color }}>
+              {definition.name}
+            </span>
+            <span className="text-xs text-stone-300">+{event.amount ?? 1} XP</span>
+          </div>
+          {event.note && (
+            <p className="text-xs text-stone-400 truncate">{event.note}</p>
+          )}
+        </div>
+        <span className="text-xs text-stone-300 flex-shrink-0">
+          {formatTimestamp(event.timestamp)}
+        </span>
       </div>
-      <span className="text-xs text-stone-300 flex-shrink-0">
-        {formatTimestamp(event.timestamp)}
-      </span>
+      {event.verdictMessage && (
+        <div className="flex items-start gap-2 mt-2 pt-2 border-t border-stone-100">
+          <img
+            src="/mascots/judge-hero.svg"
+            alt=""
+            className="w-5 h-5 rounded-full bg-amber-50 border border-amber-200 p-0.5 flex-shrink-0 mt-0.5"
+          />
+          <p className="text-xs text-stone-400 italic leading-relaxed">{event.verdictMessage}</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -346,15 +358,80 @@ function PrizeUnlockedRow({ event }: { event: Extract<FeedEvent, { type: "prize_
   );
 }
 
+function ChallengeIssuedRow({ event, definitions }: { event: Extract<FeedEvent, { type: "challenge_issued" }>; definitions: Record<StatKey, StatDefinition> }) {
+  const definition = definitions[event.stat];
+  return (
+    <div
+      className="flex items-center gap-3 px-4 py-3 rounded-xl border"
+      style={{
+        background: `${definition?.color ?? "#d4a44a"}08`,
+        borderColor: `${definition?.color ?? "#d4a44a"}30`,
+      }}
+    >
+      <div
+        className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+        style={{ backgroundColor: `${definition?.color ?? "#d4a44a"}15`, color: definition?.color ?? "#d4a44a" }}
+      >
+        <StatIcon iconKey={definition?.iconKey ?? "sword"} className="w-4 h-4" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Side Quest</span>
+        <p className="text-xs text-stone-500 mt-0.5">{event.description}</p>
+      </div>
+      <span className="text-xs text-stone-300 flex-shrink-0">
+        {formatTimestamp(event.timestamp)}
+      </span>
+    </div>
+  );
+}
+
+function ChallengeCompletedRow({ event }: { event: Extract<FeedEvent, { type: "challenge_completed" }> }) {
+  return (
+    <div
+      className="flex items-center gap-3 px-4 py-3 rounded-xl border-2"
+      style={{
+        background: "rgba(16, 185, 129, 0.08)",
+        borderColor: "#6ee7b7",
+      }}
+    >
+      <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-emerald-50 border border-emerald-200">
+        <span className="text-sm">&#x2694;</span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <span className="text-xs font-bold text-emerald-600">Quest Complete!</span>
+        <p className="text-xs text-emerald-500/80 mt-0.5">
+          {event.description} <span className="font-semibold">+{event.bonusXP} bonus XP</span>
+        </p>
+      </div>
+      <span className="text-xs text-stone-300 flex-shrink-0">
+        {formatTimestamp(event.timestamp)}
+      </span>
+    </div>
+  );
+}
+
 function ActivityGroupCard({ group, definitions }: { group: ActivityGroup; definitions: Record<StatKey, StatDefinition> }) {
   const totalXP = group.xpGains.reduce((sum, e) => sum + (e.amount ?? 1), 0);
   const hasLevelUps = group.levelUps.length > 0 || group.overallLevelUps.length > 0 || group.rankUps.length > 0;
+  const verdictMessage = group.xpGains[0]?.verdictMessage;
 
   return (
     <div className="px-4 py-3 rounded-xl bg-white/60">
       {/* Activity description */}
       {group.note && (
         <p className="text-xs text-stone-500 mb-1.5">{group.note}</p>
+      )}
+
+      {/* Captain's verdict quote */}
+      {verdictMessage && (
+        <div className="flex items-start gap-2 mb-2">
+          <img
+            src="/mascots/judge-hero.svg"
+            alt=""
+            className="w-5 h-5 rounded-full bg-amber-50 border border-amber-200 p-0.5 flex-shrink-0 mt-0.5"
+          />
+          <p className="text-xs text-stone-400 italic leading-relaxed">{verdictMessage}</p>
+        </div>
       )}
 
       {/* XP pills row */}
@@ -466,6 +543,10 @@ export function ActivityLog({ feedEvents, definitions }: ActivityLogProps) {
             return <RankUpRow key={event.id} event={event} />;
           case "prize_unlocked":
             return <PrizeUnlockedRow key={event.id} event={event} />;
+          case "challenge_issued":
+            return <ChallengeIssuedRow key={event.id} event={event} definitions={definitions} />;
+          case "challenge_completed":
+            return <ChallengeCompletedRow key={event.id} event={event} />;
           default:
             return null;
         }

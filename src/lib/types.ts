@@ -20,6 +20,8 @@ export interface Activity {
   timestamp: string;
   /** XP amount awarded (defaults to 1 for backward compat with pre-judge activities) */
   amount?: number;
+  /** The Judge's full verdict text (sassy flavor text) — only present for Judge-awarded XP */
+  verdictMessage?: string;
 }
 
 export interface CustomStatOverride {
@@ -71,6 +73,18 @@ export interface PlayerInventory {
   equippedItems: Partial<Record<EquipmentSlot, string>>;
 }
 
+// --- Challenges (Judge-issued side quests) ---
+
+/** A challenge issued by the Judge — one active at a time */
+export interface Challenge {
+  id: string;
+  description: string;
+  stat: StatKey;
+  bonusXP: number;
+  issuedAt: string;
+  completedAt?: string;
+}
+
 // --- Prize Track ---
 
 /** A user-created IRL prize/reward that unlocks at a specific overall level */
@@ -84,7 +98,7 @@ export interface Prize {
 
 // Discriminated union for all events that appear in the activity feed
 export type FeedEvent =
-  | { type: "xp_gain"; id: string; timestamp: string; stat: StatKey; note: string; amount?: number }
+  | { type: "xp_gain"; id: string; timestamp: string; stat: StatKey; note: string; amount?: number; verdictMessage?: string }
   | { type: "habit_completed"; id: string; timestamp: string; habitKey: HabitKey }
   | { type: "habit_removed"; id: string; timestamp: string; habitKey: HabitKey }
   | { type: "damage_marked"; id: string; timestamp: string; damageKey: DamageKey }
@@ -92,7 +106,9 @@ export type FeedEvent =
   | { type: "level_up"; id: string; timestamp: string; stat: StatKey; newLevel: number }
   | { type: "overall_level_up"; id: string; timestamp: string; newLevel: number; previousLevel: number }
   | { type: "rank_up"; id: string; timestamp: string; newRank: string; newLevel: number }
-  | { type: "prize_unlocked"; id: string; timestamp: string; prizeId: string; prizeName: string; unlockLevel: number };
+  | { type: "prize_unlocked"; id: string; timestamp: string; prizeId: string; prizeName: string; unlockLevel: number }
+  | { type: "challenge_issued"; id: string; timestamp: string; challengeId: string; description: string; stat: StatKey; bonusXP: number }
+  | { type: "challenge_completed"; id: string; timestamp: string; challengeId: string; description: string; stat: StatKey; bonusXP: number };
 
 export interface GameData {
   stats: Record<StatKey, StatProgress>;
@@ -118,4 +134,6 @@ export interface GameData {
   mascotName?: string;
   /** User-created IRL prize rewards, unlocked at specific overall levels */
   prizes?: Prize[];
+  /** The current active challenge issued by the Judge (one at a time) */
+  activeChallenge?: Challenge;
 }

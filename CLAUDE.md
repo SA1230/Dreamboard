@@ -43,8 +43,6 @@ src/
 │   ├── PrizeTimeline.tsx    # Horizontal scrollable dual-track timeline — system rewards (top) + user prizes (bottom) with fog of war
 │   ├── MonthCalendar.tsx    # Calendar grid with per-day XP breakdown + habit/damage icons
 │   ├── YesterdayReview.tsx   # Compact yesterday checklist — habit/damage toggles with emoji labels, PP summary row with toast
-│   ├── HealthyHabits.tsx    # Daily toggle cards for 6 habits (water, nails, brush, nosugar, floss, steps) — used by calendar page only
-│   ├── DailyDamage.tsx      # Daily toggle cards for 4 damage types (substance, screentime, junkfood, badsleep) — used by calendar page only
 │   ├── SkipperCharacter.tsx # Inline SVG paper-doll — renders Skipper with layered equipment overlays
 │   ├── StatIcons.tsx        # 20 SVG icons (8 stat defaults + 12 extras for customization)
 │   ├── AuthProvider.tsx     # Client wrapper for NextAuth SessionProvider (used in layout.tsx)
@@ -71,16 +69,17 @@ src/
 - **HabitKey** — one of 6 strings: `"water"`, `"nails"`, `"brush"`, `"nosugar"`, `"floss"`, `"steps"`
 - **DamageKey** — one of 4 strings: `"substance"`, `"screentime"`, `"junkfood"`, `"badsleep"`
 - **PointsWallet** — `{ lifetimeEarned, lifetimeSpent }` — tracks Power Points spending (earned is always derived from source data)
-- **Activity** — `{ id, stat, note, timestamp, amount? }` — one logged action. `amount` defaults to 1 for legacy entries; Judge awards variable amounts (1-10)
+- **Activity** — `{ id, stat, note, timestamp, amount?, verdictMessage? }` — one logged action. `amount` defaults to 1 for legacy entries; Judge awards variable amounts (1-10). `verdictMessage` stores the Judge's full sassy verdict text
 - **Prize** — `{ id, name, unlockLevel, link?, createdAt }` — a user-created IRL prize that unlocks at a specific overall level
-- **FeedEvent** — discriminated union (`type` field) for the activity feed. Types: `xp_gain`, `habit_completed`, `habit_removed`, `damage_marked`, `damage_removed`, `level_up`, `overall_level_up`, `rank_up`, `prize_unlocked`. Each has `id` + `timestamp` + type-specific fields
+- **Challenge** — `{ id, description, stat, bonusXP, issuedAt, completedAt? }` — a Judge-issued side quest. One active at a time
+- **FeedEvent** — discriminated union (`type` field) for the activity feed. Types: `xp_gain`, `habit_completed`, `habit_removed`, `damage_marked`, `damage_removed`, `level_up`, `overall_level_up`, `rank_up`, `prize_unlocked`, `challenge_issued`, `challenge_completed`. Each has `id` + `timestamp` + type-specific fields. `xp_gain` events include optional `verdictMessage` with the Judge's verdict text
 - **VisibleSlot** — one of 8 strings: `"head"`, `"chest"`, `"legs"`, `"robe"`, `"hands"`, `"feet"`, `"primary"`, `"secondary"` — SVG layers rendered on Skipper
 - **HiddenSlot** — inventory-only slots (rings, ears, neck, shoulders, back, bracers, ranged) — no visual on character, for future stat items
 - **EquipmentSlot** — `VisibleSlot | HiddenSlot`
 - **ItemRarity** — `"common" | "uncommon" | "rare" | "epic" | "legendary"`
 - **ShopItem** — `{ id, name, description, slot, rarity, cost, levelRequirement?, svgAssetKey?, overridesSlots? }` — item definition. `overridesSlots` lets robes hide chest+legs visuals
 - **PlayerInventory** — `{ ownedItemIds: string[], equippedItems: Partial<Record<EquipmentSlot, string>> }` — owned items + slot-to-itemId mapping
-- **GameData** — the root object stored in localStorage: `{ stats, activities, customDefinitions?, healthyHabits?, enabledHabits?, dailyDamage?, enabledDamage?, pointsWallet?, mascotOverrides?, feedEvents?, inventory?, prizes? }`
+- **GameData** — the root object stored in localStorage: `{ stats, activities, customDefinitions?, healthyHabits?, enabledHabits?, dailyDamage?, enabledDamage?, pointsWallet?, mascotOverrides?, feedEvents?, inventory?, prizes?, activeChallenge? }`
   - `healthyHabits` maps each `HabitKey` to an array of `"YYYY-MM-DD"` date strings (days the habit was completed)
   - `enabledHabits` is an array of `HabitKey` values that should be visible on the dashboard (defaults to the original 4 if not set)
   - `dailyDamage` maps each `DamageKey` to an array of `"YYYY-MM-DD"` date strings (days the damage was marked)
@@ -89,6 +88,7 @@ src/
   - `mascotOverrides` maps level thresholds to mascot image filenames in `public/mascots/` (e.g. `{ 1: "skipper-default.svg", 10: "skipper-cool.svg" }`). Uses threshold logic — picks highest key ≤ current level. Defaults to `skipper-default.svg`
   - `feedEvents` is an array of `FeedEvent` objects (newest first) — the unified activity feed that captures XP gains, habit toggles, damage toggles, level-ups, rank transitions, and prize unlocks. Pushed automatically by `addXP`, `toggleHabitForToday`, `toggleDamageForToday`, and `checkPrizeUnlocks`
   - `prizes` is an array of `Prize` objects — user-created IRL rewards that unlock at specific overall levels. Managed via the Prize Track page (`/prizes`)
+  - `activeChallenge` is a `Challenge` object — one active side quest issued by the Judge. Only one at a time. Cleared on completion (awards bonus XP) or dismissal. Managed by `issueChallenge`, `completeChallenge`, `dismissChallenge` in `storage.ts`
 - **Per-stat leveling:** Fibonacci-ish XP thresholds per stat. Logic in `storage.ts` (`addXP`, `getXPForNextLevel`)
 - **Overall player level:** EQ-inspired curve (max level 60) with "hell levels" at 30/35/40/45/50/55/59. Logic in `storage.ts` (`getOverallLevel`). Rank titles and colors now live in `ranks.ts` as the single source of truth — do not add rank definitions elsewhere
 
@@ -111,6 +111,7 @@ src/
 - **Mascot system:** Skipper the penguin base SVG paths are inlined in `SkipperCharacter.tsx`. `getMascotForLevel()` in `storage.ts` still exists for future per-level base variants via `mascotOverrides` in GameData
 - **XP Judge:** The sole way to earn XP. A conversational AI (via `/api/judge`) evaluates user-described activities, asks up to 3 follow-up questions, then awards 1-10 XP per stat. Triggered from a centered CTA card on the homepage (hero penguin avatar from `public/mascots/judge-hero.svg`). The hero avatar also appears in the JudgeModal header and next to each judge message
 - **Prize Track:** Separate from the Shop (level-based rewards vs currency-based purchases). Dual-track horizontal timeline: system rewards (rank titles) on top, user-created IRL prizes on bottom, level progression line in the center. Fog of war hides future brackets — current rank bracket is fully visible, next bracket is teased/dimmed, beyond is hidden. Auto-unlock when level is reached (no claim step), generates `prize_unlocked` feed event. `checkPrizeUnlocks` is called on homepage mount and prizes page mount
+- **Challenge system (Side Quests):** The Judge occasionally issues a single active challenge alongside verdicts — one at a time, ~1 in 4-5 verdicts, only when contextually clever. Stored as `activeChallenge` in GameData. The Judge detects completion during normal activity evaluation. ChallengeCard renders between the Captain CTA and Monthly XP Summary on the homepage. Challenges generate `challenge_issued` and `challenge_completed` feed events in the ActivityLog
 - **Error handling:** Errors in `JudgeModal` are caught and displayed as a red system message inline in the chat thread, with a "Dismiss" button. Loading state always resets. Follow this pattern (in-place error display, no retry logic, user-dismissable) for any new API-dependent features
 
 ## Key exports in `stats.ts`
@@ -156,7 +157,7 @@ src/
 ## Key exports in `storage.ts`
 
 - `loadGameData()` / `saveGameData(data)` — localStorage read/write
-- `addXP(data, statKey, note, amount?)` — log XP (default 1, Judge passes variable amounts), handle level-up, save
+- `addXP(data, statKey, note, amount?, verdictMessage?)` — log XP (default 1, Judge passes variable amounts), handle level-up, save. `verdictMessage` stores the Judge's sassy verdict text on the Activity and feed event
 - `getXPForNextLevel(level)` — per-stat Fibonacci thresholds
 - `getOverallLevel(totalXP)` — overall player level (EQ curve, max 60)
 - `getTotalLevel(data)` — sum of all per-stat levels
@@ -185,6 +186,10 @@ src/
 - `updatePrize(data, prizeId, updates)` — partial update, returns updated GameData or null
 - `deletePrize(data, prizeId)` — removes prize, returns updated GameData
 - `checkPrizeUnlocks(data, currentLevel)` — generates `prize_unlocked` feed events for newly unlocked prizes (deduplicates against existing events)
+- `getActiveChallenge(data)` — returns `data.activeChallenge ?? null`
+- `issueChallenge(data, description, stat, bonusXP)` — creates Challenge, stores in `activeChallenge`, pushes `challenge_issued` feed event
+- `completeChallenge(data)` — marks challenge completed, awards bonus XP via `addXP()`, pushes `challenge_completed` feed event, clears `activeChallenge`
+- `dismissChallenge(data)` — removes active challenge without completing it (no feed event)
 
 ## Visual Design System
 

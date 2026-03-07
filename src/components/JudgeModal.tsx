@@ -19,10 +19,18 @@ interface Award {
   amount: number;
 }
 
+interface ChallengeData {
+  text: string;
+  stat: string;
+  bonusXP: number;
+}
+
 interface JudgeVerdict {
   message: string;
   summary: string;
   awards: Award[];
+  challenge?: ChallengeData;
+  challengeCompleted?: boolean;
 }
 
 interface JudgeModalProps {
@@ -31,7 +39,7 @@ interface JudgeModalProps {
   overallLevel: number;
   rank: string;
   profilePicture: string | null;
-  onAcceptVerdict: (awards: Award[], summary: string) => void;
+  onAcceptVerdict: (awards: Award[], summary: string, verdictMessage: string, challenge?: ChallengeData, challengeCompleted?: boolean) => void;
   onCancel: () => void;
 }
 
@@ -79,7 +87,17 @@ function buildGameContext(
     };
   });
 
-  return { stats, overallLevel, rank, recentDamage, recentActivities };
+  // Active challenge context
+  const activeChallenge = gameData.activeChallenge
+    ? {
+        description: gameData.activeChallenge.description,
+        stat: gameData.activeChallenge.stat,
+        bonusXP: gameData.activeChallenge.bonusXP,
+        issuedAt: gameData.activeChallenge.issuedAt,
+      }
+    : undefined;
+
+  return { stats, overallLevel, rank, recentDamage, recentActivities, activeChallenge };
 }
 
 export function JudgeModal({
@@ -138,7 +156,13 @@ export function JudgeModal({
         if (data.type === "verdict") {
           // Judge rendered a verdict
           setMessages([...newMessages, { role: "assistant", content: data.message }]);
-          setVerdict({ message: data.message, summary: data.summary || "Judged activity", awards: data.awards });
+          setVerdict({
+            message: data.message,
+            summary: data.summary || "Judged activity",
+            awards: data.awards,
+            challenge: data.challenge,
+            challengeCompleted: data.challengeCompleted,
+          });
         } else {
           // Judge asked a follow-up question
           setMessages([...newMessages, { role: "assistant", content: data.message }]);
@@ -175,7 +199,13 @@ export function JudgeModal({
 
       if (data.type === "verdict") {
         setMessages([...messages, { role: "assistant", content: data.message }]);
-        setVerdict({ message: data.message, summary: data.summary || "Judged activity", awards: data.awards });
+        setVerdict({
+          message: data.message,
+          summary: data.summary || "Judged activity",
+          awards: data.awards,
+          challenge: data.challenge,
+          challengeCompleted: data.challengeCompleted,
+        });
       } else {
         setMessages([...messages, { role: "assistant", content: data.message }]);
       }
@@ -370,7 +400,7 @@ export function JudgeModal({
               })}
             </div>
             <button
-              onClick={() => onAcceptVerdict(verdict.awards, verdict.summary)}
+              onClick={() => onAcceptVerdict(verdict.awards, verdict.summary, verdict.message, verdict.challenge, verdict.challengeCompleted)}
               className="w-full py-2.5 rounded-xl text-sm font-bold text-white bg-stone-700 hover:bg-stone-800 transition-colors active:scale-[0.98]"
             >
               Accept Verdict (+{totalXP} XP)
