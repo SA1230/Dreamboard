@@ -95,7 +95,7 @@ src/
 - **Icon fill effect:** StatCard layers an unfilled ghost icon behind a filled icon that clips from bottom-up based on XP progress
 - **Healthy Habits:** A separate system from stat XP — boolean-per-day toggles that don't award XP. Stored as date strings in `healthyHabits`. Users can enable/disable which habits appear via settings (`enabledHabits`)
 - **Daily Damage:** Mirrors healthy habits but tracks negative behaviors. Same date-string storage pattern. Red-themed toggle cards on dashboard. Each habit completed = +1 Power Point, each damage marked = -1 Power Point
-- **Power Points (AA System):** Inspired by EverQuest's Alternate Advancement. `lifetimeEarned` is always derived from source data (total habit completions minus total damage marks), never stored incrementally. `lifetimeSpent` is persisted. Balance = earned - spent. Spent via the Power-Up Store (`/shop`)
+- **Power Points (AA System):** Inspired by EverQuest's Alternate Advancement. `lifetimeEarned` is always derived from source data (total habit completions), never stored incrementally. `lifetimeSpent` is persisted. Balance is calculated day-by-day chronologically (habits minus damage per day, floored at 0 each day — no debt carries forward), then subtracts `lifetimeSpent`. Spent via the Power-Up Store (`/shop`)
 - **Equipment system (EQ-inspired):** Visible slots (head, chest, legs, robe, hands, feet, primary, secondary) render as SVG overlays on Skipper. Hidden slots (rings, ears, neck, etc.) are inventory-only for future stat items. Robes use `overridesSlots` to visually hide chest+legs when equipped
 - **SkipperCharacter component:** Inline SVG paper-doll that renders Skipper with layered equipment. Items are `<g>` groups from `itemSvgs.ts` inserted at z-order positions (feet → arms → weapons → body → armor → head → face). Uses `dangerouslySetInnerHTML` for item SVGs (safe — content is from our own registry)
 - **`LevelDisplay` component** now uses `SkipperCharacter` instead of `<img>`. Lives in `src/components/LevelDisplay.tsx`. Accepts `equippedItems` prop. Shows Skipper inside SVG progress ring with level badge and rank title. Parallax tilt + shatter animation on level-up
@@ -157,14 +157,17 @@ src/
 - `getActivitiesByDay(activities, year, month)` — XP grouped by calendar day
 - `getStatStreaks(activities)` — consecutive-day streak per stat
 - `getMonthlyXPTotals(activities)` — current vs last month XP
-- `isHabitCompletedToday(data, habitKey)` / `toggleHabitForToday(data, habitKey)`
+- `getTodayString()` / `getYesterdayString()` — returns `YYYY-MM-DD` for today/yesterday in local timezone
+- `isHabitCompletedForDate(data, habitKey, dateString)` / `toggleHabitForDate(data, habitKey, dateString)` — date-parameterized habit functions
+- `isHabitCompletedToday(data, habitKey)` / `toggleHabitForToday(data, habitKey)` — convenience wrappers (call `*ForDate` with today)
 - `getHabitsByDay(data, year, month)` — habits grouped by calendar day
 - `getEnabledHabits(data)` / `saveEnabledHabits(data, habits)` — which habits are visible on dashboard
-- `isDamageMarkedToday(data, damageKey)` / `toggleDamageForToday(data, damageKey)` — daily damage toggle
+- `isDamageMarkedForDate(data, damageKey, dateString)` / `toggleDamageForDate(data, damageKey, dateString)` — date-parameterized damage functions
+- `isDamageMarkedToday(data, damageKey)` / `toggleDamageForToday(data, damageKey)` — convenience wrappers (call `*ForDate` with today)
 - `getDamageByDay(data, year, month)` — damage grouped by calendar day
 - `getEnabledDamage(data)` / `saveEnabledDamage(data, enabledDamage)` — which damage types are visible on dashboard
-- `calculateLifetimePoints(data)` — derives total Power Points earned from habit/damage history
-- `getPointsBalance(data)` — returns `{ lifetimeEarned, lifetimeSpent, balance }`
+- `calculateLifetimePoints(data)` — derives total Power Points earned from habit/damage history (day-by-day chronological, floors at 0 each day — no debt carries forward)
+- `getPointsBalance(data)` — returns `{ lifetimeEarned, lifetimeDamage, lifetimeSpent, balance }`
 - `spendPoints(data, amount)` — deducts from wallet (returns null if insufficient balance)
 - `getInventory(data)` — returns PlayerInventory (with defaults if not set)
 - `purchaseItem(data, itemId)` — buy an item: validates ownership/balance, deducts points, adds to ownedItemIds
