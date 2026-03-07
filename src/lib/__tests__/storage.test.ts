@@ -306,9 +306,9 @@ describe("getEnabledHabits", () => {
 });
 
 describe("getEnabledDamage", () => {
-  it("returns all 4 defaults when not set", () => {
+  it("returns empty array when not set (damage is opt-in)", () => {
     const data = makeGameData();
     const enabled = getEnabledDamage(data);
-    expect(enabled).toEqual(["substance", "screentime", "junkfood", "badsleep"]);
+    expect(enabled).toEqual([]);
   });
 });
