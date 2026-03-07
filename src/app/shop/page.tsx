@@ -81,10 +81,26 @@ export default function ShopPage() {
         </div>
       </div>
 
-      {/* PP explainer */}
-      <p className="text-[11px] text-stone-400 -mt-4 mb-4 text-right">
-        Earn PP by completing daily habits
-      </p>
+      {/* PP explainer — expanded for new users, compact for experienced */}
+      {pointsBalance.balance === 0 && inventory.ownedItemIds.length === 0 ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4 -mt-2 mb-4">
+          <p className="text-sm font-semibold text-amber-800 mb-1.5">What are Power Points?</p>
+          <p className="text-xs text-amber-700/80 leading-relaxed">
+            Complete daily habits to earn PP. Damage behaviors subtract PP.
+            Spend PP here to equip Skipper with gear.
+          </p>
+          <Link
+            href="/settings"
+            className="inline-block mt-2.5 text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors"
+          >
+            Enable habits in Settings &rarr;
+          </Link>
+        </div>
+      ) : (
+        <p className="text-[11px] text-stone-400 -mt-4 mb-4 text-right">
+          Earn PP by completing daily habits
+        </p>
+      )}
 
       {/* Skipper Preview */}
       <div className="flex flex-col items-center mb-6 py-4 rounded-2xl"
