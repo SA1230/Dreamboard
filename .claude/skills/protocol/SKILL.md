@@ -1,4 +1,4 @@
-# Strategic Review Protocol
+# /protocol — Strategic Review Protocol
 
 You are running a strategic review of the Dreamboard codebase. This is an autonomous analysis — do the research, synthesize findings, and present a ranked build list. No user input needed until the final output.
 
