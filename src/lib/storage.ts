@@ -1,4 +1,4 @@
-import { GameData, StatKey, HabitKey, DamageKey, Activity, StatProgress, CustomStatOverride, FeedEvent, PlayerInventory, EquipmentSlot, Prize, Challenge } from "./types";
+import { GameData, StatKey, HabitKey, DamageKey, Activity, StatProgress, CustomStatOverride, FeedEvent, PlayerInventory, EquipmentSlot, Prize, Challenge, ChainStep } from "./types";
 import { getItemById } from "./items";
 import { STAT_KEYS, STAT_DEFINITIONS, StatDefinition, COLOR_PRESETS } from "./stats";
 import { getRankTitle } from "./ranks";
@@ -985,14 +985,14 @@ export function checkPrizeUnlocks(data: GameData, currentLevel: number): GameDat
   return updatedData;
 }
 
-// --- Challenges (Judge-issued side quests) ---
+// --- Challenges (Judge-issued) ---
 
 /** Returns the current active challenge, or null if none. */
 export function getActiveChallenge(data: GameData): Challenge | null {
   return data.activeChallenge ?? null;
 }
 
-/** Issue a new challenge from the Judge. Stores it as the active challenge and pushes a feed event. */
+/** Issue a new standalone challenge from the Judge. Stores it as the active challenge and pushes a feed event. */
 export function issueChallenge(
   data: GameData,
   description: string,
@@ -1026,8 +1026,50 @@ export function issueChallenge(
   return newData;
 }
 
-/** Complete the active challenge — awards bonus XP and clears it. Returns null if no active challenge. */
-export function completeChallenge(data: GameData): { newData: GameData } | null {
+/** Issue a challenge chain — sets the first step as active and queues the rest as pending steps. */
+export function issueChallengeChain(
+  data: GameData,
+  steps: ChainStep[]
+): GameData {
+  if (steps.length === 0) return data;
+
+  const chainId = crypto.randomUUID();
+  const firstStep = steps[0];
+  const remainingSteps = steps.slice(1);
+
+  const challenge: Challenge = {
+    id: crypto.randomUUID(),
+    description: firstStep.description,
+    stat: firstStep.stat,
+    bonusXP: firstStep.bonusXP,
+    issuedAt: new Date().toISOString(),
+    chainId,
+    chainIndex: 1,
+    chainTotal: steps.length,
+  };
+
+  let newData: GameData = {
+    ...data,
+    activeChallenge: challenge,
+    pendingChainSteps: remainingSteps.length > 0 ? remainingSteps : undefined,
+  };
+
+  newData = pushFeedEvent(newData, {
+    type: "challenge_issued",
+    id: crypto.randomUUID(),
+    timestamp: challenge.issuedAt,
+    challengeId: challenge.id,
+    description: challenge.description,
+    stat: challenge.stat,
+    bonusXP: challenge.bonusXP,
+  });
+
+  saveGameData(newData);
+  return newData;
+}
+
+/** Complete the active challenge — awards bonus XP and clears it. If part of a chain, auto-issues the next step. Returns null if no active challenge. */
+export function completeChallenge(data: GameData): { newData: GameData; nextChainStep: boolean } | null {
   const challenge = data.activeChallenge;
   if (!challenge) return null;
 
@@ -1043,7 +1085,6 @@ export function completeChallenge(data: GameData): { newData: GameData } | null 
     activeChallenge: undefined,
   };
 
-  // Store the completed challenge info so the feed event has it
   newData = pushFeedEvent(newData, {
     type: "challenge_completed",
     id: crypto.randomUUID(),
@@ -1054,15 +1095,56 @@ export function completeChallenge(data: GameData): { newData: GameData } | null 
     bonusXP: completedChallenge.bonusXP,
   });
 
+  // If this was a chain step and there are more pending steps, auto-issue the next one
+  const pendingSteps = data.pendingChainSteps;
+  if (challenge.chainId && pendingSteps && pendingSteps.length > 0) {
+    const nextStep = pendingSteps[0];
+    const remainingSteps = pendingSteps.slice(1);
+
+    const nextChallenge: Challenge = {
+      id: crypto.randomUUID(),
+      description: nextStep.description,
+      stat: nextStep.stat,
+      bonusXP: nextStep.bonusXP,
+      issuedAt: now,
+      chainId: challenge.chainId,
+      chainIndex: (challenge.chainIndex ?? 1) + 1,
+      chainTotal: challenge.chainTotal,
+    };
+
+    newData = {
+      ...newData,
+      activeChallenge: nextChallenge,
+      pendingChainSteps: remainingSteps.length > 0 ? remainingSteps : undefined,
+    };
+
+    newData = pushFeedEvent(newData, {
+      type: "challenge_issued",
+      id: crypto.randomUUID(),
+      timestamp: now,
+      challengeId: nextChallenge.id,
+      description: nextChallenge.description,
+      stat: nextChallenge.stat,
+      bonusXP: nextChallenge.bonusXP,
+    });
+
+    saveGameData(newData);
+    return { newData, nextChainStep: true };
+  }
+
+  // Clear any leftover pending steps
+  newData = { ...newData, pendingChainSteps: undefined };
+
   saveGameData(newData);
-  return { newData };
+  return { newData, nextChainStep: false };
 }
 
-/** Dismiss the active challenge without completing it. */
+/** Dismiss the active challenge without completing it. Also clears any pending chain steps. */
 export function dismissChallenge(data: GameData): GameData {
   const newData: GameData = {
     ...data,
     activeChallenge: undefined,
+    pendingChainSteps: undefined,
   };
   saveGameData(newData);
   return newData;

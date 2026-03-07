@@ -22,7 +22,7 @@ interface GameContext {
   rank: string;
   recentDamage: string[]; // damage type names from last 7 days
   recentActivities: { stat: string; note: string; amount: number; daysAgo: number; verdictMessage?: string }[];
-  activeChallenge?: { description: string; stat: string; bonusXP: number; issuedAt: string };
+  activeChallenge?: { description: string; stat: string; bonusXP: number; issuedAt: string; chainIndex?: number; chainTotal?: number };
 }
 
 interface JudgeRequest {
@@ -36,6 +36,7 @@ interface JudgeResult {
   summary?: string;
   awards?: { stat: string; amount: number }[];
   challenge?: { text: string; stat: string; bonusXP: number };
+  challengeChain?: { text: string; stat: string; bonusXP: number }[];
   challengeCompleted?: boolean;
 }
 
@@ -89,7 +90,7 @@ const AWARD_XP_TOOL_ANTHROPIC: Anthropic.Tool = {
       },
       challenge: {
         type: "object",
-        description: "Optional: issue a follow-up challenge (side quest) for the player. Only issue one if there is NO active challenge and the activity naturally lends itself to a follow-up push.",
+        description: "Optional: issue a single follow-up challenge for the player. Only use this if there is NO active challenge. For multi-step challenges, use challenge_chain instead.",
         properties: {
           text: {
             type: "string",
@@ -106,6 +107,29 @@ const AWARD_XP_TOOL_ANTHROPIC: Anthropic.Tool = {
           },
         },
         required: ["text", "stat", "bonus_xp"],
+      },
+      challenge_chain: {
+        type: "array",
+        description: "Optional: issue a multi-step challenge chain (2-3 steps that build on each other). Use INSTEAD of 'challenge' when the activity lends itself to a progressive quest. Each step unlocks after the previous one is completed. Only use if there is NO active challenge.",
+        items: {
+          type: "object",
+          properties: {
+            text: {
+              type: "string",
+              description: "This step's challenge description — 1 sentence, action-oriented. Each step should build on the previous one.",
+            },
+            stat: {
+              type: "string",
+              enum: ["strength", "wisdom", "vitality", "charisma", "craft", "discipline", "spirit", "wealth"],
+              description: "Which stat this step primarily targets",
+            },
+            bonus_xp: {
+              type: "integer",
+              description: "Bonus XP awarded on completion of this step (3-5 XP)",
+            },
+          },
+          required: ["text", "stat", "bonus_xp"],
+        },
       },
       challenge_completed: {
         type: "boolean",
@@ -166,7 +190,7 @@ const AWARD_XP_TOOL_OPENAI: OpenAI.Chat.Completions.ChatCompletionTool = {
         },
         challenge: {
           type: "object",
-          description: "Optional: issue a follow-up challenge (side quest) for the player. Only issue one if there is NO active challenge and the activity naturally lends itself to a follow-up push.",
+          description: "Optional: issue a single follow-up challenge for the player. Only use this if there is NO active challenge. For multi-step challenges, use challenge_chain instead.",
           properties: {
             text: {
               type: "string",
@@ -183,6 +207,29 @@ const AWARD_XP_TOOL_OPENAI: OpenAI.Chat.Completions.ChatCompletionTool = {
             },
           },
           required: ["text", "stat", "bonus_xp"],
+        },
+        challenge_chain: {
+          type: "array",
+          description: "Optional: issue a multi-step challenge chain (2-3 steps that build on each other). Use INSTEAD of 'challenge' when the activity lends itself to a progressive quest. Each step unlocks after the previous one is completed. Only use if there is NO active challenge.",
+          items: {
+            type: "object",
+            properties: {
+              text: {
+                type: "string",
+                description: "This step's challenge description — 1 sentence, action-oriented. Each step should build on the previous one.",
+              },
+              stat: {
+                type: "string",
+                enum: ["strength", "wisdom", "vitality", "charisma", "craft", "discipline", "spirit", "wealth"],
+                description: "Which stat this step primarily targets",
+              },
+              bonus_xp: {
+                type: "integer",
+                description: "Bonus XP awarded on completion of this step (3-5 XP)",
+              },
+            },
+            required: ["text", "stat", "bonus_xp"],
+          },
         },
         challenge_completed: {
           type: "boolean",
@@ -226,7 +273,10 @@ function buildSystemPrompt(gameContext: GameContext, questionCount: number): str
 
   let challengeText: string;
   if (gameContext.activeChallenge) {
-    challengeText = `\n\nActive Challenge: "${gameContext.activeChallenge.description}" (${gameContext.activeChallenge.stat}, +${gameContext.activeChallenge.bonusXP} bonus XP). If this activity satisfies it, set challenge_completed to true. Do NOT issue a new challenge while this one is active.`;
+    const chainInfo = gameContext.activeChallenge.chainIndex && gameContext.activeChallenge.chainTotal
+      ? ` (Step ${gameContext.activeChallenge.chainIndex} of ${gameContext.activeChallenge.chainTotal} in a chain)`
+      : "";
+    challengeText = `\n\nActive Challenge${chainInfo}: "${gameContext.activeChallenge.description}" (${gameContext.activeChallenge.stat}, +${gameContext.activeChallenge.bonusXP} bonus XP). If this activity satisfies it, set challenge_completed to true. Do NOT issue a new challenge while this one is active.`;
   } else if (isFirstTimeUser) {
     challengeText = "\n\nNo active challenge. This is the adventurer's FIRST EVER activity — you MUST issue a challenge. Give them something specific and achievable to come back for tomorrow. Make it feel like a personal dare inspired by what they just told you.";
   } else {
@@ -283,7 +333,11 @@ If the activity is clear enough from the description, skip questions and go stra
 - Keep your follow-up questions to ONE at a time — don't ask multiple questions in one message
 
 ## Challenges (Side Quests)
-You can issue OPTIONAL challenges — follow-up goals that push the adventurer to do more. Think of them as side quests.
+You can issue OPTIONAL challenges — follow-up goals that push the adventurer to do more.
+
+You have two formats:
+1. Single challenge (use the "challenge" field): A one-off challenge. Most challenges should be this.
+2. Challenge chain (use the "challenge_chain" field): A 2-3 step progressive quest where each step builds on the last. Steps unlock one at a time as they're completed. Use this RARELY — only when the activity naturally suggests a multi-step journey. Think "training arc" not "to-do list."
 
 Rules for issuing challenges:
 - Challenges should be RARE and delightful. Issue one roughly 1 in every 4-5 verdicts at most. Most verdicts should NOT include a challenge.
@@ -293,15 +347,23 @@ Rules for issuing challenges:
 - The challenge should feel like YOU had a clever idea inspired by what they told you — not a generic "do more of that" push.
 - Reference specific details from their activity. If they ran 5 miles, challenge them to try a new route or beat their time. If they cooked dinner, dare them to cook something from a cuisine they've never tried.
 - Inject your personality — be witty, provocative, or warmly competitive. "I bet you can't do that two days in a row" hits different than "Try to exercise again."
-- Bonus XP should be 3-5 (proportional to difficulty).
-- Keep the challenge text to ONE sentence, action-oriented and punchy.
+- Bonus XP should be 3-5 per step (proportional to difficulty).
+- Keep each challenge/step text to ONE sentence, action-oriented and punchy.
 - Good: "I dare you to cook something you can't even pronounce" / "Beat that 5-mile time — I'll know if you sandbagged it"
 - Bad: "Keep exercising" / "Do more stuff" / "Try harder next time" (too vague, no personality)
+
+Rules for challenge chains specifically:
+- Use "challenge_chain" INSTEAD of "challenge" (never both). Provide exactly 2-3 steps.
+- Each step should escalate or build on the previous one — it should feel like a story arc, not a checklist.
+- Steps can target different stats if the progression naturally spans multiple areas.
+- Good chain: Step 1: "Run 3 miles this week" → Step 2: "Now beat that time" → Step 3: "Do it on a trail you've never tried"
+- Bad chain: Step 1: "Run" → Step 2: "Run again" → Step 3: "Run more" (no progression, no personality)
 
 Rules for completing challenges:
 - If the player has an active challenge AND their current activity clearly satisfies it, set challenge_completed to true.
 - Be fair but not overly strict — if the spirit of the challenge is met, count it.
 - When completing a challenge, be genuinely impressed or amusingly grudging about it in your verdict — make it feel like a moment.
+- If the active challenge is part of a chain (check the status), acknowledge the chain progress in your verdict — "Step 1 down, but the real test is coming."
 
 ## This Adventurer's Status
 Overall Level: ${gameContext.overallLevel} (${gameContext.rank})
@@ -338,6 +400,7 @@ async function callAnthropic(
       summary?: string;
       awards: { stat: string; amount: number }[];
       challenge?: { text: string; stat: string; bonus_xp: number };
+      challenge_chain?: { text: string; stat: string; bonus_xp: number }[];
       challenge_completed?: boolean;
     };
     return {
@@ -346,6 +409,7 @@ async function callAnthropic(
       summary: input.summary,
       awards: input.awards,
       challenge: input.challenge ? { text: input.challenge.text, stat: input.challenge.stat, bonusXP: input.challenge.bonus_xp } : undefined,
+      challengeChain: input.challenge_chain?.map((step) => ({ text: step.text, stat: step.stat, bonusXP: step.bonus_xp })),
       challengeCompleted: input.challenge_completed,
     };
   }

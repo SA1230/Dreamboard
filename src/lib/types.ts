@@ -73,7 +73,7 @@ export interface PlayerInventory {
   equippedItems: Partial<Record<EquipmentSlot, string>>;
 }
 
-// --- Challenges (Judge-issued side quests) ---
+// --- Challenges (Judge-issued) ---
 
 /** A challenge issued by the Judge — one active at a time */
 export interface Challenge {
@@ -83,6 +83,19 @@ export interface Challenge {
   bonusXP: number;
   issuedAt: string;
   completedAt?: string;
+  /** If part of a chain: shared ID across all steps */
+  chainId?: string;
+  /** 1-based index within the chain (e.g. 1 of 3) */
+  chainIndex?: number;
+  /** Total steps in the chain */
+  chainTotal?: number;
+}
+
+/** A pending step in a challenge chain, waiting to be issued */
+export interface ChainStep {
+  description: string;
+  stat: StatKey;
+  bonusXP: number;
 }
 
 // --- Prize Track ---
@@ -136,4 +149,6 @@ export interface GameData {
   prizes?: Prize[];
   /** The current active challenge issued by the Judge (one at a time) */
   activeChallenge?: Challenge;
+  /** Remaining steps in a challenge chain — auto-issued as each step completes */
+  pendingChainSteps?: ChainStep[];
 }

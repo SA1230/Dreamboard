@@ -375,7 +375,7 @@ function ChallengeIssuedRow({ event, definitions }: { event: Extract<FeedEvent, 
         <StatIcon iconKey={definition?.iconKey ?? "sword"} className="w-4 h-4" />
       </div>
       <div className="flex-1 min-w-0">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Side Quest</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Challenge</span>
         <p className="text-xs text-stone-500 mt-0.5">{event.description}</p>
       </div>
       <span className="text-xs text-stone-300 flex-shrink-0">
