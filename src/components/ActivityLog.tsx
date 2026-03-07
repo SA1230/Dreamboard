@@ -2,7 +2,7 @@
 
 import { FeedEvent, StatKey } from "@/lib/types";
 import { StatDefinition } from "@/lib/stats";
-import { HABIT_DEFINITIONS, HABIT_LABELS } from "@/lib/habits";
+import { HABIT_DEFINITIONS, HABIT_PAST_LABELS } from "@/lib/habits";
 import { DAMAGE_DEFINITIONS, DAMAGE_LABELS } from "@/lib/damage";
 import { StatIcon } from "./StatIcons";
 import { Trophy } from "lucide-react";
@@ -145,7 +145,7 @@ function XPGainRow({ event, definitions }: { event: Extract<FeedEvent, { type: "
 
 function HabitRow({ event }: { event: Extract<FeedEvent, { type: "habit_completed" | "habit_removed" }> }) {
   const isCompleted = event.type === "habit_completed";
-  const label = HABIT_LABELS[event.habitKey];
+  const label = HABIT_PAST_LABELS[event.habitKey];
   const emoji = HABIT_EMOJI[event.habitKey];
 
   return (
