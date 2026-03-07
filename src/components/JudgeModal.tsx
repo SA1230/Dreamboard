@@ -152,6 +152,40 @@ export function JudgeModal({
     [messages, gameData, definitions, overallLevel, rank]
   );
 
+  const retryLastMessage = useCallback(async () => {
+    // Resend the current messages array (last user message is already in it)
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const gameContext = buildGameContext(gameData, definitions, overallLevel, rank);
+
+      const response = await fetch("/api/judge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages, gameContext }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Something went wrong");
+      }
+
+      const data = await response.json();
+
+      if (data.type === "verdict") {
+        setMessages([...messages, { role: "assistant", content: data.message }]);
+        setVerdict({ message: data.message, summary: data.summary || "Judged activity", awards: data.awards });
+      } else {
+        setMessages([...messages, { role: "assistant", content: data.message }]);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "The Captain is unavailable.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [messages, gameData, definitions, overallLevel, rank]);
+
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     const trimmed = inputValue.trim();
@@ -284,12 +318,25 @@ export function JudgeModal({
           {error && (
             <div className="text-center">
               <p className="text-sm text-red-400">{error}</p>
-              <button
-                onClick={() => setError(null)}
-                className="text-xs text-stone-400 underline mt-1"
-              >
-                Dismiss
-              </button>
+              <div className="flex items-center justify-center gap-3 mt-1">
+                <button
+                  onClick={() => setError(null)}
+                  className="text-xs text-stone-400 underline"
+                >
+                  Dismiss
+                </button>
+                {messages.length > 0 && (
+                  <button
+                    onClick={() => {
+                      setError(null);
+                      retryLastMessage();
+                    }}
+                    className="text-xs text-amber-600 font-semibold underline"
+                  >
+                    Try Again
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
