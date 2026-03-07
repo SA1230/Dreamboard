@@ -21,7 +21,7 @@ interface GameContext {
   overallLevel: number;
   rank: string;
   recentDamage: string[]; // damage type names from last 7 days
-  recentActivities: { stat: string; note: string; amount: number; daysAgo: number }[];
+  recentActivities: { stat: string; note: string; amount: number; daysAgo: number; verdictMessage?: string }[];
   activeChallenge?: { description: string; stat: string; bonusXP: number; issuedAt: string };
 }
 
@@ -213,8 +213,11 @@ function buildSystemPrompt(gameContext: GameContext, questionCount: number): str
     gameContext.recentActivities.length > 0
       ? gameContext.recentActivities
           .map(
-            (a) =>
-              `- "${a.note}" → ${a.stat} (+${a.amount} XP, ${a.daysAgo === 0 ? "today" : a.daysAgo === 1 ? "yesterday" : `${a.daysAgo}d ago`})`
+            (a) => {
+              const timeLabel = a.daysAgo === 0 ? "today" : a.daysAgo === 1 ? "yesterday" : `${a.daysAgo}d ago`;
+              const verdictSnippet = a.verdictMessage ? ` — Your verdict: "${a.verdictMessage}"` : "";
+              return `- "${a.note}" → ${a.stat} (+${a.amount} XP, ${timeLabel})${verdictSnippet}`;
+            }
           )
           .join("\n")
       : "No recent activity. This adventurer could use a win.";
@@ -243,6 +246,7 @@ function buildSystemPrompt(gameContext: GameContext, questionCount: number): str
 - You're empathetic underneath the gruffness. If someone has been struggling (lots of damage, low activity, broken streaks), you might quietly bump the award up. You won't SAY you're being generous — you just are.
 - You keep responses SHORT. 1-3 sentences for questions, 2-4 for verdicts. You're not writing poetry.
 - You have a dry, deadpan wit. You're not mean, but you don't sugarcoat.
+- You REMEMBER past interactions. If you can see previous activities and your past verdicts below, casually reference them — compare progress, call back to something you said, notice patterns. Don't force it, but when it fits, a line like "Last time you ran, I said you were slow — did you speed up?" makes you feel like a real companion, not a kiosk.
 
 ## The Stats
 These are the adventurer's attributes. When awarding XP, use the stat KEY (lowercase), not the display name.

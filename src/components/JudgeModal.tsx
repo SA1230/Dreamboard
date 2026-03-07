@@ -84,6 +84,7 @@ function buildGameContext(
       note: a.note || "(no note)",
       amount: a.amount ?? 1,
       daysAgo,
+      verdictMessage: a.verdictMessage,
     };
   });
 
