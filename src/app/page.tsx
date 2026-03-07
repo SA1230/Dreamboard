@@ -15,6 +15,7 @@ import { LevelUpCelebration } from "@/components/LevelUpCelebration";
 import { Download, Settings, CalendarDays, ShoppingBag, Trophy } from "lucide-react";
 import Link from "next/link";
 import { getRankTitle } from "@/lib/ranks";
+import { UserMenu } from "@/components/UserMenu";
 
 export default function Home() {
   const [gameData, setGameData] = useState<GameData | null>(null);
@@ -250,6 +251,9 @@ export default function Home() {
     >
       {/* Header */}
       <header className="text-center mb-10 relative sticky top-0 z-50 bg-[#FDF8F4]/80 backdrop-blur-md -mx-4 px-4 py-3 border-b border-stone-200/50">
+        <div className="absolute left-0 top-2">
+          <UserMenu />
+        </div>
         <div className="absolute right-0 top-1 flex items-center gap-2">
           <Link
             href="/calendar"
