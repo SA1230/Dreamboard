@@ -16,6 +16,8 @@ import { Download, Settings, CalendarDays, ShoppingBag, Trophy } from "lucide-re
 import Link from "next/link";
 import { getRankTitle } from "@/lib/ranks";
 import { UserMenu } from "@/components/UserMenu";
+import { CaptainQuip } from "@/components/CaptainQuip";
+import { getCaptainQuip } from "@/lib/captainQuips";
 
 export default function Home() {
   const [gameData, setGameData] = useState<GameData | null>(null);
@@ -276,6 +278,18 @@ export default function Home() {
   // First-run detection — user has never logged XP via the Judge
   const isFirstRun = gameData.activities.length === 0;
 
+  // Daily Captain quip (deterministic — same all day, rotates tomorrow)
+  const quipText = !isFirstRun && definitions && streaks
+    ? getCaptainQuip({
+        activities: gameData.activities,
+        streaks,
+        activeChallenge: gameData.activeChallenge ?? null,
+        overallLevel,
+        rank: getRankTitle(overallLevel),
+        definitions,
+      })
+    : null;
+
   // Weekly quote — hidden for now, may bring back later
   // const weeklyQuotes / currentWeekNumber / weeklyQuote removed from render
 
@@ -439,6 +453,13 @@ export default function Home() {
               Log XP
             </span>
           </button>
+        </div>
+      )}
+
+      {/* Daily Captain Quip */}
+      {!isFirstRun && quipText && (
+        <div className="mb-4 animate-fadeIn">
+          <CaptainQuip quipText={quipText} />
         </div>
       )}
 
