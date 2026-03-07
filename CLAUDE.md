@@ -18,6 +18,7 @@ The core loop: User tells the Judge what they did → Judge interviews them (1-3
 - **Charts:** None — we build visualizations with plain CSS/SVG (no recharts, no d3)
 - **Animations:** 6 custom keyframe animations in `globals.css` (fadeIn, modalSlideUp, xpPop, levelUpGlow, levelUpText, particle)
 - **Viewport:** Designed for mobile-width viewports (375–430px). No desktop breakpoints currently — do not add responsive layouts unless asked
+- **Hosting:** Vercel (Production) — custom domain `dreamboard.net` (redirects to `www.dreamboard.net`)
 - **Run locally:** `npm run dev` (port 3000) / `npm run build` to check for errors
 
 ## Project structure
