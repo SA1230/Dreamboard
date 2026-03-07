@@ -219,9 +219,16 @@ function buildSystemPrompt(gameContext: GameContext, questionCount: number): str
           .join("\n")
       : "No recent activity. This adventurer could use a win.";
 
-  const challengeText = gameContext.activeChallenge
-    ? `\n\nActive Challenge: "${gameContext.activeChallenge.description}" (${gameContext.activeChallenge.stat}, +${gameContext.activeChallenge.bonusXP} bonus XP). If this activity satisfies it, set challenge_completed to true. Do NOT issue a new challenge while this one is active.`
-    : "\n\nNo active challenge — you may issue one if the activity warrants it.";
+  const isFirstTimeUser = gameContext.recentActivities.length === 0;
+
+  let challengeText: string;
+  if (gameContext.activeChallenge) {
+    challengeText = `\n\nActive Challenge: "${gameContext.activeChallenge.description}" (${gameContext.activeChallenge.stat}, +${gameContext.activeChallenge.bonusXP} bonus XP). If this activity satisfies it, set challenge_completed to true. Do NOT issue a new challenge while this one is active.`;
+  } else if (isFirstTimeUser) {
+    challengeText = "\n\nNo active challenge. This is the adventurer's FIRST EVER activity — you MUST issue a challenge. Give them something specific and achievable to come back for tomorrow. Make it feel like a personal dare inspired by what they just told you.";
+  } else {
+    challengeText = "\n\nNo active challenge — you may issue one if the activity warrants it.";
+  }
 
   const forceVerdict =
     questionCount >= 3
