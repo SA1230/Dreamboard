@@ -430,7 +430,7 @@ export function ActivityLog({ feedEvents, definitions }: ActivityLogProps) {
   if (recentEvents.length === 0) {
     return (
       <div className="text-center py-12 text-stone-400">
-        <p className="text-sm">No activities yet. Click a + button to get started!</p>
+        <p className="text-sm">No activities yet. Tell the Captain what you did to earn your first XP!</p>
       </div>
     );
   }

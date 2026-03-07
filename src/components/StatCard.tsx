@@ -11,7 +11,7 @@ interface StatCardProps {
   definition: StatDefinition;
   progress: StatProgress;
   leveledUp: boolean;
-  justGainedXP: boolean;
+  justGainedXP: number | false;
   streak: number;
   isActiveThisMonth: boolean;
   previousLevel?: number;
@@ -170,7 +170,7 @@ export function StatCard({
           className="absolute top-2 right-12 animate-xpPop pointer-events-none z-10 font-bold text-sm"
           style={{ color: definition.color }}
         >
-          +1 XP
+          +{justGainedXP || 1} XP
         </div>
       )}
 
