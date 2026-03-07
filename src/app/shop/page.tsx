@@ -12,10 +12,15 @@ import Link from "next/link";
 export default function ShopPage() {
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<VisibleSlot | "all">("all");
-  const [purchaseFlash, setPurchaseFlash] = useState<string | null>(null);
+  const [actionToast, setActionToast] = useState<string | null>(null);
 
   useEffect(() => {
     setGameData(loadGameData());
+  }, []);
+
+  const showToast = useCallback((message: string) => {
+    setActionToast(message);
+    setTimeout(() => setActionToast(null), 1500);
   }, []);
 
   const handlePurchase = useCallback((itemId: string) => {
@@ -23,22 +28,25 @@ export default function ShopPage() {
     const result = purchaseItem(freshData, itemId);
     if (result) {
       setGameData(result);
-      setPurchaseFlash(itemId);
-      setTimeout(() => setPurchaseFlash(null), 800);
+      showToast("Purchased!");
     }
-  }, []);
+  }, [showToast]);
 
   const handleEquip = useCallback((itemId: string) => {
     const freshData = loadGameData();
     const result = equipItem(freshData, itemId);
-    if (result) setGameData(result);
-  }, []);
+    if (result) {
+      setGameData(result);
+      showToast("Equipped!");
+    }
+  }, [showToast]);
 
   const handleUnequip = useCallback((slot: EquipmentSlot) => {
     const freshData = loadGameData();
     const result = unequipSlot(freshData, slot);
     setGameData(result);
-  }, []);
+    showToast("Unequipped!");
+  }, [showToast]);
 
 
   if (!gameData) {
@@ -179,14 +187,11 @@ export default function ShopPage() {
           const canAfford = pointsBalance.balance >= item.cost;
           const meetsLevel = (item.levelRequirement ?? 0) <= overallLevel;
           const rarityColors = RARITY_COLORS[item.rarity];
-          const isFlashing = purchaseFlash === item.id;
 
           return (
             <div
               key={item.id}
-              className={`relative rounded-xl border-2 p-3 transition-all ${
-                isFlashing ? "animate-fadeIn" : ""
-              }`}
+              className="relative rounded-xl border-2 p-3 transition-all"
               style={{
                 borderColor: owned ? rarityColors.border : "#e7e0d5",
                 background: owned ? rarityColors.background : "#fefcf9",
@@ -279,6 +284,15 @@ export default function ShopPage() {
       {filteredItems.length === 0 && (
         <div className="text-center py-12 text-stone-400 text-sm">
           No items in this slot yet.
+        </div>
+      )}
+
+      {/* Action toast */}
+      {actionToast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-fadeIn">
+          <div className="px-4 py-2 rounded-full bg-stone-700 text-white text-sm font-semibold shadow-lg">
+            {actionToast}
+          </div>
         </div>
       )}
     </main>
