@@ -3,14 +3,13 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { GameData, StatKey, HabitKey, DamageKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForToday, toggleDamageForToday, getPointsBalance, formatRelativeTime, getInventory, getMascotName, checkPrizeUnlocks } from "@/lib/storage";
+import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForDate, toggleDamageForDate, getYesterdayString, formatRelativeTime, getInventory, getMascotName, checkPrizeUnlocks } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
 import { StatIcon } from "@/components/StatIcons";
 import { JudgeModal } from "@/components/JudgeModal";
 import { ActivityLog } from "@/components/ActivityLog";
 import { MonthlyXPSummary } from "@/components/MonthlyXPSummary";
-import { HealthyHabits } from "@/components/HealthyHabits";
-import { DailyDamage } from "@/components/DailyDamage";
+import { YesterdayReview } from "@/components/YesterdayReview";
 import { LevelDisplay } from "@/components/LevelDisplay";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
 import { Download, Settings, CalendarDays, ShoppingBag, Trophy } from "lucide-react";
@@ -196,29 +195,23 @@ export default function Home() {
     [gameData, definitions, celebrationInfo]
   );
 
-  const handleToggleHabit = useCallback(
+  const handleToggleYesterdayHabit = useCallback(
     (habitKey: HabitKey) => {
       if (!gameData) return;
-      const newData = toggleHabitForToday(gameData, habitKey);
+      const newData = toggleHabitForDate(gameData, habitKey, getYesterdayString());
       setGameData(newData);
     },
     [gameData]
   );
 
-  const handleToggleDamage = useCallback(
+  const handleToggleYesterdayDamage = useCallback(
     (damageKey: DamageKey) => {
       if (!gameData) return;
-      const newData = toggleDamageForToday(gameData, damageKey);
+      const newData = toggleDamageForDate(gameData, damageKey, getYesterdayString());
       setGameData(newData);
     },
     [gameData]
   );
-
-  // AA points balance derived from habits vs damage
-  const pointsBalance = useMemo(() => {
-    if (!gameData) return null;
-    return getPointsBalance(gameData);
-  }, [gameData]);
 
   // Show nothing while loading from localStorage (prevents hydration flash)
   if (!gameData || !definitions || !streaks || !monthlyXP) {
@@ -291,8 +284,17 @@ export default function Home() {
         </h1>
       </header>
 
+      {/* Yesterday Review — retrospective habit/damage checklist */}
+      <div className="mt-14 mb-4">
+        <YesterdayReview
+          gameData={gameData}
+          onToggleHabit={handleToggleYesterdayHabit}
+          onToggleDamage={handleToggleYesterdayDamage}
+        />
+      </div>
+
       {/* Captain CTA */}
-      <div className="mt-14 mb-6">
+      <div className="mb-6">
         <button
           onClick={() => setShowJudge(true)}
           className="relative w-full flex flex-col items-center pt-12 pb-4 px-8 rounded-2xl border border-amber-200/60 hover:border-amber-300 transition-all cursor-pointer group active:scale-[0.98]"
@@ -368,53 +370,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Points Balance */}
-      {pointsBalance && (() => {
-        const today = new Date().toISOString().split("T")[0];
-        const habitsToday = Object.values(gameData.healthyHabits ?? {}).filter(
-          (dates) => (dates as string[]).includes(today)
-        ).length;
-        const damageToday = Object.values(gameData.dailyDamage ?? {}).filter(
-          (dates) => (dates as string[]).includes(today)
-        ).length;
-        const todayNet = habitsToday - damageToday;
-        return (
-          <section className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-stone-600 flex items-center gap-2">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M11.5 1L4 11h5.5L8.5 19 16 9h-5.5L11.5 1z" fill="#f59e0b" stroke="#d97706" strokeWidth="1.2" strokeLinejoin="round" />
-                </svg>
-                Power Points
-              </h2>
-              <Link
-                href="/shop"
-                className="px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest rounded-full no-underline text-white"
-                style={{
-                  background: 'linear-gradient(135deg, #d97706, #f59e0b)',
-                }}
-              >
-                Visit Shop
-              </Link>
-            </div>
-            <div className="flex items-center justify-center gap-3 py-5 px-6 rounded-2xl bg-stone-50 border border-stone-200">
-              <svg width="24" height="24" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M11.5 1L4 11h5.5L8.5 19 16 9h-5.5L11.5 1z" fill="#f59e0b" stroke="#d97706" strokeWidth="1.2" strokeLinejoin="round" />
-              </svg>
-              <span className="text-3xl font-extrabold text-amber-600">{pointsBalance.balance}</span>
-              {todayNet > 0 && (
-                <span className="text-sm font-bold text-emerald-500">+{todayNet} today</span>
-              )}
-            </div>
-          </section>
-        );
-      })()}
-
-      {/* Healthy Habits */}
-      <HealthyHabits gameData={gameData} onToggleHabit={handleToggleHabit} />
-
-      {/* Daily Damage */}
-      <DailyDamage gameData={gameData} onToggleDamage={handleToggleDamage} />
 
       {/* Stat Card Grid — active stats first, then inactive */}
       <div className="grid grid-cols-2 gap-2.5 mb-12">
