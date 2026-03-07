@@ -73,7 +73,7 @@ src/
 - **PointsWallet** — `{ lifetimeEarned, lifetimeSpent }` — tracks Power Points spending (earned is always derived from source data)
 - **Activity** — `{ id, stat, note, timestamp, amount? }` — one logged action. `amount` defaults to 1 for legacy entries; Judge awards variable amounts (1-10)
 - **Prize** — `{ id, name, unlockLevel, link?, createdAt }` — a user-created IRL prize that unlocks at a specific overall level
-- **FeedEvent** — discriminated union (`type` field) for the activity feed. Types: `xp_gain`, `habit_completed`, `habit_removed`, `damage_marked`, `damage_removed`, `level_up`, `rank_up`, `prize_unlocked`. Each has `id` + `timestamp` + type-specific fields
+- **FeedEvent** — discriminated union (`type` field) for the activity feed. Types: `xp_gain`, `habit_completed`, `habit_removed`, `damage_marked`, `damage_removed`, `level_up`, `overall_level_up`, `rank_up`, `prize_unlocked`. Each has `id` + `timestamp` + type-specific fields
 - **VisibleSlot** — one of 8 strings: `"head"`, `"chest"`, `"legs"`, `"robe"`, `"hands"`, `"feet"`, `"primary"`, `"secondary"` — SVG layers rendered on Skipper
 - **HiddenSlot** — inventory-only slots (rings, ears, neck, shoulders, back, bracers, ranged) — no visual on character, for future stat items
 - **EquipmentSlot** — `VisibleSlot | HiddenSlot`

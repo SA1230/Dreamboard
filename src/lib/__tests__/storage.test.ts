@@ -16,8 +16,14 @@ import {
   toggleHabitForDate,
   isDamageMarkedForDate,
   toggleDamageForDate,
+  addXP,
+  spendPoints,
+  purchaseItem,
+  equipItem,
+  unequipSlot,
+  getInventory,
 } from "../storage";
-import type { GameData, Activity, StatKey } from "../types";
+import type { GameData, Activity, StatKey, EquipmentSlot } from "../types";
 import { STAT_KEYS } from "../stats";
 
 // Mock localStorage so storage.ts doesn't blow up in Node
@@ -524,5 +530,308 @@ describe("getPointsBalance (floor-at-zero)", () => {
     expect(result.balance).toBe(1);
     expect(result.lifetimeEarned).toBe(3);
     expect(result.lifetimeDamage).toBe(1);
+  });
+});
+
+// ─── addXP ───
+
+describe("addXP", () => {
+  it("increases stat XP by the given amount", () => {
+    const data = makeGameData();
+    const { newData } = addXP(data, "strength", "Lifted weights", 2);
+    expect(newData.stats.strength.xp).toBe(2);
+  });
+
+  it("defaults amount to 1", () => {
+    const data = makeGameData();
+    const { newData } = addXP(data, "wisdom", "Read a book");
+    expect(newData.stats.wisdom.xp).toBe(1);
+  });
+
+  it("adds an activity to the front of the activities array", () => {
+    const data = makeGameData();
+    const { newData } = addXP(data, "craft", "Built a table", 2);
+    expect(newData.activities.length).toBe(1);
+    expect(newData.activities[0].stat).toBe("craft");
+    expect(newData.activities[0].note).toBe("Built a table");
+    expect(newData.activities[0].amount).toBe(2);
+  });
+
+  it("triggers a stat level-up when XP crosses threshold", () => {
+    // Level 1→2 requires 3 XP
+    const data = makeGameData();
+    const { newData, leveledUp, previousLevel } = addXP(data, "strength", "Big lift", 3);
+    expect(leveledUp).toBe(true);
+    expect(previousLevel).toBe(1);
+    expect(newData.stats.strength.level).toBe(2);
+    expect(newData.stats.strength.xp).toBe(0); // 3 - 3 = 0
+  });
+
+  it("does not level up when XP is below threshold", () => {
+    const data = makeGameData();
+    const { newData, leveledUp } = addXP(data, "strength", "Small lift", 2);
+    expect(leveledUp).toBe(false);
+    expect(newData.stats.strength.level).toBe(1);
+    expect(newData.stats.strength.xp).toBe(2);
+  });
+
+  it("handles multi-level gains from large XP awards", () => {
+    // Level 1→2 = 3, Level 2→3 = 5. So 8 XP = level 3 with 0 remaining
+    const data = makeGameData();
+    const { newData, leveledUp } = addXP(data, "vitality", "Epic hike", 8);
+    expect(leveledUp).toBe(true);
+    expect(newData.stats.vitality.level).toBe(3);
+    expect(newData.stats.vitality.xp).toBe(0);
+  });
+
+  it("pushes an xp_gain feed event", () => {
+    const data = makeGameData();
+    const { newData } = addXP(data, "charisma", "Gave a speech", 5);
+    const xpEvents = (newData.feedEvents ?? []).filter(e => e.type === "xp_gain");
+    expect(xpEvents.length).toBe(1);
+    expect(xpEvents[0].type === "xp_gain" && xpEvents[0].stat).toBe("charisma");
+  });
+
+  it("pushes a level_up feed event when stat levels up", () => {
+    const data = makeGameData();
+    const { newData } = addXP(data, "discipline", "Studied hard", 3);
+    const levelEvents = (newData.feedEvents ?? []).filter(e => e.type === "level_up");
+    expect(levelEvents.length).toBe(1);
+  });
+
+  it("does not push level_up feed event when stat does not level up", () => {
+    const data = makeGameData();
+    const { newData } = addXP(data, "discipline", "Quick read", 1);
+    const levelEvents = (newData.feedEvents ?? []).filter(e => e.type === "level_up");
+    expect(levelEvents.length).toBe(0);
+  });
+
+  it("does not mutate the original data", () => {
+    const data = makeGameData();
+    const originalXP = data.stats.strength.xp;
+    addXP(data, "strength", "Test", 5);
+    expect(data.stats.strength.xp).toBe(originalXP);
+    expect(data.activities.length).toBe(0);
+  });
+});
+
+// ─── spendPoints ───
+
+describe("spendPoints", () => {
+  it("deducts points from the wallet", () => {
+    const data = makeGameData({
+      healthyHabits: {
+        water: ["2026-03-01", "2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05"],
+      },
+      pointsWallet: { lifetimeEarned: 0, lifetimeSpent: 0 },
+    });
+
+    const result = spendPoints(data, 3);
+    expect(result).not.toBeNull();
+    expect(result!.pointsWallet!.lifetimeSpent).toBe(3);
+  });
+
+  it("returns null when spending more than balance", () => {
+    const data = makeGameData({
+      healthyHabits: {
+        water: ["2026-03-01"],
+      },
+      pointsWallet: { lifetimeEarned: 0, lifetimeSpent: 0 },
+    });
+
+    // Balance is 1, trying to spend 5
+    const result = spendPoints(data, 5);
+    expect(result).toBeNull();
+  });
+
+  it("adds to existing lifetimeSpent", () => {
+    const data = makeGameData({
+      healthyHabits: {
+        water: ["2026-03-01", "2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05",
+                "2026-03-06", "2026-03-07", "2026-03-08", "2026-03-09", "2026-03-10"],
+      },
+      pointsWallet: { lifetimeEarned: 0, lifetimeSpent: 2 },
+    });
+
+    // Balance = 10 - 2 = 8, spending 3
+    const result = spendPoints(data, 3);
+    expect(result).not.toBeNull();
+    expect(result!.pointsWallet!.lifetimeSpent).toBe(5);
+  });
+
+  it("allows spending exact balance", () => {
+    const data = makeGameData({
+      healthyHabits: {
+        water: ["2026-03-01", "2026-03-02"],
+      },
+      pointsWallet: { lifetimeEarned: 0, lifetimeSpent: 0 },
+    });
+
+    const result = spendPoints(data, 2);
+    expect(result).not.toBeNull();
+    expect(result!.pointsWallet!.lifetimeSpent).toBe(2);
+  });
+});
+
+// ─── purchaseItem ───
+
+describe("purchaseItem", () => {
+  // "wooden-sword" costs 2 PP, no level requirement
+  // "leather-cap" costs 3 PP, no level requirement
+  // "iron-helm" costs 8 PP, requires level 5
+
+  function makeDataWithBalance(balance: number): GameData {
+    // Create enough habit entries to have the desired PP balance
+    const dates: string[] = [];
+    for (let i = 1; i <= balance; i++) {
+      dates.push(`2026-03-${String(i).padStart(2, "0")}`);
+    }
+    return makeGameData({
+      healthyHabits: { water: dates },
+      pointsWallet: { lifetimeEarned: 0, lifetimeSpent: 0 },
+    });
+  }
+
+  it("purchases an affordable item", () => {
+    const data = makeDataWithBalance(5);
+    const result = purchaseItem(data, "wooden-sword");
+    expect(result).not.toBeNull();
+    expect(getInventory(result!).ownedItemIds).toContain("wooden-sword");
+  });
+
+  it("deducts item cost from points", () => {
+    const data = makeDataWithBalance(5);
+    const result = purchaseItem(data, "wooden-sword");
+    expect(result).not.toBeNull();
+    // wooden-sword costs 2, so lifetimeSpent should be 2
+    expect(result!.pointsWallet!.lifetimeSpent).toBe(2);
+  });
+
+  it("returns null for non-existent item", () => {
+    const data = makeDataWithBalance(10);
+    const result = purchaseItem(data, "nonexistent-item");
+    expect(result).toBeNull();
+  });
+
+  it("returns null when already owned", () => {
+    const data = makeDataWithBalance(10);
+    const firstPurchase = purchaseItem(data, "wooden-sword");
+    expect(firstPurchase).not.toBeNull();
+    const secondPurchase = purchaseItem(firstPurchase!, "wooden-sword");
+    expect(secondPurchase).toBeNull();
+  });
+
+  it("returns null when balance is insufficient", () => {
+    const data = makeDataWithBalance(1); // 1 PP, wooden-sword costs 2
+    const result = purchaseItem(data, "wooden-sword");
+    expect(result).toBeNull();
+  });
+
+  it("returns null when level requirement is not met", () => {
+    // iron-helm requires level 5, fresh game data is level 1
+    const data = makeDataWithBalance(20);
+    const result = purchaseItem(data, "iron-helm");
+    expect(result).toBeNull();
+  });
+});
+
+// ─── equipItem ───
+
+describe("equipItem", () => {
+  function makeDataWithOwnedItem(itemId: string): GameData {
+    return makeGameData({
+      inventory: {
+        ownedItemIds: [itemId],
+        equippedItems: {},
+      },
+    });
+  }
+
+  it("equips an owned item to its slot", () => {
+    const data = makeDataWithOwnedItem("wooden-sword");
+    const result = equipItem(data, "wooden-sword");
+    expect(result).not.toBeNull();
+    expect(getInventory(result!).equippedItems.primary).toBe("wooden-sword");
+  });
+
+  it("returns null for non-existent item", () => {
+    const data = makeDataWithOwnedItem("wooden-sword");
+    const result = equipItem(data, "nonexistent-item");
+    expect(result).toBeNull();
+  });
+
+  it("returns null for item not owned", () => {
+    const data = makeGameData(); // empty inventory
+    const result = equipItem(data, "wooden-sword");
+    expect(result).toBeNull();
+  });
+
+  it("replaces existing item in the same slot", () => {
+    // Own both wooden-sword and crystal-staff (both primary slot)
+    const data = makeGameData({
+      inventory: {
+        ownedItemIds: ["wooden-sword", "crystal-staff"],
+        equippedItems: { primary: "wooden-sword" },
+      },
+    });
+    const result = equipItem(data, "crystal-staff");
+    expect(result).not.toBeNull();
+    expect(getInventory(result!).equippedItems.primary).toBe("crystal-staff");
+  });
+
+  it("does not remove the item from ownedItemIds", () => {
+    const data = makeDataWithOwnedItem("leather-cap");
+    const result = equipItem(data, "leather-cap");
+    expect(result).not.toBeNull();
+    expect(getInventory(result!).ownedItemIds).toContain("leather-cap");
+  });
+});
+
+// ─── unequipSlot ───
+
+describe("unequipSlot", () => {
+  it("removes an item from the specified slot", () => {
+    const data = makeGameData({
+      inventory: {
+        ownedItemIds: ["wooden-sword"],
+        equippedItems: { primary: "wooden-sword" },
+      },
+    });
+    const result = unequipSlot(data, "primary");
+    expect(getInventory(result).equippedItems.primary).toBeUndefined();
+  });
+
+  it("keeps the item in ownedItemIds after unequipping", () => {
+    const data = makeGameData({
+      inventory: {
+        ownedItemIds: ["leather-cap"],
+        equippedItems: { head: "leather-cap" },
+      },
+    });
+    const result = unequipSlot(data, "head");
+    expect(getInventory(result).ownedItemIds).toContain("leather-cap");
+  });
+
+  it("is a no-op on an already-empty slot", () => {
+    const data = makeGameData({
+      inventory: {
+        ownedItemIds: ["wooden-sword"],
+        equippedItems: {},
+      },
+    });
+    const result = unequipSlot(data, "head" as EquipmentSlot);
+    expect(getInventory(result).equippedItems.head).toBeUndefined();
+  });
+
+  it("does not affect other equipped slots", () => {
+    const data = makeGameData({
+      inventory: {
+        ownedItemIds: ["wooden-sword", "leather-cap"],
+        equippedItems: { primary: "wooden-sword", head: "leather-cap" },
+      },
+    });
+    const result = unequipSlot(data, "primary");
+    expect(getInventory(result).equippedItems.primary).toBeUndefined();
+    expect(getInventory(result).equippedItems.head).toBe("leather-cap");
   });
 });
