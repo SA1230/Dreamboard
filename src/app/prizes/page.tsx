@@ -15,6 +15,7 @@ import {
 import { MAX_USER_PRIZES } from "@/lib/prizes";
 import { getRankTitle } from "@/lib/ranks";
 import { PrizeTimeline } from "@/components/PrizeTimeline";
+import { ModalBackdrop } from "@/components/ModalBackdrop";
 import { ArrowLeft, Trophy, Plus, X, Trash2, Gift } from "lucide-react";
 import Link from "next/link";
 
@@ -188,14 +189,13 @@ export default function PrizesPage() {
 
       {/* Prize Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-12">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/10"
-            onClick={closeForm}
-          />
+        <ModalBackdrop
+          onClose={closeForm}
+          align="bottom"
+          onKeyDown={(e) => e.key === "Escape" && closeForm()}
+        >
           {/* Modal — sits at bottom so timeline stays visible above */}
-          <div className="relative w-full max-w-lg bg-[#FDF8F4] rounded-2xl p-5 animate-modalSlideUp shadow-xl">
+          <div className="w-full max-w-lg bg-[#FDF8F4] rounded-2xl p-5 animate-modalSlideUp shadow-xl mb-12 mx-4">
             {/* Close button */}
             <button
               onClick={closeForm}
@@ -316,7 +316,7 @@ export default function PrizesPage() {
               </button>
             </div>
           </div>
-        </div>
+        </ModalBackdrop>
       )}
     </main>
   );
