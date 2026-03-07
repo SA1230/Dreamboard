@@ -440,3 +440,89 @@ describe("toggleDamageForDate", () => {
     expect(result.feedEvents?.[0].type).toBe("damage_marked");
   });
 });
+
+// ─── Power Points: no-debt carryover ───
+
+describe("calculateLifetimePoints (floor-at-zero)", () => {
+  it("returns 0 when no habits or damage", () => {
+    const data = makeGameData();
+    expect(calculateLifetimePoints(data)).toBe(0);
+  });
+
+  it("counts habits normally when no damage", () => {
+    const data = makeGameData({
+      healthyHabits: {
+        water: ["2026-03-01", "2026-03-02"],
+        floss: ["2026-03-01"],
+      },
+    });
+    expect(calculateLifetimePoints(data)).toBe(3);
+  });
+
+  it("damage reduces balance but not below zero", () => {
+    const data = makeGameData({
+      healthyHabits: {
+        water: ["2026-03-01"],
+      },
+      dailyDamage: {
+        substance: ["2026-03-01"],
+        screentime: ["2026-03-01"],
+        junkfood: ["2026-03-01"],
+      },
+    });
+    // Day 1: +1 habit, -3 damage = net -2, floored to 0
+    expect(calculateLifetimePoints(data)).toBe(0);
+  });
+
+  it("does not carry debt to next day", () => {
+    const data = makeGameData({
+      healthyHabits: {
+        water: ["2026-03-01", "2026-03-02"],
+      },
+      dailyDamage: {
+        substance: ["2026-03-01"],
+        screentime: ["2026-03-01"],
+        junkfood: ["2026-03-01"],
+      },
+    });
+    // Day 1: +1 habit, -3 damage = floored to 0 (no debt)
+    // Day 2: +1 habit, 0 damage = balance is 1 (not stuck at 0)
+    expect(calculateLifetimePoints(data)).toBe(1);
+  });
+
+  it("accumulates across good days", () => {
+    const data = makeGameData({
+      healthyHabits: {
+        water: ["2026-03-01", "2026-03-02", "2026-03-03"],
+        floss: ["2026-03-02"],
+      },
+      dailyDamage: {
+        substance: ["2026-03-01"],
+      },
+    });
+    // Day 1: +1 - 1 = 0, balance = 0
+    // Day 2: +2 - 0 = +2, balance = 2
+    // Day 3: +1 - 0 = +1, balance = 3
+    expect(calculateLifetimePoints(data)).toBe(3);
+  });
+});
+
+describe("getPointsBalance (floor-at-zero)", () => {
+  it("balance reflects effective points minus spent", () => {
+    const data = makeGameData({
+      healthyHabits: {
+        water: ["2026-03-01", "2026-03-02", "2026-03-03"],
+      },
+      dailyDamage: {
+        substance: ["2026-03-01"],
+      },
+      pointsWallet: { lifetimeEarned: 0, lifetimeSpent: 1 },
+    });
+    // Day 1: +1 -1 = 0. Day 2: +1 = 1. Day 3: +1 = 2.
+    // Effective = 2, spent = 1, balance = 1
+    const result = getPointsBalance(data);
+    expect(result.balance).toBe(1);
+    expect(result.lifetimeEarned).toBe(3);
+    expect(result.lifetimeDamage).toBe(1);
+  });
+});

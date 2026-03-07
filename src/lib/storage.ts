@@ -710,11 +710,47 @@ function countTotalDamageMarks(data: GameData): number {
   return total;
 }
 
-// Calculates lifetime earned points from source data (habits - damage)
+// Calculates effective points using day-by-day floor-at-zero logic.
+// Damage can reduce your balance to 0 on any given day, but never below.
+// This prevents a "debt spiral" where past damage blocks future habit earnings.
 export function calculateLifetimePoints(data: GameData): number {
-  const earned = countTotalHabitCompletions(data);
-  const lost = countTotalDamageMarks(data);
-  return Math.max(0, earned - lost);
+  return calculateEffectivePoints(data);
+}
+
+// Process habits and damage chronologically, flooring at 0 each day.
+// This means damage on a bad day doesn't create debt that carries forward.
+function calculateEffectivePoints(data: GameData): number {
+  const habits = data.healthyHabits ?? {};
+  const damage = data.dailyDamage ?? {};
+
+  // Collect all unique dates from both habits and damage
+  const allDates = new Set<string>();
+  for (const dates of Object.values(habits)) {
+    for (const d of (dates as string[])) allDates.add(d);
+  }
+  for (const dates of Object.values(damage)) {
+    for (const d of (dates as string[])) allDates.add(d);
+  }
+
+  // Process each day chronologically
+  const sortedDates = Array.from(allDates).sort();
+  let balance = 0;
+
+  for (const date of sortedDates) {
+    let dayHabits = 0;
+    let dayDamage = 0;
+
+    for (const dates of Object.values(habits)) {
+      if ((dates as string[]).includes(date)) dayHabits++;
+    }
+    for (const dates of Object.values(damage)) {
+      if ((dates as string[]).includes(date)) dayDamage++;
+    }
+
+    balance = Math.max(0, balance + dayHabits - dayDamage);
+  }
+
+  return balance;
 }
 
 // Returns the full points breakdown: earned, damage, spent, and current balance
@@ -727,11 +763,12 @@ export function getPointsBalance(data: GameData): {
   const lifetimeEarned = countTotalHabitCompletions(data);
   const lifetimeDamage = countTotalDamageMarks(data);
   const lifetimeSpent = data.pointsWallet?.lifetimeSpent ?? 0;
+  const effectivePoints = calculateEffectivePoints(data);
   return {
     lifetimeEarned,
     lifetimeDamage,
     lifetimeSpent,
-    balance: Math.max(0, lifetimeEarned - lifetimeDamage - lifetimeSpent),
+    balance: Math.max(0, effectivePoints - lifetimeSpent),
   };
 }
 
