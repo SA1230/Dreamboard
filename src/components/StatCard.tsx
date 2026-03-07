@@ -15,6 +15,8 @@ interface StatCardProps {
   streak: number;
   isActiveThisMonth: boolean;
   previousLevel?: number;
+  /** When true, dormant cards show the stat description instead of "No activity this month" */
+  isFirstRun?: boolean;
 }
 
 // SVG ring constants (compact)
@@ -31,6 +33,7 @@ export function StatCard({
   streak,
   isActiveThisMonth,
   previousLevel,
+  isFirstRun,
 }: StatCardProps) {
   const xpNeeded = getXPForNextLevel(progress.level);
   const progressPercent = Math.min((progress.xp / xpNeeded) * 100, 100);
@@ -137,8 +140,8 @@ export function StatCard({
           >
             Lv.{displayedLevel}
           </span>
-          <span className="text-[10px] text-stone-300 italic ml-1">
-            No activity this month
+          <span className="text-[10px] text-stone-300 italic ml-1 truncate">
+            {isFirstRun ? definition.description : "No activity this month"}
           </span>
         </div>
       </div>
