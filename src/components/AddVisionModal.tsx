@@ -75,7 +75,9 @@ export function AddVisionModal({ onClose, onSave }: AddVisionModalProps) {
         throw new Error(result.error || "The Oracle is resting. Try again later.");
       }
       setWeavedText(result.weavedText);
-      setImageBase64(result.imageBase64);
+      // Compress DALL-E image (1024x1024) to same size as uploads
+      const compressed = await compressImage(result.imageBase64, 512, 0.8);
+      setImageBase64(compressed);
       setState("preview");
     } catch (error) {
       setErrorMessage(
