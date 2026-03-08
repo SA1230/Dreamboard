@@ -243,7 +243,7 @@ export function JudgeModal({
   const totalXP = verdict?.awards.reduce((sum, a) => sum + a.amount, 0) ?? 0;
 
   return (
-    <ModalBackdrop onClose={onCancel} onKeyDown={handleKeyDown}>
+    <ModalBackdrop onClose={onCancel} onKeyDown={handleKeyDown} ariaLabel="The Captain">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md animate-modalSlideUp flex flex-col" style={{ maxHeight: "80vh" }}>
         {/* Header */}
         <div className="px-6 pt-5 pb-3 border-b border-stone-100">

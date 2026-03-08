@@ -25,7 +25,7 @@ export function VisionCardDetail({
   const gradient = getCardGradient(card.id);
 
   return (
-    <ModalBackdrop onClose={onClose} backdropStyle="medium">
+    <ModalBackdrop onClose={onClose} backdropStyle="medium" ariaLabel="Vision card details">
       <div
         className={`w-full max-w-sm rounded-2xl overflow-hidden animate-fadeIn shadow-xl ${hasImage ? "bg-white" : ""}`}
         style={

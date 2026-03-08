@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 interface ModalBackdropProps {
   /** Called when clicking the backdrop (outside the modal content). */
   onClose?: () => void;
@@ -11,6 +13,8 @@ interface ModalBackdropProps {
   blur?: boolean;
   /** Keyboard handler on the outer container (e.g. for Escape key). */
   onKeyDown?: (e: React.KeyboardEvent) => void;
+  /** Accessible label for the dialog (screen readers). */
+  ariaLabel?: string;
   /** Extra className on the outer container. */
   className?: string;
   children: React.ReactNode;
@@ -32,18 +36,40 @@ export function ModalBackdrop({
   backdropStyle = "light",
   blur,
   onKeyDown,
+  ariaLabel = "Dialog",
   className,
   children,
 }: ModalBackdropProps) {
   const shouldBlur = blur ?? backdropStyle === "light";
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Focus the dialog container on mount for keyboard accessibility
+  useEffect(() => {
+    containerRef.current?.focus();
+  }, []);
+
+  // Built-in Escape key handling + forward to consumer's onKeyDown
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape" && onClose) {
+      e.stopPropagation();
+      onClose();
+    }
+    onKeyDown?.(e);
+  };
 
   return (
     <div
+      ref={containerRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={ariaLabel}
+      tabIndex={-1}
       className={`fixed inset-0 z-50 flex ${
         align === "bottom" ? "items-end" : "items-center"
       } justify-center ${align === "center" ? "p-4" : ""} ${className ?? ""}`}
+      style={{ outline: "none" }}
       onClick={onClose}
-      onKeyDown={onKeyDown}
+      onKeyDown={handleKeyDown}
     >
       {/* Backdrop */}
       <div
