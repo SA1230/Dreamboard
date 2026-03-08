@@ -20,3 +20,12 @@ export const VISION_COLORS = [
 
 /** Maximum number of vision cards allowed (encourages curation, prevents localStorage bloat) */
 export const MAX_VISION_CARDS = 20;
+
+/** Get gradient for a card based on its ID (deterministic hash) */
+export function getCardGradient(cardId: string) {
+  let hash = 0;
+  for (let i = 0; i < cardId.length; i++) {
+    hash = ((hash << 3) + cardId.charCodeAt(i)) | 0;
+  }
+  return VISION_GRADIENTS[Math.abs(hash) % VISION_GRADIENTS.length];
+}
