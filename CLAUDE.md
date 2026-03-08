@@ -52,7 +52,8 @@ The shared state file lives at `~/.claude/projects/-Users-shiroy-Dreamboard-clon
 - **Auth:** NextAuth v5 (next-auth@5.0.0-beta.30) with Google OAuth — JWT sessions, profile upsert to Supabase on sign-in
 - **Database:** Supabase (Postgres) — `profiles` table for user data, `events` table for analytics. Game data still in localStorage
 - **Analytics:** Lightweight event tracking via `src/lib/tracker.ts` → `POST /api/events` → Supabase `events` table. Tracks session_start, page_view, xp_earned, habit/damage toggles, vision cards, shop purchases. Query via `/metrics` skill
-- **Storage:** Browser localStorage for game data — no server-side game state yet. `/api/judge`, `/api/auth`, `/api/profile`, and `/api/events` are the backend routes
+- **Admin Dashboard:** `/admin` route — founder-only analytics dashboard gated by `ADMIN_EMAILS` env var. Queries Supabase `events` + `profiles` tables via 3 API routes. Auto-refreshes every 30s. CSS/SVG charts (no charting library). Uses `max-w-4xl` layout (wider than main app)
+- **Storage:** Browser localStorage for game data — no server-side game state yet. `/api/judge`, `/api/auth`, `/api/profile`, `/api/events`, and `/api/admin/*` are the backend routes
 - **AI Judge:** Anthropic Claude Sonnet 4 (fallback: OpenAI GPT-4o) via `/api/judge` route — evaluates activities and awards variable XP
 - **AI Image Gen:** OpenAI DALL-E 3 — generates vision board images from Oracle prompts. Requires `OPENAI_API_KEY` in `.env.local`
 - **Charts:** None — we build visualizations with plain CSS/SVG (no recharts, no d3)
@@ -74,6 +75,10 @@ src/
 │   ├── api/events/route.ts  # POST endpoint — receives batched analytics events, writes to Supabase events table
 │   ├── api/profile/route.ts # GET/PATCH user profile from Supabase (auth-gated)
 │   ├── api/vision/route.ts  # POST endpoint — Oracle AI for Dream Weaver (enhance visions) and Board Reading (interpret the whole board)
+│   ├── api/admin/overview/route.ts  # GET endpoint — KPI snapshot (DAU, WAU, totals, trends). Admin-gated
+│   ├── api/admin/metrics/route.ts   # GET endpoint — time-series data (sessions/day, XP/day, heatmap, retention). Admin-gated
+│   ├── api/admin/events/route.ts    # GET endpoint — recent raw events feed (paginated). Admin-gated
+│   ├── admin/              # Admin analytics dashboard — KPI cards, charts, heatmap, retention, user table, live feed
 │   ├── calendar/           # Month-at-a-glance view — daily XP totals with habit/damage icons, tap a day to see detail modal
 │   ├── settings/           # Customize stat names, descriptions, colors, icons + enable/disable habits & damage
 │   ├── shop/               # Power-Up Store — buy and equip cosmetic items on Skipper
@@ -98,7 +103,8 @@ src/
 │   ├── VisionCardGrid.tsx   # Masonry grid of vision cards — CSS columns layout, pastel card tints, staggered dreamFadeIn
 │   ├── VisionCardDetail.tsx # Tap-to-view detail modal — full text, original/weaved toggle, pin/unpin, delete
 │   ├── AddVisionModal.tsx   # Bottom-sheet modal for creating visions — "Just add it" or "Let the Oracle weave it" AI path
-│   └── BoardReadingModal.tsx # Modal showing the Oracle's interpretation of the whole board
+│   ├── BoardReadingModal.tsx # Modal showing the Oracle's interpretation of the whole board
+│   └── admin/              # Admin dashboard components (MetricCard, BarChart, SparklineChart, ActivityHeatmap, FeatureBreakdown, RetentionTable, UserTable, LiveEventFeed)
 └── lib/
     ├── types.ts             # TypeScript types: StatKey, HabitKey, Activity, GameData, etc.
     ├── stats.ts             # Stat definitions, ColorPreset palettes, STAT_KEYS array
@@ -113,7 +119,8 @@ src/
     ├── storage.ts           # All data logic: load/save, addXP, leveling, habits, streaks, inventory, vision board, export, etc.
     ├── tracker.ts           # Client-side analytics — track() queues events, batches to /api/events, identifyUser() links anon→auth
     ├── auth.ts              # NextAuth v5 config — Google OAuth provider, JWT session strategy, Supabase profile upsert on sign-in
-    └── supabase.ts          # Supabase client factories — createServiceClient (server, bypasses RLS) + createBrowserClient (client, subject to RLS)
+    ├── supabase.ts          # Supabase client factories — createServiceClient (server, bypasses RLS) + createBrowserClient (client, subject to RLS)
+    └── adminQueries.ts      # Admin dashboard server-side queries — isAdmin(), getOverviewMetrics(), getMetrics(), getUserSummaries(), getRecentEvents()
 
 src/types/
 └── next-auth.d.ts           # TypeScript module augmentation — adds googleSub to Session and JWT types
