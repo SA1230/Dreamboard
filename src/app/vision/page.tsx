@@ -36,13 +36,13 @@ export default function VisionBoardPage() {
   }, []);
 
   const handleAddCard = useCallback(
-    (rawText: string, weavedText: string) => {
+    (rawText: string, weavedText: string, imageBase64?: string) => {
       const freshData = loadGameData();
-      const newData = addVisionCard(freshData, rawText, weavedText);
+      const newData = addVisionCard(freshData, rawText, weavedText, imageBase64);
       if (newData) {
         setGameData(newData);
         setShowAddModal(false);
-        showToast("Vision added");
+        showToast("Vision pinned");
       } else {
         showToast("Board is full (20 max)");
       }
@@ -67,7 +67,6 @@ export default function VisionBoardPage() {
       const newData = togglePinVisionCard(freshData, cardId);
       if (newData) {
         setGameData(newData);
-        // Update the selected card to reflect new pin state
         const updatedCards = getVisionCards(newData);
         const updatedCard = updatedCards.find((c) => c.id === cardId);
         if (updatedCard) setSelectedCard(updatedCard);
@@ -99,7 +98,7 @@ export default function VisionBoardPage() {
   const lastReading = getLastBoardReading(gameData);
 
   return (
-    <main className="min-h-screen p-4 pb-24 max-w-lg mx-auto">
+    <main className="min-h-screen pb-24 max-w-lg mx-auto vision-corkboard">
       {/* Toast */}
       {actionToast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-fadeIn">
@@ -110,10 +109,10 @@ export default function VisionBoardPage() {
       )}
 
       {/* Header */}
-      <header className="flex items-center justify-between mb-8">
+      <header className="flex items-center justify-between p-4 pb-2">
         <Link
           href="/"
-          className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
+          className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/70 hover:bg-white/90 transition-colors text-stone-400 hover:text-stone-500 shadow-sm"
           aria-label="Back to home"
         >
           <ArrowLeft size={18} />
@@ -122,21 +121,20 @@ export default function VisionBoardPage() {
           <Sparkles size={22} className="text-purple-400" />
           Vision Board
         </h1>
-        <div className="w-9" /> {/* spacer for centering */}
+        <div className="w-9" />
       </header>
 
       {/* Empty state */}
       {cards.length === 0 && (
-        <div className="animate-fadeIn mt-16 text-center">
-          <div className="w-16 h-16 rounded-full bg-purple-50 flex items-center justify-center mx-auto mb-4">
+        <div className="animate-fadeIn mt-16 text-center px-4">
+          <div className="w-16 h-16 rounded-full bg-white/80 flex items-center justify-center mx-auto mb-4 shadow-sm">
             <Sparkles size={28} className="text-purple-300" />
           </div>
           <h2 className="text-lg font-bold text-stone-600 mb-2">
             Your future starts here
           </h2>
           <p className="text-sm text-stone-400 mb-6 max-w-xs mx-auto">
-            Add your dreams, goals, and vibes. The Oracle can weave them into
-            something beautiful.
+            Pin your dreams, goals, and vibes. The Oracle can turn your words into images.
           </p>
           <button
             onClick={() => setShowAddModal(true)}
@@ -149,20 +147,20 @@ export default function VisionBoardPage() {
 
       {/* Cards grid */}
       {cards.length > 0 && (
-        <>
+        <div className="px-4 pt-2">
           <VisionCardGrid cards={cards} onCardTap={setSelectedCard} />
 
           {/* Board Reading button — show when 3+ cards */}
           {cards.length >= 3 && (
             <button
               onClick={() => setShowBoardReading(true)}
-              className="w-full mt-6 py-3 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-600 text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+              className="w-full mt-4 py-3 rounded-xl border border-purple-200 bg-white/70 hover:bg-white/90 text-purple-600 text-sm font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm"
             >
               <Eye size={16} />
               What does the Oracle see?
             </button>
           )}
-        </>
+        </div>
       )}
 
       {/* Floating add button */}
@@ -181,7 +179,6 @@ export default function VisionBoardPage() {
         <AddVisionModal
           onClose={() => setShowAddModal(false)}
           onSave={handleAddCard}
-          gameData={gameData}
         />
       )}
 

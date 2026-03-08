@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { VisionCard } from "@/lib/types";
-import { VISION_COLORS } from "@/lib/visionColors";
 import { ModalBackdrop } from "./ModalBackdrop";
-import { X, Pin, Trash2 } from "lucide-react";
+import { Pin, Trash2 } from "lucide-react";
 
 interface VisionCardDetailProps {
   card: VisionCard;
@@ -20,72 +19,81 @@ export function VisionCardDetail({
   onTogglePin,
 }: VisionCardDetailProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showOriginal, setShowOriginal] = useState(false);
-  const color = VISION_COLORS[card.colorIndex % VISION_COLORS.length];
+  const hasImage = !!card.imageBase64;
   const hasAIVersion = card.rawText !== card.weavedText;
 
   return (
     <ModalBackdrop onClose={onClose} backdropStyle="medium">
-      <div
-        className="w-full max-w-sm rounded-2xl p-6 animate-fadeIn"
-        style={{ backgroundColor: color.bg, border: `1px solid ${color.border}` }}
-      >
-        {/* Close */}
-        <div className="flex items-center justify-end mb-3">
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-stone-400 hover:text-stone-600 hover:bg-white/50 transition-colors"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Main text */}
-        <p className="text-base text-stone-600 leading-relaxed mb-4">
-          {showOriginal ? card.rawText : card.weavedText}
-        </p>
-
-        {/* Original text toggle */}
-        {hasAIVersion && (
-          <button
-            onClick={() => setShowOriginal(!showOriginal)}
-            className="text-xs text-stone-400 hover:text-stone-500 transition-colors mb-4"
-          >
-            {showOriginal ? "Show Oracle version" : "Show your words"}
-          </button>
+      <div className="w-full max-w-sm bg-white rounded-2xl overflow-hidden animate-fadeIn shadow-xl">
+        {/* Image */}
+        {hasImage && (
+          <div className="w-full aspect-square overflow-hidden">
+            <img
+              src={card.imageBase64}
+              alt={card.rawText}
+              className="w-full h-full object-cover"
+            />
+          </div>
         )}
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 pt-3 border-t border-stone-200/50">
-          <button
-            onClick={() => onTogglePin(card.id)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-              card.pinned
-                ? "bg-purple-100 text-purple-600"
-                : "bg-white/60 text-stone-500 hover:bg-white/80"
-            }`}
-          >
-            <Pin size={12} className={card.pinned ? "rotate-45" : ""} />
-            {card.pinned ? "Pinned" : "Pin"}
-          </button>
-
-          <div className="flex-1" />
-
-          {showDeleteConfirm ? (
-            <button
-              onClick={() => onDelete(card.id)}
-              className="px-3 py-2 rounded-lg bg-red-100 text-red-600 text-xs font-semibold transition-colors hover:bg-red-200"
-            >
-              Confirm delete
-            </button>
-          ) : (
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-400 hover:text-red-500 hover:bg-white/60 transition-colors"
-            >
-              <Trash2 size={14} />
-            </button>
+        {/* Content */}
+        <div className="p-5">
+          {/* Text fallback for no-image cards */}
+          {!hasImage && (
+            <p className="text-base text-stone-600 leading-relaxed mb-3">
+              {card.weavedText}
+            </p>
           )}
+
+          {/* Oracle text (when image exists and text was woven) */}
+          {hasImage && hasAIVersion && (
+            <p className="text-sm text-stone-500 italic leading-relaxed mb-2">
+              {card.weavedText}
+            </p>
+          )}
+
+          {/* Original words */}
+          <p className="text-xs text-stone-400 mb-4">
+            {hasAIVersion ? `"${card.rawText}"` : card.rawText}
+          </p>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2 pt-3 border-t border-stone-100">
+            <button
+              onClick={() => onTogglePin(card.id)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                card.pinned
+                  ? "bg-purple-100 text-purple-600"
+                  : "bg-stone-100 text-stone-500 hover:bg-stone-200"
+              }`}
+            >
+              <Pin size={12} className={card.pinned ? "rotate-45" : ""} />
+              {card.pinned ? "Pinned" : "Pin"}
+            </button>
+
+            <button
+              onClick={onClose}
+              className="flex-1 py-2 rounded-lg text-xs font-semibold text-stone-500 hover:bg-stone-100 transition-colors"
+            >
+              Close
+            </button>
+
+            {showDeleteConfirm ? (
+              <button
+                onClick={() => onDelete(card.id)}
+                className="px-3 py-2 rounded-lg bg-red-100 text-red-600 text-xs font-semibold transition-colors hover:bg-red-200"
+              >
+                Confirm
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-400 hover:text-red-500 hover:bg-stone-100 transition-colors"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </ModalBackdrop>

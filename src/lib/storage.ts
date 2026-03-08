@@ -1148,7 +1148,7 @@ export function getVisionCards(data: GameData): VisionCard[] {
 }
 
 /** Add a new vision card. Returns updated GameData, or null if at the 20-card cap. */
-export function addVisionCard(data: GameData, rawText: string, weavedText: string): GameData | null {
+export function addVisionCard(data: GameData, rawText: string, weavedText: string, imageBase64?: string): GameData | null {
   const existing = data.visionCards ?? [];
   if (existing.length >= MAX_VISION_CARDS) return null;
 
@@ -1158,6 +1158,7 @@ export function addVisionCard(data: GameData, rawText: string, weavedText: strin
     weavedText: weavedText.trim(),
     colorIndex: existing.length % VISION_COLORS.length,
     createdAt: new Date().toISOString(),
+    ...(imageBase64 ? { imageBase64 } : {}),
   };
 
   const newData: GameData = {

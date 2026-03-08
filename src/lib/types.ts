@@ -108,6 +108,8 @@ export interface VisionCard {
   colorIndex: number;    // index into VISION_COLORS palette (0-5)
   createdAt: string;
   pinned?: boolean;
+  /** Base64 data URL of the card image — either AI-generated or user-uploaded */
+  imageBase64?: string;
 }
 
 /** Snapshot of an AI "Board Reading" — the Oracle's interpretation of the whole board */

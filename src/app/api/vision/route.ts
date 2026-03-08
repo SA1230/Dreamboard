@@ -15,7 +15,7 @@ interface PlayerContext {
 }
 
 interface VisionRequest {
-  action: "weave" | "read";
+  action: "weave" | "read" | "imagine";
   rawText?: string;
   cards?: { rawText: string; weavedText: string }[];
   playerContext?: PlayerContext;
@@ -42,6 +42,22 @@ Examples of good transformations:
 - "make more money lol" → "The kind of comfortable where you don't check the price first. Where generosity comes easy because there's more than enough."
 
 Just return the transformed vision text. Nothing else — no preamble, no explanation, no quotes around it.`;
+
+const IMAGINE_PROMPT_SYSTEM = `You are the Oracle — a dream-visualizer who turns wishes into DALL-E image prompts. Given someone's vision or dream, create a single vivid image prompt that captures the FEELING of what they want.
+
+Rules:
+- Output ONLY the DALL-E prompt. Nothing else.
+- Style: warm, dreamy, soft watercolor or oil painting aesthetic. Think cozy, aspirational, gentle.
+- Focus on the FEELING and SCENE, not text or words in the image.
+- Never include text, labels, logos, or writing in the prompt.
+- Keep it to 1-2 sentences maximum.
+- Make it beautiful and emotionally evocative.
+- Include art style direction (e.g. "soft watercolor", "warm oil painting", "dreamy illustration")
+
+Examples:
+- "I want to travel more" → "A warm watercolor painting of a cobblestone street in a sun-drenched Mediterranean village, with terracotta buildings, climbing flowers, and a single figure walking toward the light at the end of the lane"
+- "get better at cooking" → "A cozy oil painting of a warm kitchen at golden hour, pots bubbling on the stove, herbs hanging from the ceiling, flour-dusted hands kneading dough, warm light streaming through the window"
+- "less anxiety" → "A dreamy soft illustration of a person sitting peacefully on a dock at sunrise, feet dangling over still water, surrounded by gentle mist and warm golden light"`;
 
 function buildReadSystemPrompt(playerContext?: PlayerContext): string {
   let contextLine = "";
@@ -139,6 +155,24 @@ async function callVisionAI(
   }
 }
 
+async function generateImage(prompt: string): Promise<string> {
+  const response = await openai.images.generate({
+    model: "dall-e-3",
+    prompt,
+    n: 1,
+    size: "1024x1024",
+    response_format: "b64_json",
+    quality: "standard",
+  });
+
+  const imageData = response.data[0]?.b64_json;
+  if (!imageData) {
+    throw new Error("No image data from DALL-E");
+  }
+
+  return `data:image/png;base64,${imageData}`;
+}
+
 // --- API Route Handler ---
 
 export async function POST(request: NextRequest) {
@@ -157,6 +191,31 @@ export async function POST(request: NextRequest) {
       );
 
       return NextResponse.json({ weavedText });
+    }
+
+    if (body.action === "imagine") {
+      if (!body.rawText || body.rawText.trim().length === 0) {
+        return NextResponse.json({ error: "No vision text provided" }, { status: 400 });
+      }
+
+      // Step 1: Generate a DALL-E prompt from the user's text
+      const dallePrompt = await callVisionAI(
+        IMAGINE_PROMPT_SYSTEM,
+        body.rawText.trim(),
+        150
+      );
+
+      // Step 2: Also weave the text into a poetic version
+      const weavedText = await callVisionAI(
+        WEAVE_SYSTEM_PROMPT,
+        body.rawText.trim(),
+        200
+      );
+
+      // Step 3: Generate the image
+      const imageBase64 = await generateImage(dallePrompt);
+
+      return NextResponse.json({ weavedText, imageBase64 });
     }
 
     if (body.action === "read") {
