@@ -94,7 +94,7 @@ src/
 │   ├── YesterdayReview.tsx   # Compact yesterday checklist — habit/damage toggles with emoji labels, PP summary row with toast
 │   ├── CaptainQuip.tsx      # Daily Captain quip card — deterministic rotation, 6 priority tiers
 │   ├── LevelUpCelebration.tsx # Level-up celebration animation overlay
-│   ├── ModalBackdrop.tsx    # Shared modal backdrop component (click-to-close, fade animation)
+│   ├── ModalBackdrop.tsx    # Shared modal backdrop (role="dialog", aria-modal, auto-focus, Escape key, click-to-close)
 │   ├── SkipperCharacter.tsx # Inline SVG paper-doll — renders Skipper with layered equipment overlays
 │   ├── StatIcons.tsx        # 20 SVG icons (8 stat defaults + 12 extras for customization)
 │   ├── TrackerProvider.tsx   # Client wrapper for analytics — auto-tracks session_start, page_view, user identification
