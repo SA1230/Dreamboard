@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { ModalBackdrop } from "./ModalBackdrop";
+import { OracleCharacter } from "./OracleCharacter";
 import { X, Sparkles, ImagePlus, Upload, PenLine } from "lucide-react";
 
 interface AddVisionModalProps {
@@ -223,10 +224,12 @@ export function AddVisionModal({ onClose, onSave }: AddVisionModalProps) {
 
         {/* Imagining state (loading) */}
         {state === "imagining" && (
-          <div className="py-12 flex flex-col items-center gap-3">
-            <ImagePlus size={28} className="text-purple-400 animate-oracleShimmer" />
-            <p className="text-sm text-stone-400">The Oracle is imagining...</p>
-            <p className="text-xs text-stone-300">This may take a moment</p>
+          <div className="py-10 flex flex-col items-center gap-3">
+            <div className="animate-oracleFloat w-fit mx-auto">
+              <OracleCharacter size={64} thinking />
+            </div>
+            <p className="text-sm text-stone-500 font-medium">The Oracle is dreaming your vision...</p>
+            <p className="text-xs text-stone-400">Something is taking shape</p>
           </div>
         )}
 

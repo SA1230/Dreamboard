@@ -17,7 +17,8 @@ import { VisionCardGrid } from "@/components/VisionCardGrid";
 import { AddVisionModal } from "@/components/AddVisionModal";
 import { VisionCardDetail } from "@/components/VisionCardDetail";
 import { BoardReadingModal } from "@/components/BoardReadingModal";
-import { ArrowLeft, Sparkles, Plus, Eye } from "lucide-react";
+import { OracleCharacter } from "@/components/OracleCharacter";
+import { ArrowLeft, Sparkles, Plus } from "lucide-react";
 import Link from "next/link";
 
 // Ambient bokeh orbs — soft glowing spheres drifting gently upward
@@ -103,10 +104,10 @@ export default function VisionBoardPage() {
       if (newData) {
         setGameData(newData);
         setShowAddModal(false);
-        showToast("Vision pinned");
+        showToast("Dream held");
         track("vision_added", { hasImage: !!imageBase64, oracleUsed: rawText !== weavedText });
       } else {
-        showToast("Board is full (20 max)");
+        showToast("Your board holds 20 dreams \u2014 release one to make room");
       }
     },
     [showToast]
@@ -118,7 +119,7 @@ export default function VisionBoardPage() {
       const newData = deleteVisionCard(freshData, cardId);
       setGameData(newData);
       setSelectedCard(null);
-      showToast("Vision removed");
+      showToast("Released");
     },
     [showToast]
   );
@@ -132,7 +133,7 @@ export default function VisionBoardPage() {
         const updatedCards = getVisionCards(newData);
         const updatedCard = updatedCards.find((c) => c.id === cardId);
         if (updatedCard) setSelectedCard(updatedCard);
-        showToast(updatedCard?.pinned ? "Pinned" : "Unpinned");
+        showToast(updatedCard?.pinned ? "Anchored" : "Freed");
       }
     },
     [showToast]
@@ -191,15 +192,15 @@ export default function VisionBoardPage() {
 
       {/* Empty state — atmospheric, evocative */}
       {cards.length === 0 && (
-        <div className="animate-fadeIn mt-16 text-center px-4">
-          <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-5 vision-empty-glow">
-            <Sparkles size={32} className="text-purple-300" />
+        <div className="animate-fadeIn mt-12 text-center px-4">
+          <div className="animate-oracleFloat w-fit mx-auto mb-5">
+            <OracleCharacter size={100} />
           </div>
           <h2 className="text-xl font-bold text-white/85 mb-2">
             This board is waiting for your dreams
           </h2>
           <p className="text-sm text-white/50 mb-8 max-w-xs mx-auto leading-relaxed">
-            Describe a wish, a goal, or a vibe. The Oracle can turn your words into vivid images.
+            Describe a wish, a goal, or a vibe — the Oracle will help you see it clearly.
           </p>
           <button
             onClick={() => setShowAddModal(true)}
@@ -223,7 +224,7 @@ export default function VisionBoardPage() {
               onClick={() => setShowBoardReading(true)}
               className="w-full mt-5 py-3.5 rounded-2xl bg-white/8 hover:bg-white/12 border border-white/10 text-purple-300 text-sm font-semibold transition-all flex items-center justify-center gap-2 backdrop-blur-sm"
             >
-              <Eye size={16} />
+              <OracleCharacter size={20} />
               What does the Oracle see?
             </button>
           )}
