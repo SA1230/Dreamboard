@@ -12,6 +12,7 @@ import {
   getLastBoardReading,
 } from "@/lib/storage";
 import { MAX_VISION_CARDS } from "@/lib/visionColors";
+import { track } from "@/lib/tracker";
 import { VisionCardGrid } from "@/components/VisionCardGrid";
 import { AddVisionModal } from "@/components/AddVisionModal";
 import { VisionCardDetail } from "@/components/VisionCardDetail";
@@ -82,6 +83,7 @@ export default function VisionBoardPage() {
         setGameData(newData);
         setShowAddModal(false);
         showToast("Vision pinned");
+        track("vision_added", { hasImage: !!imageBase64, oracleUsed: rawText !== weavedText });
       } else {
         showToast("Board is full (20 max)");
       }

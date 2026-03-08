@@ -50,8 +50,9 @@ The shared state file lives at `~/.claude/projects/-Users-shiroy-Dreamboard-clon
 - **Icons:** lucide-react + 20 hand-drawn SVG icons in `StatIcons.tsx` (no other UI library)
 - **Font:** Nunito (Google Font) loaded via `next/font/google` in `layout.tsx`
 - **Auth:** NextAuth v5 (next-auth@5.0.0-beta.30) with Google OAuth — JWT sessions, profile upsert to Supabase on sign-in
-- **Database:** Supabase (Postgres) — `profiles` table for user data (email, name, phone, avatar, last login). Game data still in localStorage
-- **Storage:** Browser localStorage for game data — no server-side game state yet. `/api/judge`, `/api/auth`, and `/api/profile` are the only backend routes
+- **Database:** Supabase (Postgres) — `profiles` table for user data, `events` table for analytics. Game data still in localStorage
+- **Analytics:** Lightweight event tracking via `src/lib/tracker.ts` → `POST /api/events` → Supabase `events` table. Tracks session_start, page_view, xp_earned, habit/damage toggles, vision cards, shop purchases. Query via `/metrics` skill
+- **Storage:** Browser localStorage for game data — no server-side game state yet. `/api/judge`, `/api/auth`, `/api/profile`, and `/api/events` are the backend routes
 - **AI Judge:** Anthropic Claude Sonnet 4 (fallback: OpenAI GPT-4o) via `/api/judge` route — evaluates activities and awards variable XP
 - **AI Image Gen:** OpenAI DALL-E 3 — generates vision board images from Oracle prompts. Requires `OPENAI_API_KEY` in `.env.local`
 - **Charts:** None — we build visualizations with plain CSS/SVG (no recharts, no d3)
@@ -70,6 +71,7 @@ src/
 │   ├── globals.css         # Tailwind base + 6 custom keyframe animations
 │   ├── api/judge/route.ts  # POST endpoint — sends activity to AI judge, returns XP verdict
 │   ├── api/auth/[...nextauth]/route.ts  # NextAuth catch-all route — handles Google OAuth login/callback/session
+│   ├── api/events/route.ts  # POST endpoint — receives batched analytics events, writes to Supabase events table
 │   ├── api/profile/route.ts # GET/PATCH user profile from Supabase (auth-gated)
 │   ├── api/vision/route.ts  # POST endpoint — Oracle AI for Dream Weaver (enhance visions) and Board Reading (interpret the whole board)
 │   ├── calendar/           # Month-at-a-glance view — daily XP totals with habit/damage icons, tap a day to see detail modal
@@ -87,6 +89,7 @@ src/
 │   ├── YesterdayReview.tsx   # Compact yesterday checklist — habit/damage toggles with emoji labels, PP summary row with toast
 │   ├── SkipperCharacter.tsx # Inline SVG paper-doll — renders Skipper with layered equipment overlays
 │   ├── StatIcons.tsx        # 20 SVG icons (8 stat defaults + 12 extras for customization)
+│   ├── TrackerProvider.tsx   # Client wrapper for analytics — auto-tracks session_start, page_view, user identification
 │   ├── AuthProvider.tsx     # Client wrapper for NextAuth SessionProvider (used in layout.tsx)
 │   ├── UserMenu.tsx         # Login/logout button — shows Google avatar when signed in, "Sign in" when not
 │   ├── VisionCardGrid.tsx   # Masonry grid of vision cards — CSS columns layout, pastel card tints, staggered dreamFadeIn
@@ -102,6 +105,7 @@ src/
     ├── itemSvgs.ts          # SVG content registry for equippable items (placeholder art)
     ├── visionColors.ts      # Vision Board pastel palette (6 colors), MAX_VISION_CARDS constant
     ├── storage.ts           # All data logic: load/save, addXP, leveling, habits, streaks, inventory, vision board, export, etc.
+    ├── tracker.ts           # Client-side analytics — track() queues events, batches to /api/events, identifyUser() links anon→auth
     ├── auth.ts              # NextAuth v5 config — Google OAuth provider, JWT session strategy, Supabase profile upsert on sign-in
     └── supabase.ts          # Supabase client factories — createServiceClient (server, bypasses RLS) + createBrowserClient (client, subject to RLS)
 
@@ -115,6 +119,7 @@ src/types/
     ├── devil/SKILL.md          # /devil — devil's advocate: 4-agent assumption/competition/dropout/technical analysis → pre-mortem failure scenarios
     ├── historian/SKILL.md      # /historian — development archaeology: 4-agent git history analysis → velocity, churn, decisions, growth narrative
     ├── kickoff/SKILL.md        # /kickoff — session start: sync main, read memory, check build/tests/PRs, present briefing
+    ├── metrics/SKILL.md        # /metrics — query analytics data: retention, feature usage, engagement, impact measurement
     ├── observe/SKILL.md        # /observe — field notes: 4-agent codebase observation (shape, drift, connections, outsider view) → observations only, no prescriptions
     ├── persona/SKILL.md        # /persona — persona simulator: 4-agent user-type walkthrough → conflict map + core user verdict
     ├── protocol/SKILL.md       # /protocol — strategic review: 4-agent codebase analysis → tiered build list

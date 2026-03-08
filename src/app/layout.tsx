@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
 import AuthProvider from "@/components/AuthProvider";
+import { TrackerProvider } from "@/components/TrackerProvider";
 import "./globals.css";
 
 const nunito = Nunito({
@@ -35,7 +36,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${nunito.variable} font-sans antialiased bg-[#FDF8F4] text-stone-700 min-h-screen`}>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <TrackerProvider>{children}</TrackerProvider>
+        </AuthProvider>
       </body>
     </html>
   );

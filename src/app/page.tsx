@@ -18,6 +18,7 @@ import { getRankTitle } from "@/lib/ranks";
 import { UserMenu } from "@/components/UserMenu";
 import { CaptainQuip } from "@/components/CaptainQuip";
 import { getCaptainQuip } from "@/lib/captainQuips";
+import { track } from "@/lib/tracker";
 
 export default function Home() {
   const [gameData, setGameData] = useState<GameData | null>(null);
@@ -220,6 +221,13 @@ export default function Home() {
       setGameData(currentData);
       setShowJudge(false);
 
+      // Track XP earned event
+      track("xp_earned", {
+        stats: awards.map((a) => ({ stat: a.stat, amount: a.amount })),
+        totalXP: awards.reduce((sum, a) => sum + a.amount, 0),
+        challengeCompleted: challengeCompleted ?? false,
+      });
+
       // Post-verdict feedback: staggered XP toasts + Today pill pulse
       awards.forEach((award, index) => {
         const def = definitions[award.stat];
@@ -262,6 +270,7 @@ export default function Home() {
       const newData = toggleHabitForDate(gameData, habitKey, dateString);
       setGameData(newData);
       showPpToast(wasCompleted ? "-1 PP" : "+1 PP", wasCompleted ? "#ef4444" : "#10b981");
+      track("habit_toggled", { habitKey, completed: !wasCompleted });
     },
     [gameData, showPpToast]
   );
@@ -273,6 +282,7 @@ export default function Home() {
       const newData = toggleDamageForDate(gameData, damageKey, dateString);
       setGameData(newData);
       showPpToast(wasMarked ? "+1 PP" : "-1 PP", wasMarked ? "#10b981" : "#ef4444");
+      track("damage_toggled", { damageKey, marked: !wasMarked });
     },
     [gameData, showPpToast]
   );
