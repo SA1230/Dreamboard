@@ -120,6 +120,7 @@ src/types/
     ├── protocol/SKILL.md       # /protocol — strategic review: 4-agent codebase analysis → tiered build list
     ├── ship/SKILL.md           # /ship — build, commit, push, auto-merge in one step (invoking = push + merge approval)
     ├── storyteller/SKILL.md    # /storyteller — narrative coherence audit: 4-agent timeline walk (Day 0 → Month 1) → arc map with chapter markers
+    ├── thesis/SKILL.md         # /thesis — thesis examiner: 4-agent stress-test of a product idea before building (user, builder, skeptic, strategist)
     ├── stranger/SKILL.md       # /stranger — first-impression audit: 4-agent new-user simulation → clarity/friction/hook/jargon fixes
     ├── subtractor/SKILL.md     # /subtractor — deletion agent: 4-agent audit for dead code, unused features, over-abstractions → ranked removal list
     ├── wrapup/SKILL.md         # /wrapup — session end: sync main, check dangling work, update CLAUDE.md + memory + strategic lessons
@@ -372,6 +373,18 @@ The Oracle is the AI personality for the Vision Board (`/api/vision/route.ts`). 
 - Ends with a surprising connection the user might not have noticed
 - Never prescribes or advises — just reflects with wonder
 - Can subtly reference player stats/activities if context is provided
+
+## Decision Framework
+
+When the founder proposes a new feature, especially from the vision list (story arc, Judge companion, special effect items, etc.), follow this thinking before building:
+
+1. **Frame it as a thesis.** Every feature is a bet: "If we build X, then Y will happen, because Z." If the thesis isn't clear, help the founder articulate it before writing code.
+2. **Ask "who is this for?"** Is this for the founder (power user), current users, or hypothetical future users? All three are valid, but the implications are different. A feature for the founder is a taste call. A feature for future users is a bet on who those users are.
+3. **Flag untestable bets.** If there's no way to measure whether a feature worked — no analytics, no observable behavior change, no data — say so. An untestable thesis is a bet you can never learn from. This is especially important while the data layer is still being built.
+4. **Consider the cheapest test.** Before building the full version, is there a 10%-effort version that provides 80% of the signal? A partial build, a manual simulation, or even a mockup?
+5. **Name the opportunity cost.** Building X means not building Y. Always consider: is this the best use of the next bet?
+
+For small features and bug fixes, skip this. For big bets that take a session or more, suggest running `/thesis` to formalize the examination.
 
 ## Known Issues & Planned Improvements
 
