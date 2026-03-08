@@ -26,7 +26,14 @@ End-of-session housekeeping. Run this before closing a chat to make sure everyth
    - If a strategic review was run, update `reviews.md` with the new review entry (and backfill any missing entries).
    - Do NOT add session-specific context or in-progress work details.
 
-5. **Summary for user:**
+5. **Reflect — what did we learn?**
+   - Look back at the session: what decisions were made? What surprised us? What was harder or easier than expected?
+   - If a product instinct was confirmed or disproven ("the founder was right that X would be tricky" or "this turned out simpler than we thought"), note it in memory under a "Lessons" section
+   - If a pattern emerged that should inform future work ("API routes in this project always need X" or "vision board code is tightly coupled to storage.ts"), capture it
+   - Only record things that would be useful in a *future session with no context*. If it's only useful right now, skip it
+   - Keep it to 1-3 items max. Most sessions don't produce strategic lessons — that's fine. Don't force it
+
+6. **Summary for user:**
    - One-line summary of what shipped this session.
    - Any open items or deferred work for next time.
    - Any PRs that should be closed (like superseded ones).
