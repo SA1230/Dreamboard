@@ -621,7 +621,7 @@ export default function SettingsPage() {
 
       {/* Enable Damage Confirmation Modal */}
       {pendingDamageKey && (
-        <ModalBackdrop onClose={() => setPendingDamageKey(null)} backdropStyle="dark">
+        <ModalBackdrop onClose={() => setPendingDamageKey(null)} backdropStyle="dark" ariaLabel="Enable daily damage">
           <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-modalSlideUp">
             <div className="flex flex-col items-center text-center">
               <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mb-4">
@@ -657,7 +657,7 @@ export default function SettingsPage() {
 
       {/* Unsaved Changes Modal */}
       {showUnsavedModal && (
-        <ModalBackdrop onClose={() => setShowUnsavedModal(false)} backdropStyle="dark">
+        <ModalBackdrop onClose={() => setShowUnsavedModal(false)} backdropStyle="dark" ariaLabel="Unsaved changes">
           <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-modalSlideUp">
             <div className="flex flex-col items-center text-center">
               <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mb-4">
@@ -694,7 +694,7 @@ export default function SettingsPage() {
 
       {/* Reset Data Confirmation Modal */}
       {showResetDataConfirm && (
-        <ModalBackdrop onClose={() => setShowResetDataConfirm(false)} backdropStyle="dark">
+        <ModalBackdrop onClose={() => setShowResetDataConfirm(false)} backdropStyle="dark" ariaLabel="Reset all data">
           <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-modalSlideUp">
             <div className="flex flex-col items-center text-center">
               <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">

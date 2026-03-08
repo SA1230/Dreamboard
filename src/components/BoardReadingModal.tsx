@@ -85,7 +85,7 @@ export function BoardReadingModal({
   };
 
   return (
-    <ModalBackdrop onClose={onClose} backdropStyle="medium">
+    <ModalBackdrop onClose={onClose} backdropStyle="medium" ariaLabel="Board reading">
       <div className="w-full max-w-sm bg-white rounded-2xl p-6 animate-fadeIn">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">

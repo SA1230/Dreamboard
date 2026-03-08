@@ -146,7 +146,7 @@ export function AddVisionModal({ onClose, onSave }: AddVisionModalProps) {
   };
 
   return (
-    <ModalBackdrop onClose={onClose} align="bottom" backdropStyle="medium">
+    <ModalBackdrop onClose={onClose} align="bottom" backdropStyle="medium" ariaLabel="Add a new vision">
       <div className="w-full max-w-lg bg-white rounded-t-2xl p-6 animate-modalSlideUp">
         {/* Hidden file input */}
         <input

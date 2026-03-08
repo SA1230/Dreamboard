@@ -55,7 +55,7 @@ function DayDetailModal({
   const dateLabel = `${MONTH_NAMES[month]} ${day}, ${year}`;
 
   return (
-    <ModalBackdrop onClose={onClose} align="bottom" backdropStyle="medium">
+    <ModalBackdrop onClose={onClose} align="bottom" backdropStyle="medium" ariaLabel="Day details">
       <div
         className="w-full max-w-lg rounded-t-2xl p-6 pb-8 max-h-[70vh] overflow-y-auto"
         style={{

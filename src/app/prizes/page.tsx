@@ -192,7 +192,7 @@ export default function PrizesPage() {
         <ModalBackdrop
           onClose={closeForm}
           align="bottom"
-          onKeyDown={(e) => e.key === "Escape" && closeForm()}
+          ariaLabel="Prize form"
         >
           {/* Modal — sits at bottom so timeline stays visible above */}
           <div className="w-full max-w-lg bg-[#FDF8F4] rounded-2xl p-5 animate-modalSlideUp shadow-xl mb-12 mx-4">
