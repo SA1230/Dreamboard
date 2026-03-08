@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { GameData, EquipmentSlot, VisibleSlot } from "@/lib/types";
-import { loadGameData, getPointsBalance, getInventory, purchaseItem, equipItem, unequipSlot, getOverallLevel, getTotalLifetimeXP } from "@/lib/storage";
+import { loadGameData, getPointsBalance, getInventory, purchaseItem, equipItem, unequipSlot, getOverallLevel, getTotalLifetimeXP, getMascotName } from "@/lib/storage";
 import { ITEM_CATALOG, RARITY_COLORS, VISIBLE_SLOTS, getItemById } from "@/lib/items";
 import { ITEM_THUMBNAIL_REGISTRY } from "@/lib/itemSvgs";
 import { SkipperCharacter } from "@/components/SkipperCharacter";
@@ -95,7 +95,7 @@ export default function ShopPage() {
           <p className="text-sm font-semibold text-amber-800 mb-1.5">What are Power Points?</p>
           <p className="text-xs text-amber-700/80 leading-relaxed">
             Complete daily habits to earn PP. Damage behaviors subtract PP.
-            Spend PP here to equip Skipper with gear.
+            Spend PP here to equip {getMascotName(gameData)} with gear.
           </p>
           <Link
             href="/settings"

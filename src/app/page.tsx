@@ -354,12 +354,12 @@ export default function Home() {
         </div>
         <h1 className="mb-1 flex items-center justify-center gap-1.5">
           <img
-            src="/logos/dreambound-icon-blue.svg"
+            src="/logos/dreamboard-icon-blue.svg"
             alt=""
             className="h-7 inline-block"
           />
           <img
-            src="/logos/dreambound-wordmark-blue.svg"
+            src="/logos/dreamboard-wordmark-blue.svg"
             alt="Dreamboard"
             className="h-7 inline-block"
           />
@@ -590,7 +590,7 @@ export default function Home() {
       )}
 
       {/* Level Display — Skipper character with progress ring */}
-      <div className={`flex justify-center mb-6${isFirstRun ? "" : ""}`}>
+      <div className="flex justify-center mb-6">
         <div style={{ transform: "scale(1.05)", transformOrigin: "center center" }}>
           <LevelDisplay
             level={overallLevel}

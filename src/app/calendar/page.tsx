@@ -10,7 +10,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, X } from "lucide-react";
 import Link from "next/link";
 import { ModalBackdrop } from "@/components/ModalBackdrop";
 import { HABIT_PAST_LABELS } from "@/lib/habits";
-import { DAMAGE_LABELS } from "@/lib/damage";
+import { DAMAGE_PAST_LABELS } from "@/lib/damage";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -150,7 +150,7 @@ function DayDetailModal({
                     color: "#dc2626",
                   }}
                 >
-                  {DAMAGE_LABELS[damageKey]}
+                  {DAMAGE_PAST_LABELS[damageKey]}
                 </span>
               ))}
             </div>
