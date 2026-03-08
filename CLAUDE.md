@@ -49,8 +49,9 @@ The shared state file lives at `~/.claude/projects/-Users-shiroy-Dreamboard-clon
 - **Styling:** Tailwind CSS 4 — warm earth tones, stone backgrounds, rounded cards
 - **Icons:** lucide-react + 20 hand-drawn SVG icons in `StatIcons.tsx` (no other UI library)
 - **Font:** Nunito (Google Font) loaded via `next/font/google` in `layout.tsx`
-- **Auth:** NextAuth v5 (next-auth@5.0.0-beta.30) with Google OAuth — JWT sessions, no database yet
-- **Storage:** Browser localStorage only — no database, no backend API except `/api/judge` and `/api/auth`
+- **Auth:** NextAuth v5 (next-auth@5.0.0-beta.30) with Google OAuth — JWT sessions, profile upsert to Supabase on sign-in
+- **Database:** Supabase (Postgres) — `profiles` table for user data (email, name, phone, avatar, last login). Game data still in localStorage
+- **Storage:** Browser localStorage for game data — no server-side game state yet. `/api/judge`, `/api/auth`, and `/api/profile` are the only backend routes
 - **AI Judge:** Anthropic Claude Sonnet 4 (fallback: OpenAI GPT-4o) via `/api/judge` route — evaluates activities and awards variable XP
 - **Charts:** None — we build visualizations with plain CSS/SVG (no recharts, no d3)
 - **Animations:** 6 custom keyframe animations in `globals.css` (fadeIn, modalSlideUp, xpPop, levelUpGlow, levelUpText, particle)
@@ -68,6 +69,7 @@ src/
 │   ├── globals.css         # Tailwind base + 6 custom keyframe animations
 │   ├── api/judge/route.ts  # POST endpoint — sends activity to AI judge, returns XP verdict
 │   ├── api/auth/[...nextauth]/route.ts  # NextAuth catch-all route — handles Google OAuth login/callback/session
+│   ├── api/profile/route.ts # GET/PATCH user profile from Supabase (auth-gated)
 │   ├── calendar/           # Month-at-a-glance view — daily XP totals with habit/damage icons, tap a day to see detail modal
 │   ├── settings/           # Customize stat names, descriptions, colors, icons + enable/disable habits & damage
 │   ├── shop/               # Power-Up Store — buy and equip cosmetic items on Skipper
@@ -92,7 +94,11 @@ src/
     ├── items.ts             # Item catalog (ITEM_CATALOG), rarity colors, slot definitions, helpers
     ├── itemSvgs.ts          # SVG content registry for equippable items (placeholder art)
     ├── storage.ts           # All data logic: load/save, addXP, leveling, habits, streaks, inventory, export, etc.
-    └── auth.ts              # NextAuth v5 config — Google OAuth provider, JWT session strategy
+    ├── auth.ts              # NextAuth v5 config — Google OAuth provider, JWT session strategy, Supabase profile upsert on sign-in
+    └── supabase.ts          # Supabase client factories — createServiceClient (server, bypasses RLS) + createBrowserClient (client, subject to RLS)
+
+src/types/
+└── next-auth.d.ts           # TypeScript module augmentation — adds googleSub to Session and JWT types
 
 .claude/
 └── skills/
