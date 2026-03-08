@@ -136,7 +136,7 @@ export function OracleCharacter({
         </g>
       ) : (
         /* Open eyes — full detail with amber irises */
-        <g id="or-eyes-open">
+        <g id="or-eyes-open" className="oracle-eyes-blink">
           {/* Left eye */}
           <circle cx="80" cy="88" r="16" fill="#2a1f3d" />
           <circle cx="80" cy="88" r="12.5" fill="#d4a853" />
