@@ -143,3 +143,4 @@ Organize into:
 - Limit to 10-12 actionable items total across all categories. Prioritize ruthlessly.
 - First-run vs returning user matters enormously. The code has conditional rendering for new users — check what actually shows for each state.
 - Don't suggest adding a tutorial or onboarding wizard. The product should explain itself through its design. If it needs a tutorial, the design is wrong.
+- If `.claude/screenshots/` has recent clean-browser captures (from a `/qa` run), agents may read them via the Read tool as supplementary context — these show exactly what a stranger sees with no localStorage.
