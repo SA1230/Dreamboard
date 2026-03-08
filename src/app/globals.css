@@ -470,6 +470,7 @@
     radial-gradient(ellipse at 80% 20%, rgba(180, 150, 110, 0.3) 0%, transparent 50%),
     radial-gradient(ellipse at 50% 80%, rgba(200, 170, 130, 0.3) 0%, transparent 50%);
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* Vision Board: card shadows for depth — looks pinned to board */

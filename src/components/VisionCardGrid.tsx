@@ -15,56 +15,53 @@ function getCardRotation(cardId: string): number {
   for (let i = 0; i < cardId.length; i++) {
     hash = ((hash << 5) - hash + cardId.charCodeAt(i)) | 0;
   }
-  return (hash % 5) - 2; // -2 to +2 degrees (subtle)
+  return (hash % 5) - 2; // -2 to +2 degrees
 }
 
-// Deterministic washi tape color per card
-const WASHI_COLORS = [
-  { bg: "bg-pink-200/80", border: "border-pink-300/40" },
-  { bg: "bg-amber-200/80", border: "border-amber-300/40" },
-  { bg: "bg-sky-200/80", border: "border-sky-300/40" },
-  { bg: "bg-lime-200/80", border: "border-lime-300/40" },
-  { bg: "bg-violet-200/80", border: "border-violet-300/40" },
-  { bg: "bg-orange-200/80", border: "border-orange-300/40" },
+// Accent bar colors — muted pastels that look like colored tape edges
+const ACCENT_COLORS = [
+  "#E8B4B8", // dusty rose
+  "#B8D4E3", // soft blue
+  "#C5D5A9", // sage green
+  "#E3C9A6", // warm sand
+  "#C4B4D8", // lavender
+  "#E3D4A6", // muted gold
 ];
 
-function getWashiColor(cardId: string): typeof WASHI_COLORS[number] {
+function getAccentColor(cardId: string): string {
   let hash = 0;
   for (let i = 0; i < cardId.length; i++) {
     hash = ((hash << 3) + cardId.charCodeAt(i)) | 0;
   }
-  return WASHI_COLORS[Math.abs(hash) % WASHI_COLORS.length];
+  return ACCENT_COLORS[Math.abs(hash) % ACCENT_COLORS.length];
 }
 
 export function VisionCardGrid({ cards, onCardTap }: VisionCardGridProps) {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-4">
       {cards.map((card, index) => {
         const rotation = getCardRotation(card.id);
-        const washi = getWashiColor(card.id);
+        const accent = getAccentColor(card.id);
         const hasImage = !!card.imageBase64;
         const color = VISION_COLORS[card.colorIndex % VISION_COLORS.length];
 
         return (
           <button
             key={card.id}
-            className="relative text-left transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] animate-dreamFadeIn group"
+            className="text-left transition-all duration-200 hover:scale-[1.02] active:scale-[0.97] animate-dreamFadeIn group"
             style={{
               animationDelay: `${index * 60}ms`,
               transform: `rotate(${rotation}deg)`,
             }}
             onClick={() => onCardTap(card)}
           >
-            {/* Washi tape strip */}
-            <div className={`absolute -top-2 left-1/2 -translate-x-1/2 z-10 w-10 h-4 ${washi.bg} ${washi.border} border rounded-sm`}
-              style={{ transform: `translateX(-50%) rotate(${rotation > 0 ? -3 : 3}deg)` }}
-            />
+            <div className="rounded-lg overflow-hidden vision-card-shadow group-hover:vision-card-shadow-hover transition-shadow">
+              {/* Colored accent bar at top */}
+              <div className="h-1.5" style={{ backgroundColor: accent }} />
 
-            {/* Card */}
-            <div className="bg-white rounded-lg overflow-hidden vision-card-shadow group-hover:vision-card-shadow-hover transition-shadow">
               {hasImage ? (
                 <>
-                  {/* Image card — square photo + caption */}
+                  {/* Image card */}
                   <div className="w-full aspect-[4/5] overflow-hidden">
                     <img
                       src={card.imageBase64}
@@ -72,33 +69,38 @@ export function VisionCardGrid({ cards, onCardTap }: VisionCardGridProps) {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div className="px-2.5 py-2 flex items-center gap-1">
-                    <p className="text-[11px] text-stone-500 leading-snug line-clamp-1 flex-1">
+                  <div className="px-3 py-2.5 bg-white">
+                    <p className="text-xs text-stone-600 leading-snug line-clamp-2 font-medium">
                       {card.rawText}
                     </p>
                     {card.pinned && (
-                      <Pin size={9} className="text-purple-400 rotate-45 shrink-0" />
+                      <Pin size={10} className="text-purple-400 rotate-45 mt-1" />
                     )}
                   </div>
                 </>
               ) : (
                 <>
-                  {/* Text-only card — compact, no square placeholder */}
-                  <div className="px-3 py-4" style={{ backgroundColor: color.bg }}>
-                    <p className="text-sm text-stone-600 leading-relaxed line-clamp-5">
+                  {/* Text card — warm pastel fill, bigger text, more padding */}
+                  <div
+                    className="px-4 py-5 min-h-[120px] flex flex-col justify-center"
+                    style={{ backgroundColor: color.bg }}
+                  >
+                    <p className="text-[15px] text-stone-700 leading-relaxed line-clamp-6">
                       {card.weavedText}
                     </p>
                   </div>
-                  <div className="px-2.5 py-1.5 bg-white flex items-center gap-1">
-                    {card.rawText !== card.weavedText && (
-                      <p className="text-[10px] text-stone-400 leading-snug line-clamp-1 flex-1 italic">
-                        {card.rawText}
-                      </p>
-                    )}
-                    {card.pinned && (
-                      <Pin size={9} className="text-purple-400 rotate-45 shrink-0" />
-                    )}
-                  </div>
+                  {(card.rawText !== card.weavedText || card.pinned) && (
+                    <div className="px-3 py-2 bg-white/80 flex items-center gap-1">
+                      {card.rawText !== card.weavedText && (
+                        <p className="text-[10px] text-stone-400 line-clamp-1 flex-1 italic">
+                          {card.rawText}
+                        </p>
+                      )}
+                      {card.pinned && (
+                        <Pin size={10} className="text-purple-400 rotate-45 shrink-0" />
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </div>
