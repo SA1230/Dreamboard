@@ -1,4 +1,14 @@
-/** Soft pastel palette for Vision Board cards — dreamy, warm, cozy */
+/** Dreamy gradient palette for Vision Board text cards — warm, cozy, Pinterest-style quote cards */
+export const VISION_GRADIENTS = [
+  { name: "Sunset Glow", from: "#FDDCDC", to: "#FCE4EC", accent: "#E8A0A0" },
+  { name: "Lavender Dream", from: "#E8DEF8", to: "#F3EFF7", accent: "#B39DDB" },
+  { name: "Ocean Calm", from: "#D1E7F0", to: "#E8F4F8", accent: "#81B9D4" },
+  { name: "Golden Hour", from: "#FCEABB", to: "#FFF3D6", accent: "#D4A843" },
+  { name: "Sage Whisper", from: "#D5E8D4", to: "#EAF5E9", accent: "#8CB88A" },
+  { name: "Berry Soft", from: "#E8D5E8", to: "#F5ECF5", accent: "#B388B3" },
+] as const;
+
+/** Flat pastel fallback for non-gradient contexts */
 export const VISION_COLORS = [
   { name: "Misty Lavender", bg: "#F3EFF7", border: "#E0D5ED" },
   { name: "Soft Peach", bg: "#FDF0EC", border: "#F5DDD5" },
