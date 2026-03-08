@@ -468,6 +468,57 @@
   50% { transform: translateY(-5px) rotate(1deg); }
 }
 
+/* Oracle: periodic blink — squishes eyes shut briefly */
+.oracle-eyes-blink {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: owlBlink 4s ease-in-out infinite;
+}
+
+@keyframes owlBlink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.08); }
+  97% { transform: scaleY(1); }
+}
+
+/* Oracle: playful wiggle on tap */
+.oracle-wiggle {
+  animation: owlWiggle 0.5s ease-in-out;
+}
+
+@keyframes owlWiggle {
+  0% { transform: rotate(0deg); }
+  15% { transform: rotate(-8deg) scale(1.05); }
+  30% { transform: rotate(6deg) scale(1.05); }
+  45% { transform: rotate(-4deg); }
+  60% { transform: rotate(3deg); }
+  75% { transform: rotate(-1deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* Oracle: sparkle burst particle */
+.oracle-sparkle {
+  position: absolute;
+  pointer-events: none;
+  animation: sparkleFloat 0.8s ease-out forwards;
+}
+
+@keyframes sparkleFloat {
+  0% { opacity: 1; transform: translate(0, 0) scale(0.5); }
+  50% { opacity: 1; transform: translate(var(--sx), var(--sy)) scale(1.2); }
+  100% { opacity: 0; transform: translate(calc(var(--sx) * 1.5), calc(var(--sy) * 1.5)) scale(0); }
+}
+
+/* Oracle: soft pulsing glow behind the owl */
+.oracle-glow {
+  animation: oracleGlow 3s ease-in-out infinite;
+}
+
+@keyframes oracleGlow {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.08); }
+}
+
 /* Vision Board: ethereal gradient background with depth */
 .vision-corkboard {
   background: linear-gradient(170deg, #1e1b2e 0%, #2a2244 30%, #1f2937 60%, #1a1625 100%);

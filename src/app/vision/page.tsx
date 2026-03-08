@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { GameData, VisionCard } from "@/lib/types";
 import {
   loadGameData,
@@ -77,6 +77,74 @@ function BackgroundOrbs() {
         style={{ background: "radial-gradient(circle, rgba(200, 120, 180, 0.3) 0%, transparent 70%)" }} />
       <div className="absolute w-[200px] h-[200px] rounded-full top-[60%] right-[10%] opacity-20"
         style={{ background: "radial-gradient(circle, rgba(100, 180, 240, 0.3) 0%, transparent 70%)" }} />
+    </div>
+  );
+}
+
+// Interactive Oracle on the main board — blinks, wiggles on tap, sparkles burst out
+function OraclePresence({ onReadBoard }: { onReadBoard: () => void }) {
+  const [wiggling, setWiggling] = useState(false);
+  const [sparkles, setSparkles] = useState<{ id: number; sx: number; sy: number }[]>([]);
+  const sparkleIdRef = useRef(0);
+
+  const handleTap = () => {
+    // Wiggle
+    setWiggling(true);
+    setTimeout(() => setWiggling(false), 500);
+
+    // Burst 6 sparkles in random directions
+    const newSparkles = Array.from({ length: 6 }, () => {
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 20 + Math.random() * 25;
+      return {
+        id: sparkleIdRef.current++,
+        sx: Math.cos(angle) * distance,
+        sy: Math.sin(angle) * distance,
+      };
+    });
+    setSparkles(newSparkles);
+    setTimeout(() => setSparkles([]), 800);
+  };
+
+  return (
+    <div className="mt-6 flex flex-col items-center gap-3">
+      {/* Tappable Oracle with glow */}
+      <button
+        onClick={handleTap}
+        className="relative cursor-pointer"
+        aria-label="Tap the Oracle"
+      >
+        {/* Glow behind owl */}
+        <div
+          className="oracle-glow absolute inset-0 -m-4 rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(168, 130, 255, 0.3) 0%, transparent 70%)" }}
+        />
+        <div className={`animate-oracleFloat relative ${wiggling ? "oracle-wiggle" : ""}`}>
+          <OracleCharacter size={80} />
+        </div>
+        {/* Sparkle particles */}
+        {sparkles.map((s) => (
+          <div
+            key={s.id}
+            className="oracle-sparkle"
+            style={{
+              left: "50%",
+              top: "50%",
+              "--sx": `${s.sx}px`,
+              "--sy": `${s.sy}px`,
+            } as React.CSSProperties}
+          >
+            <Sparkles size={10} className="text-purple-300" />
+          </div>
+        ))}
+      </button>
+      <button
+        onClick={onReadBoard}
+        className="w-full py-3.5 rounded-2xl bg-white/8 hover:bg-white/12 border border-white/10 text-purple-300 text-sm font-semibold transition-all flex items-center justify-center gap-2 backdrop-blur-sm"
+      >
+        <Sparkles size={14} />
+        What does the Oracle see?
+      </button>
     </div>
   );
 }
@@ -220,18 +288,7 @@ export default function VisionBoardPage() {
 
           {/* Oracle + Board Reading — show when 3+ cards */}
           {cards.length >= 3 && (
-            <div className="mt-6 flex flex-col items-center gap-3">
-              <div className="animate-oracleFloat">
-                <OracleCharacter size={80} />
-              </div>
-              <button
-                onClick={() => setShowBoardReading(true)}
-                className="w-full py-3.5 rounded-2xl bg-white/8 hover:bg-white/12 border border-white/10 text-purple-300 text-sm font-semibold transition-all flex items-center justify-center gap-2 backdrop-blur-sm"
-              >
-                <Sparkles size={14} />
-                What does the Oracle see?
-              </button>
-            </div>
+            <OraclePresence onReadBoard={() => setShowBoardReading(true)} />
           )}
         </div>
       )}
