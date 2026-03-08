@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { ModalBackdrop } from "./ModalBackdrop";
-import { X, Sparkles, ImagePlus, Upload } from "lucide-react";
+import { X, Sparkles, ImagePlus, Upload, PenLine } from "lucide-react";
 
 interface AddVisionModalProps {
   onClose: () => void;
@@ -19,7 +19,6 @@ function compressImage(dataUrl: string, maxSize: number, quality: number): Promi
       let width = img.width;
       let height = img.height;
 
-      // Scale down to fit within maxSize x maxSize
       if (width > maxSize || height > maxSize) {
         if (width > height) {
           height = Math.round((height * maxSize) / width);
@@ -86,6 +85,34 @@ export function AddVisionModal({ onClose, onSave }: AddVisionModalProps) {
     }
   };
 
+  const handleWeaveTextOnly = async () => {
+    if (!canSubmit) return;
+    setState("imagining");
+
+    try {
+      const response = await fetch("/api/vision", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "weave",
+          rawText: trimmedText,
+        }),
+      });
+
+      if (!response.ok) {
+        // If even text weaving fails, just save the raw text
+        onSave(trimmedText, trimmedText);
+        return;
+      }
+
+      const result = await response.json();
+      onSave(trimmedText, result.weavedText);
+    } catch {
+      // Fallback: save raw text as-is
+      onSave(trimmedText, trimmedText);
+    }
+  };
+
   const handleUpload = () => {
     fileInputRef.current?.click();
   };
@@ -106,7 +133,6 @@ export function AddVisionModal({ onClose, onSave }: AddVisionModalProps) {
         const dataUrl = e.target?.result as string;
         const compressed = await compressImage(dataUrl, 512, 0.8);
         setImageBase64(compressed);
-        // For uploaded images, use user's text as both raw and weaved
         setWeavedText(trimmedText || "My vision");
         setState("preview");
       };
@@ -129,7 +155,7 @@ export function AddVisionModal({ onClose, onSave }: AddVisionModalProps) {
           onChange={handleFileChange}
         />
 
-        {/* Close button */}
+        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-stone-700">
             {state === "preview" ? "Your vision" : "New Vision"}
@@ -153,7 +179,7 @@ export function AddVisionModal({ onClose, onSave }: AddVisionModalProps) {
               maxLength={280}
               autoFocus
             />
-            <div className="flex items-center justify-between mt-1 mb-4">
+            <div className="flex items-center justify-between mt-1 mb-3">
               <span className="text-xs text-stone-400">
                 {trimmedText.length}/280
               </span>
@@ -162,13 +188,14 @@ export function AddVisionModal({ onClose, onSave }: AddVisionModalProps) {
               )}
             </div>
 
-            <div className="flex gap-3">
+            {/* Primary actions */}
+            <div className="flex gap-2 mb-2">
               <button
                 onClick={handleUpload}
                 className="flex-1 py-3 rounded-xl border border-stone-200 text-stone-600 text-sm font-semibold transition-colors hover:bg-stone-50 flex items-center justify-center gap-1.5"
               >
                 <Upload size={14} />
-                Upload a photo
+                Upload
               </button>
               <button
                 onClick={handleImagine}
@@ -179,6 +206,16 @@ export function AddVisionModal({ onClose, onSave }: AddVisionModalProps) {
                 Imagine it
               </button>
             </div>
+
+            {/* Text-only fallback */}
+            <button
+              onClick={handleWeaveTextOnly}
+              disabled={!canSubmit}
+              className="w-full py-2.5 text-xs text-stone-400 hover:text-stone-600 transition-colors flex items-center justify-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <PenLine size={12} />
+              Just pin the words
+            </button>
           </>
         )}
 
@@ -194,7 +231,6 @@ export function AddVisionModal({ onClose, onSave }: AddVisionModalProps) {
         {/* Preview state — show image */}
         {state === "preview" && imageBase64 && (
           <>
-            {/* Image preview */}
             <div className="mb-4 rounded-xl overflow-hidden border border-stone-200">
               <img
                 src={imageBase64}
@@ -203,7 +239,6 @@ export function AddVisionModal({ onClose, onSave }: AddVisionModalProps) {
               />
             </div>
 
-            {/* Weaved text underneath */}
             {weavedText && weavedText !== trimmedText && (
               <p className="text-sm text-stone-500 italic mb-4 px-1 leading-relaxed">
                 {weavedText}

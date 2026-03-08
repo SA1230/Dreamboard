@@ -98,7 +98,8 @@ export default function VisionBoardPage() {
   const lastReading = getLastBoardReading(gameData);
 
   return (
-    <main className="min-h-screen pb-24 max-w-lg mx-auto vision-corkboard">
+    <main className="vision-corkboard pb-24">
+      <div className="max-w-lg mx-auto">
       {/* Toast */}
       {actionToast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-fadeIn">
@@ -173,6 +174,8 @@ export default function VisionBoardPage() {
           <Plus size={24} />
         </button>
       )}
+
+      </div>
 
       {/* Modals */}
       {showAddModal && (
