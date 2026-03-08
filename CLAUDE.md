@@ -53,6 +53,7 @@ The shared state file lives at `~/.claude/projects/-Users-shiroy-Dreamboard-clon
 - **Database:** Supabase (Postgres) — `profiles` table for user data (email, name, phone, avatar, last login). Game data still in localStorage
 - **Storage:** Browser localStorage for game data — no server-side game state yet. `/api/judge`, `/api/auth`, and `/api/profile` are the only backend routes
 - **AI Judge:** Anthropic Claude Sonnet 4 (fallback: OpenAI GPT-4o) via `/api/judge` route — evaluates activities and awards variable XP
+- **AI Image Gen:** OpenAI DALL-E 3 — generates vision board images from Oracle prompts. Requires `OPENAI_API_KEY` in `.env.local`
 - **Charts:** None — we build visualizations with plain CSS/SVG (no recharts, no d3)
 - **Animations:** 6 custom keyframe animations in `globals.css` (fadeIn, modalSlideUp, xpPop, levelUpGlow, levelUpText, particle)
 - **Viewport:** Designed for mobile-width viewports (375–430px). No desktop breakpoints currently — do not add responsive layouts unless asked
