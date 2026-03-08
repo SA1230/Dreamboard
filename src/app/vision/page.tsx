@@ -19,6 +19,45 @@ import { BoardReadingModal } from "@/components/BoardReadingModal";
 import { ArrowLeft, Sparkles, Plus, Eye } from "lucide-react";
 import Link from "next/link";
 
+// Floating luminous particles — warm motes of light drifting upward across the corkboard
+function FloatingParticles() {
+  const particles = Array.from({ length: 15 }, (_, i) => ({
+    left: `${(i * 19 + 7) % 100}%`,
+    size: 2 + (i % 3),
+    delay: i * 1.2,
+    duration: 8 + (i % 5) * 2,
+    // Mix of white, purple, and golden motes
+    color:
+      i % 4 === 0
+        ? "rgba(168, 85, 247, 0.15)"
+        : i % 4 === 1
+          ? "rgba(250, 200, 60, 0.12)"
+          : "rgba(255, 255, 255, 0.2)",
+  }));
+
+  return (
+    <div
+      className="fixed inset-0 pointer-events-none overflow-hidden z-0"
+      aria-hidden="true"
+    >
+      {particles.map((particle, i) => (
+        <div
+          key={i}
+          className="absolute rounded-full vision-particle"
+          style={{
+            left: particle.left,
+            width: `${particle.size}px`,
+            height: `${particle.size}px`,
+            backgroundColor: particle.color,
+            animationDelay: `${particle.delay}s`,
+            animationDuration: `${particle.duration}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function VisionBoardPage() {
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -99,7 +138,8 @@ export default function VisionBoardPage() {
 
   return (
     <main className="vision-corkboard pb-24">
-      <div className="max-w-lg mx-auto">
+      <FloatingParticles />
+      <div className="max-w-lg mx-auto relative z-10">
       {/* Toast */}
       {actionToast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-fadeIn">
@@ -125,23 +165,23 @@ export default function VisionBoardPage() {
         <div className="w-9" />
       </header>
 
-      {/* Empty state */}
+      {/* Empty state — atmospheric, evocative */}
       {cards.length === 0 && (
         <div className="animate-fadeIn mt-16 text-center px-4">
-          <div className="w-16 h-16 rounded-full bg-white/80 flex items-center justify-center mx-auto mb-4 shadow-sm">
-            <Sparkles size={28} className="text-purple-300" />
+          <div className="w-20 h-20 rounded-full bg-white/60 flex items-center justify-center mx-auto mb-5 vision-empty-glow">
+            <Sparkles size={32} className="text-purple-300" />
           </div>
-          <h2 className="text-lg font-bold text-stone-600 mb-2">
-            Your future starts here
+          <h2 className="text-xl font-bold text-stone-600 mb-2">
+            This board is waiting for your dreams
           </h2>
-          <p className="text-sm text-stone-400 mb-6 max-w-xs mx-auto">
-            Pin your dreams, goals, and vibes. The Oracle can turn your words into images.
+          <p className="text-sm text-stone-400 mb-8 max-w-xs mx-auto leading-relaxed">
+            Describe a wish, a goal, or a vibe. The Oracle can turn your words into vivid images.
           </p>
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-6 py-3 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-semibold text-sm transition-colors"
+            className="px-7 py-3.5 rounded-2xl bg-purple-500 hover:bg-purple-600 text-white font-semibold text-sm transition-colors shadow-lg shadow-purple-500/20"
           >
-            Add your first vision
+            Begin dreaming
           </button>
         </div>
       )}
