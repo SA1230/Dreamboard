@@ -11,7 +11,8 @@ import {
 import { getRankTitle } from "@/lib/ranks";
 import { STAT_KEYS } from "@/lib/stats";
 import { ModalBackdrop } from "./ModalBackdrop";
-import { X, Eye, Sparkles } from "lucide-react";
+import { OracleCharacter } from "./OracleCharacter";
+import { X, Sparkles } from "lucide-react";
 
 interface BoardReadingModalProps {
   onClose: () => void;
@@ -90,7 +91,7 @@ export function BoardReadingModal({
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-stone-700 flex items-center gap-2">
-            <Eye size={18} className="text-purple-400" />
+            <OracleCharacter size={24} />
             The Oracle
           </h2>
           <button
@@ -104,9 +105,11 @@ export function BoardReadingModal({
         {/* Idle — prompt to request reading */}
         {state === "idle" && (
           <div className="text-center py-6">
-            <p className="text-sm text-stone-400 mb-5">
-              The Oracle will look at all your visions and tell you what kind of
-              future is taking shape.
+            <div className="animate-oracleFloat w-fit mx-auto mb-4">
+              <OracleCharacter size={72} />
+            </div>
+            <p className="text-sm text-stone-500 mb-5 leading-relaxed">
+              Your dreams speak to each other when you&apos;re not looking. Let the Oracle listen.
             </p>
             <button
               onClick={handleRequestReading}
@@ -120,9 +123,11 @@ export function BoardReadingModal({
 
         {/* Loading */}
         {state === "loading" && (
-          <div className="py-12 flex flex-col items-center gap-3">
-            <Eye size={28} className="text-purple-400 animate-oracleShimmer" />
-            <p className="text-sm text-stone-400">The Oracle is reading...</p>
+          <div className="py-10 flex flex-col items-center gap-3">
+            <div className="animate-oracleFloat w-fit mx-auto">
+              <OracleCharacter size={64} thinking />
+            </div>
+            <p className="text-sm text-stone-500 font-medium">The Oracle is reading your dreams...</p>
           </div>
         )}
 
