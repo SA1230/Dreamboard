@@ -140,6 +140,7 @@ src/types/
     ├── observe/SKILL.md        # /observe — field notes: 4-agent codebase observation (shape, drift, connections, outsider view) → observations only, no prescriptions
     ├── persona/SKILL.md        # /persona — persona simulator: 4-agent user-type walkthrough → conflict map + core user verdict
     ├── protocol/SKILL.md       # /protocol — strategic review: 4-agent codebase analysis → tiered build list
+    ├── qa/SKILL.md             # /qa — visual smoke test: screenshots all routes, checks console errors, reports issues (read-only)
     ├── ship/SKILL.md           # /ship — build, commit, push, auto-merge in one step (invoking = push + merge approval)
     ├── storyteller/SKILL.md    # /storyteller — narrative coherence audit: 4-agent timeline walk (Day 0 → Month 1) → arc map with chapter markers
     ├── thesis/SKILL.md         # /thesis — thesis examiner: 4-agent stress-test of a product idea before building (user, builder, skeptic, strategist)
@@ -330,6 +331,23 @@ This section exists because design changes are the easiest to mess up. Follow th
 - Keep animations subtle and fast — the existing 6 keyframe animations in `globals.css` set the standard
 - When adding new visual elements, match the weight and style of existing ones
 
+### Visual Verification (the reflexive loop)
+
+When verifying UI changes via `preview_screenshot`, evaluate for **quality** — not just correctness. Every screenshot is an opportunity to catch taste issues before they reach `/qa` or `/ship`. Ask yourself:
+
+- **Empty states:** Does this feel inviting or barren? Would a new user feel welcomed or confused?
+- **Contrast & readability:** Is all text easily readable? Would low-vision users struggle?
+- **Visual hierarchy:** Does the eye know where to go first? Is the most important action obvious?
+- **First-timer clarity:** Would someone who's never seen this app understand what to do here?
+- **Spacing & rhythm:** Does the layout feel intentional or accidental? Any awkward gaps or cramping?
+- **Emotional tone:** Does this screen feel like the rest of the app — warm, cozy, RPG companion — or does it break the mood?
+
+Flag quality observations inline during development and fix them before reaching `/qa`. The goal is that by the time `/qa` runs, both structure AND taste have already been addressed.
+
+This is a reflexive loop: change → screenshot → evaluate (structure + quality) → fix → screenshot again → repeat until it looks *good*, not just *not broken*.
+
+**Active calibration:** When a UI decision is ambiguous (spacing, copy, color intensity, layout choice), present the founder with a targeted A/B question — two concrete options, quick to answer. Record their preference in `design-taste.md` (memory directory). Over time, the taste profile gets sharp enough to make most decisions confidently without asking. Consult `design-taste.md` before making aesthetic choices — if a relevant preference exists, follow it.
+
 ## The Judge (Skipper) — Personality & Behavior
 
 This section governs the AI system prompt in `/api/judge/route.ts` and how `JudgeModal` presents the conversation. Do not modify the Judge's personality without explicit approval.
@@ -436,3 +454,4 @@ Universal working preferences (communication style, git conventions, code qualit
 - **Pre-push hook:** `.claude/hooks/pre-push-gate.sh` runs `npm run build && npx vitest run` before any `git push`. Configured in `.claude/settings.local.json` as a `PreToolUse` hook on `Bash` commands. If build or tests fail, the push is blocked.
 - **Dev server preview:** `.claude/launch.json` configures `npm run dev` on port 3000. Use `preview_start` with name `"dev"` to launch, then `preview_screenshot`/`preview_snapshot` to verify UI changes visually.
 - **Self-review in /ship:** The `/ship` skill includes a self-review step that reviews the diff for bugs, debug artifacts, style drift, and type safety issues before committing. Fixes are applied autonomously.
+- **Connected services (MCP connectors):** Canva, Figma, GitHub, Google Drive, Slack, Supabase, and Vercel are connected via Claude Code MCP connectors. Use their native tools (e.g., `mcp__canva__*`, `mcp__slack__*`, `mcp__supabase__*`, `mcp__vercel__*`) instead of API calls when interacting with these services.
