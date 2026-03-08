@@ -176,7 +176,7 @@ export default function VisionBoardPage() {
           <h2 className="text-xl font-bold text-stone-600 mb-2">
             This board is waiting for your dreams
           </h2>
-          <p className="text-sm text-stone-400 mb-8 max-w-xs mx-auto leading-relaxed">
+          <p className="text-sm text-stone-600 mb-8 max-w-xs mx-auto leading-relaxed">
             Describe a wish, a goal, or a vibe. The Oracle can turn your words into vivid images.
           </p>
           <button
