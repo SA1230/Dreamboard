@@ -4,7 +4,7 @@ import { useState } from "react";
 import { FeedEvent, StatKey } from "@/lib/types";
 import { StatDefinition } from "@/lib/stats";
 import { HABIT_DEFINITIONS, HABIT_PAST_LABELS } from "@/lib/habits";
-import { DAMAGE_DEFINITIONS, DAMAGE_LABELS } from "@/lib/damage";
+import { DAMAGE_DEFINITIONS, DAMAGE_PAST_LABELS } from "@/lib/damage";
 import { StatIcon } from "./StatIcons";
 import { Trophy } from "lucide-react";
 
@@ -219,7 +219,7 @@ function HabitRow({ event }: { event: Extract<FeedEvent, { type: "habit_complete
 
 function DamageRow({ event }: { event: Extract<FeedEvent, { type: "damage_marked" | "damage_removed" }> }) {
   const isMarked = event.type === "damage_marked";
-  const label = DAMAGE_LABELS[event.damageKey];
+  const label = DAMAGE_PAST_LABELS[event.damageKey];
   const emoji = DAMAGE_EMOJI[event.damageKey];
 
   return (
