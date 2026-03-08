@@ -87,6 +87,9 @@ src/
 │   ├── PrizeTimeline.tsx    # Horizontal scrollable dual-track timeline — system rewards (top) + user prizes (bottom) with fog of war
 │   ├── MonthCalendar.tsx    # Calendar grid with per-day XP breakdown + habit/damage icons
 │   ├── YesterdayReview.tsx   # Compact yesterday checklist — habit/damage toggles with emoji labels, PP summary row with toast
+│   ├── CaptainQuip.tsx      # Daily Captain quip card — deterministic rotation, 6 priority tiers
+│   ├── LevelUpCelebration.tsx # Level-up celebration animation overlay
+│   ├── ModalBackdrop.tsx    # Shared modal backdrop component (click-to-close, fade animation)
 │   ├── SkipperCharacter.tsx # Inline SVG paper-doll — renders Skipper with layered equipment overlays
 │   ├── StatIcons.tsx        # 20 SVG icons (8 stat defaults + 12 extras for customization)
 │   ├── TrackerProvider.tsx   # Client wrapper for analytics — auto-tracks session_start, page_view, user identification
@@ -104,6 +107,9 @@ src/
     ├── items.ts             # Item catalog (ITEM_CATALOG), rarity colors, slot definitions, helpers
     ├── itemSvgs.ts          # SVG content registry for equippable items (placeholder art)
     ├── visionColors.ts      # Vision Board pastel palette (6 colors), MAX_VISION_CARDS constant
+    ├── habits.ts            # Habit label definitions and shared emoji mappings
+    ├── damage.ts            # Damage label definitions and shared emoji mappings
+    ├── captainQuips.ts      # Daily Captain quip text data — deterministic rotation, 6 priority tiers
     ├── storage.ts           # All data logic: load/save, addXP, leveling, habits, streaks, inventory, vision board, export, etc.
     ├── tracker.ts           # Client-side analytics — track() queues events, batches to /api/events, identifyUser() links anon→auth
     ├── auth.ts              # NextAuth v5 config — Google OAuth provider, JWT session strategy, Supabase profile upsert on sign-in
@@ -180,7 +186,7 @@ src/types/
 - Stat definitions (names, colors, icons) have defaults in `stats.ts` but can be overridden via `customDefinitions` in settings
 - **Stat card dormancy:** Cards dim (opacity + desaturation) if the stat has zero activity this month (`isActiveThisMonth` prop)
 - **Icon fill effect:** StatCard layers an unfilled ghost icon behind a filled icon that clips from bottom-up based on XP progress
-- **Healthy Habits:** A separate system from stat XP — boolean-per-day toggles that don't award XP. Stored as date strings in `healthyHabits`. Users can enable/disable which habits appear via settings (`enabledHabits`). On the homepage, habits are reviewed retrospectively via `YesterdayReview` (yesterday only). The calendar page still uses `HealthyHabits.tsx` for per-day viewing
+- **Healthy Habits:** A separate system from stat XP — boolean-per-day toggles that don't award XP. Stored as date strings in `healthyHabits`. Users can enable/disable which habits appear via settings (`enabledHabits`). On the homepage, habits are reviewed retrospectively via `YesterdayReview` (yesterday only). The calendar page shows per-day habit completion in the day detail modal
 - **Daily Damage:** Mirrors healthy habits but tracks negative behaviors. Same date-string storage pattern. Same retrospective-only pattern on homepage via `YesterdayReview`. Each habit completed = +1 Power Point, each damage marked = -1 Power Point
 - **YesterdayReview panel:** Compact checklist at the top of the homepage — emoji + label checkboxes for yesterday's habits and damage, with a PP summary row. Uses `getYesterdayString()` computed once at render time (handles midnight edge case). Toggles trigger a brief PP toast animation (+1 PP / -1 PP) inline next to the balance
 - **Power Points (AA System):** Inspired by EverQuest's Alternate Advancement. `lifetimeEarned` is always derived from source data (total habit completions), never stored incrementally. `lifetimeSpent` is persisted. Balance is calculated day-by-day chronologically (habits minus damage per day, floored at 0 each day — no debt carries forward), then subtracts `lifetimeSpent`. Spent via the Power-Up Store (`/shop`)
@@ -400,7 +406,6 @@ For small features and bug fixes, skip this. For big bets that take a session or
 These are documented product-level issues. Reference this section when working on related features to avoid reintroducing them or building on top of broken patterns.
 
 - **Habits/Damage disconnected from XP:** Healthy Habits and Daily Damage are a separate system from stat XP. They earn/subtract Power Points but this connection isn't fully visible to users. The YesterdayReview panel helps by showing PP impact inline, but the two halves (Judge + stats vs. habits + damage) still feel like parallel systems.
-- **Judge CTA redundancy:** The compact CTA bar and the floating FAB both open JudgeModal. FAB is hidden for first-run users (they see the hero CTA), but returning users see both the CTA bar and the FAB.
 - **Calendar empty state:** Calendar shows full 31-day grid but early in the month most cells are empty. Looks barren for new users.
 
 ## ⚠ Using this context correctly
