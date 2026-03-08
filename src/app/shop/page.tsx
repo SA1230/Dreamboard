@@ -5,6 +5,7 @@ import { GameData, EquipmentSlot, VisibleSlot } from "@/lib/types";
 import { loadGameData, getPointsBalance, getInventory, purchaseItem, equipItem, unequipSlot, getOverallLevel, getTotalLifetimeXP, getMascotName } from "@/lib/storage";
 import { ITEM_CATALOG, RARITY_COLORS, VISIBLE_SLOTS, getItemById } from "@/lib/items";
 import { ITEM_THUMBNAIL_REGISTRY } from "@/lib/itemSvgs";
+import { track } from "@/lib/tracker";
 import { SkipperCharacter } from "@/components/SkipperCharacter";
 import { ArrowLeft, ShoppingBag, Check, Sword } from "lucide-react";
 import Link from "next/link";
@@ -29,6 +30,8 @@ export default function ShopPage() {
     if (result) {
       setGameData(result);
       showToast("Purchased!");
+      const item = getItemById(itemId);
+      track("shop_purchase", { itemId, itemName: item?.name, rarity: item?.rarity });
     }
   }, [showToast]);
 
