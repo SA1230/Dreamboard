@@ -98,6 +98,25 @@ export interface ChainStep {
   bonusXP: number;
 }
 
+// --- Vision Board ---
+
+/** A single card on the user's Vision Board */
+export interface VisionCard {
+  id: string;
+  rawText: string;       // user's original words
+  weavedText: string;    // Oracle-enhanced (or same as rawText if skipped)
+  colorIndex: number;    // index into VISION_COLORS palette (0-5)
+  createdAt: string;
+  pinned?: boolean;
+}
+
+/** Snapshot of an AI "Board Reading" — the Oracle's interpretation of the whole board */
+export interface BoardReading {
+  id: string;
+  text: string;
+  createdAt: string;
+}
+
 // --- Prize Track ---
 
 /** A user-created IRL prize/reward that unlocks at a specific overall level */
@@ -151,4 +170,8 @@ export interface GameData {
   activeChallenge?: Challenge;
   /** Remaining steps in a challenge chain — auto-issued as each step completes */
   pendingChainSteps?: ChainStep[];
+  /** Vision Board cards — dreams, goals, vibes collected by the user */
+  visionCards?: VisionCard[];
+  /** Most recent Board Reading from the Oracle */
+  lastBoardReading?: BoardReading;
 }

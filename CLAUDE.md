@@ -70,10 +70,12 @@ src/
 │   ├── api/judge/route.ts  # POST endpoint — sends activity to AI judge, returns XP verdict
 │   ├── api/auth/[...nextauth]/route.ts  # NextAuth catch-all route — handles Google OAuth login/callback/session
 │   ├── api/profile/route.ts # GET/PATCH user profile from Supabase (auth-gated)
+│   ├── api/vision/route.ts  # POST endpoint — Oracle AI for Dream Weaver (enhance visions) and Board Reading (interpret the whole board)
 │   ├── calendar/           # Month-at-a-glance view — daily XP totals with habit/damage icons, tap a day to see detail modal
 │   ├── settings/           # Customize stat names, descriptions, colors, icons + enable/disable habits & damage
 │   ├── shop/               # Power-Up Store — buy and equip cosmetic items on Skipper
-│   └── prizes/             # Prize Track — dual-track timeline with system rewards (rank milestones) + user-created IRL prizes
+│   ├── prizes/             # Prize Track — dual-track timeline with system rewards (rank milestones) + user-created IRL prizes
+│   └── vision/             # Vision Board — cozy mood/inspiration board with AI Oracle that weaves dreams into vivid visions
 ├── components/
 │   ├── StatCard.tsx         # One card per stat (icon fill effect, level, XP bar, streak flame, dormant dimming) — read-only, no + button
 │   ├── MonthlyXPSummary.tsx # Monthly XP total with sparkline bar chart + trend vs last month
@@ -85,7 +87,11 @@ src/
 │   ├── SkipperCharacter.tsx # Inline SVG paper-doll — renders Skipper with layered equipment overlays
 │   ├── StatIcons.tsx        # 20 SVG icons (8 stat defaults + 12 extras for customization)
 │   ├── AuthProvider.tsx     # Client wrapper for NextAuth SessionProvider (used in layout.tsx)
-│   └── UserMenu.tsx         # Login/logout button — shows Google avatar when signed in, "Sign in" when not
+│   ├── UserMenu.tsx         # Login/logout button — shows Google avatar when signed in, "Sign in" when not
+│   ├── VisionCardGrid.tsx   # Masonry grid of vision cards — CSS columns layout, pastel card tints, staggered dreamFadeIn
+│   ├── VisionCardDetail.tsx # Tap-to-view detail modal — full text, original/weaved toggle, pin/unpin, delete
+│   ├── AddVisionModal.tsx   # Bottom-sheet modal for creating visions — "Just add it" or "Let the Oracle weave it" AI path
+│   └── BoardReadingModal.tsx # Modal showing the Oracle's interpretation of the whole board
 └── lib/
     ├── types.ts             # TypeScript types: StatKey, HabitKey, Activity, GameData, etc.
     ├── stats.ts             # Stat definitions, ColorPreset palettes, STAT_KEYS array
@@ -93,7 +99,8 @@ src/
     ├── prizes.ts            # System reward constants (derived from ranks), fog-of-war bracket helpers, MAX_USER_PRIZES
     ├── items.ts             # Item catalog (ITEM_CATALOG), rarity colors, slot definitions, helpers
     ├── itemSvgs.ts          # SVG content registry for equippable items (placeholder art)
-    ├── storage.ts           # All data logic: load/save, addXP, leveling, habits, streaks, inventory, export, etc.
+    ├── visionColors.ts      # Vision Board pastel palette (6 colors), MAX_VISION_CARDS constant
+    ├── storage.ts           # All data logic: load/save, addXP, leveling, habits, streaks, inventory, vision board, export, etc.
     ├── auth.ts              # NextAuth v5 config — Google OAuth provider, JWT session strategy, Supabase profile upsert on sign-in
     └── supabase.ts          # Supabase client factories — createServiceClient (server, bypasses RLS) + createBrowserClient (client, subject to RLS)
 
@@ -128,6 +135,8 @@ src/types/
 - **Prize** — `{ id, name, unlockLevel, link?, createdAt }` — a user-created IRL prize that unlocks at a specific overall level
 - **Challenge** — `{ id, description, stat, bonusXP, issuedAt, completedAt?, chainId?, chainIndex?, chainTotal? }` — a Judge-issued side quest. One active at a time. Chain fields are present when the challenge is part of a multi-step chain
 - **ChainStep** — `{ description, stat, bonusXP }` — a pending step in a challenge chain, waiting to be issued
+- **VisionCard** — `{ id, rawText, weavedText, colorIndex, createdAt, pinned? }` — a dream, goal, or vibe on the Vision Board. `rawText` preserves the user's original words; `weavedText` is the Oracle-enhanced version (or same as `rawText` if AI was skipped). `colorIndex` maps to the 6-color pastel palette in `visionColors.ts`
+- **BoardReading** — `{ id, text, createdAt }` — the Oracle's interpretation of the user's whole vision board
 - **FeedEvent** — discriminated union (`type` field) for the activity feed. Types: `xp_gain`, `habit_completed`, `habit_removed`, `damage_marked`, `damage_removed`, `level_up`, `overall_level_up`, `rank_up`, `prize_unlocked`, `challenge_issued`, `challenge_completed`. Each has `id` + `timestamp` + type-specific fields. `xp_gain` events include optional `verdictMessage` with the Judge's verdict text
 - **VisibleSlot** — one of 8 strings: `"head"`, `"chest"`, `"legs"`, `"robe"`, `"hands"`, `"feet"`, `"primary"`, `"secondary"` — SVG layers rendered on Skipper
 - **HiddenSlot** — inventory-only slots (rings, ears, neck, shoulders, back, bracers, ranged) — no visual on character, for future stat items
@@ -146,6 +155,8 @@ src/types/
   - `prizes` is an array of `Prize` objects — user-created IRL rewards that unlock at specific overall levels. Managed via the Prize Track page (`/prizes`)
   - `activeChallenge` is a `Challenge` object — one active side quest issued by the Judge. Only one at a time. Cleared on completion (awards bonus XP) or dismissal. Can be standalone or part of a chain (has `chainId`, `chainIndex`, `chainTotal`). Managed by `issueChallenge`, `issueChallengeChain`, `completeChallenge`, `dismissChallenge` in `storage.ts`
   - `pendingChainSteps` is an array of `ChainStep` objects — remaining steps in a challenge chain. When the current chain step is completed, the next pending step auto-issues as the new `activeChallenge`. Cleared when the chain completes or is dismissed
+  - `visionCards` is an array of `VisionCard` objects — dreams, goals, and vibes on the user's Vision Board. Max 20 cards (enforced by `addVisionCard`). Cards can be pinned (float to top) and have AI-enhanced text from the Oracle
+  - `lastBoardReading` is a `BoardReading` object — the Oracle's most recent interpretation of the user's vision board (patterns, themes, future self portrait)
 - **Per-stat leveling:** Fibonacci-ish XP thresholds per stat. Logic in `storage.ts` (`addXP`, `getXPForNextLevel`)
 - **Overall player level:** EQ-inspired curve (max level 60) with "hell levels" at 30/35/40/45/50/55/59. Logic in `storage.ts` (`getOverallLevel`). Rank titles and colors now live in `ranks.ts` as the single source of truth — do not add rank definitions elsewhere
 
@@ -169,6 +180,7 @@ src/types/
 - **XP Judge:** The sole way to earn XP. A conversational AI (via `/api/judge`) evaluates user-described activities, asks up to 3 follow-up questions, then awards 1-10 XP per stat. Triggered from a centered CTA card on the homepage (hero penguin avatar from `public/mascots/judge-hero.svg`). The hero avatar also appears in the JudgeModal header and next to each judge message
 - **Prize Track:** Separate from the Shop (level-based rewards vs currency-based purchases). Dual-track horizontal timeline: system rewards (rank titles) on top, user-created IRL prizes on bottom, level progression line in the center. Fog of war hides future brackets — current rank bracket is fully visible, next bracket is teased/dimmed, beyond is hidden. Auto-unlock when level is reached (no claim step), generates `prize_unlocked` feed event. `checkPrizeUnlocks` is called on homepage mount and prizes page mount
 - **Challenge system (Side Quests):** The Judge occasionally issues challenges alongside verdicts — one at a time, ~1 in 4-5 verdicts, only when contextually clever. Two formats: standalone (single challenge) and chains (2-3 progressive steps that build on each other). Chains store the first step as `activeChallenge` (with `chainId`, `chainIndex`, `chainTotal`) and remaining steps in `pendingChainSteps`. When a chain step completes, the next step auto-issues. The Judge detects completion during normal activity evaluation. Challenge card is rendered inline in `page.tsx` between the Captain CTA and LevelDisplay — shows "Step X of Y" with progress dots for chains. Challenges generate `challenge_issued` and `challenge_completed` feed events in the ActivityLog
+- **Vision Board:** A cozy, non-gamified mood/inspiration board at `/vision`. Users add vision cards (dreams, goals, vibes) — either as plain text or AI-enhanced by the Oracle. Cards display in a CSS masonry grid (2 columns, `break-inside: avoid`) with 6 soft pastel tints from `visionColors.ts`. The Oracle is a separate AI personality from the Judge — warm, dreamy, poetic instead of sassy. Two AI actions: "weave" (enhance a rough wish into a vivid vision) and "read" (interpret the whole board, find patterns, paint a future-self portrait). 20-card cap encourages curation. Cards can be pinned (float to top). No XP, no stats — the Vision Board is the "why" behind the grind
 - **Error handling:** Errors in `JudgeModal` are caught and displayed as a red system message inline in the chat thread, with a "Dismiss" button. Loading state always resets. Follow this pattern (in-place error display, no retry logic, user-dismissable) for any new API-dependent features
 
 ## Key exports in `stats.ts`
@@ -205,6 +217,11 @@ src/types/
 - `getItemById(id)` — lookup a single item by ID
 - `getItemsBySlot(slot)` — filter items by equipment slot
 - `getAffordableItems(balance, level)` — items the player can buy right now
+
+## Key exports in `visionColors.ts`
+
+- `VISION_COLORS` — array of 6 pastel color objects `{ name, bg, border }` for vision card tints (Misty Lavender, Soft Peach, Pale Sage, Warm Cream, Light Rose, Sky Mist)
+- `MAX_VISION_CARDS = 20` — soft cap on vision cards (encourages curation, prevents localStorage bloat)
 
 ## Key exports in `itemSvgs.ts`
 
@@ -248,6 +265,12 @@ src/types/
 - `issueChallengeChain(data, steps)` — creates a chain: first step becomes `activeChallenge` (with `chainId`, `chainIndex`, `chainTotal`), remaining steps stored in `pendingChainSteps`
 - `completeChallenge(data)` — marks challenge completed, awards bonus XP via `addXP()`, pushes `challenge_completed` feed event. If chain step, auto-issues next step from `pendingChainSteps`. Returns `{ newData, nextChainStep }` or null
 - `dismissChallenge(data)` — removes active challenge and any pending chain steps without completing (no feed event)
+- `getVisionCards(data)` — returns sorted array (pinned first, then newest first)
+- `addVisionCard(data, rawText, weavedText)` — creates card with rotating color, enforces 20-card cap, returns GameData or null
+- `deleteVisionCard(data, cardId)` — removes a vision card
+- `togglePinVisionCard(data, cardId)` — toggle pinned state, returns GameData or null
+- `saveBoardReading(data, text)` — stores the Oracle's latest board reading
+- `getLastBoardReading(data)` — returns most recent BoardReading or null
 
 ## Visual Design System
 
@@ -319,6 +342,34 @@ This section governs the AI system prompt in `/api/judge/route.ts` and how `Judg
 - One activity CAN earn XP across multiple categories (a hike with friends = Vitality + Strength + Charisma + Spirit)
 - Explain the reasoning with personality, not just a number
 - If awarding low XP, be funny about it rather than harsh
+
+## The Oracle (Vision Board) — Personality & Behavior
+
+The Oracle is the AI personality for the Vision Board (`/api/vision/route.ts`). It is a SEPARATE character from the Judge/Captain — warm and dreamy instead of sassy and gruff.
+
+### Contrast with the Judge
+
+| Attribute | Captain (Judge) | Oracle (Vision Board) |
+|-----------|----------------|----------------------|
+| Tone | Sassy, gruff, challenging | Warm, dreamy, poetic |
+| Direction | Backward-looking (what you did) | Forward-looking (what you want) |
+| Role | Evaluator, taskmaster | Dream-keeper, wise friend |
+| Length | Short, punchy (2-4 sentences) | Flowing, evocative (1-3 sentences for weave, 3-5 for reading) |
+
+### Dream Weaver behavior
+
+- Takes rough wishes and makes them vivid with sensory details
+- Never changes the meaning — amplifies the feeling
+- No corporate language (goals, KPIs, optimize) or hustle language (grind, crush it)
+- Matches casual/funny energy with warmth, not forced seriousness
+
+### Board Reading behavior
+
+- Finds patterns and themes across all vision cards
+- Paints a portrait of the user's "future self"
+- Ends with a surprising connection the user might not have noticed
+- Never prescribes or advises — just reflects with wonder
+- Can subtly reference player stats/activities if context is provided
 
 ## Known Issues & Planned Improvements
 

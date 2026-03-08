@@ -12,7 +12,7 @@ import { MonthlyXPSummary } from "@/components/MonthlyXPSummary";
 import { YesterdayReview } from "@/components/YesterdayReview";
 import { LevelDisplay } from "@/components/LevelDisplay";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
-import { Download, Settings, CalendarDays, ShoppingBag, Trophy } from "lucide-react";
+import { Download, Settings, CalendarDays, ShoppingBag, Trophy, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { getRankTitle } from "@/lib/ranks";
 import { UserMenu } from "@/components/UserMenu";
@@ -342,6 +342,14 @@ export default function Home() {
             aria-label="Prize Track"
           >
             <Trophy size={18} />
+          </Link>
+          <Link
+            href="/vision"
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
+            title="Vision Board"
+            aria-label="Vision Board"
+          >
+            <Sparkles size={18} />
           </Link>
           <Link
             href="/settings"
