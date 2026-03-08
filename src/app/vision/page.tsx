@@ -161,7 +161,7 @@ export default function VisionBoardPage() {
   const lastReading = getLastBoardReading(gameData);
 
   return (
-    <main className="vision-corkboard pb-24">
+    <main className="vision-corkboard pb-6">
       <BackgroundOrbs />
       <FloatingParticles />
       <div className="max-w-3xl mx-auto relative z-10">
@@ -218,15 +218,20 @@ export default function VisionBoardPage() {
             <VisionCardGrid cards={cards} onCardTap={setSelectedCard} />
           </div>
 
-          {/* Board Reading button — show when 3+ cards */}
+          {/* Oracle + Board Reading — show when 3+ cards */}
           {cards.length >= 3 && (
-            <button
-              onClick={() => setShowBoardReading(true)}
-              className="w-full mt-5 py-3.5 rounded-2xl bg-white/8 hover:bg-white/12 border border-white/10 text-purple-300 text-sm font-semibold transition-all flex items-center justify-center gap-2 backdrop-blur-sm"
-            >
-              <OracleCharacter size={20} />
-              What does the Oracle see?
-            </button>
+            <div className="mt-6 flex flex-col items-center gap-3">
+              <div className="animate-oracleFloat">
+                <OracleCharacter size={80} />
+              </div>
+              <button
+                onClick={() => setShowBoardReading(true)}
+                className="w-full py-3.5 rounded-2xl bg-white/8 hover:bg-white/12 border border-white/10 text-purple-300 text-sm font-semibold transition-all flex items-center justify-center gap-2 backdrop-blur-sm"
+              >
+                <Sparkles size={14} />
+                What does the Oracle see?
+              </button>
+            </div>
           )}
         </div>
       )}
