@@ -557,6 +557,39 @@
   50% { translate: 0 -3px; }
 }
 
+/* Vision Board: floating board — chunky Toy Story-esque object bobbing in space */
+.vision-board-frame {
+  animation: boardBob 4s ease-in-out infinite;
+  position: relative;
+  border-radius: 18px;
+  /* Warm-ish surface — slightly lighter than background so it reads as a physical thing */
+  background: linear-gradient(170deg, #352d58 0%, #2a2348 50%, #231d3e 100%);
+  /* Thick visible border — the "rim" of the board */
+  border: 4px solid #4a3d78;
+  border-bottom-color: #2a2048;
+  border-right-color: #322860;
+  box-shadow:
+    /* === CHUNKY 3D EDGE — the board's visible thickness === */
+    0 5px 0 0 #3a3060,
+    0 6px 0 0 #332a55,
+    0 7px 0 0 #2c244a,
+    0 8px 0 0 #251e3f,
+    0 9px 0 0 #1e1835,
+    /* Ambient floor shadow — grounds the floating object */
+    0 20px 50px rgba(0, 0, 0, 0.55),
+    0 10px 20px rgba(0, 0, 0, 0.35),
+    /* Top-left highlight bevel — catches light, sells the 3D */
+    inset 0 2px 0 rgba(255, 255, 255, 0.12),
+    inset 2px 0 0 rgba(255, 255, 255, 0.07),
+    /* Subtle purple ambient glow — magical float */
+    0 0 60px 8px rgba(120, 80, 200, 0.08);
+}
+
+@keyframes boardBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
 /* Vision Board: glassmorphism for modal action bars */
 .vision-glass {
   background: rgba(255, 255, 255, 0.75);

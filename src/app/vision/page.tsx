@@ -210,10 +210,12 @@ export default function VisionBoardPage() {
         </div>
       )}
 
-      {/* Cards grid */}
+      {/* Cards grid — floating board */}
       {cards.length > 0 && (
-        <div className="px-5 pt-1">
-          <VisionCardGrid cards={cards} onCardTap={setSelectedCard} />
+        <div className="px-4 pt-1">
+          <div className="vision-board-frame p-4">
+            <VisionCardGrid cards={cards} onCardTap={setSelectedCard} />
+          </div>
 
           {/* Board Reading button — show when 3+ cards */}
           {cards.length >= 3 && (
