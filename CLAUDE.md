@@ -113,7 +113,11 @@ src/types/
 └── next-auth.d.ts           # TypeScript module augmentation — adds googleSub to Session and JWT types
 
 .claude/
+├── launch.json              # Dev server config for Preview tools (npm run dev, port 3000)
+├── hooks/
+│   └── pre-push-gate.sh     # Pre-push hook: runs build + tests before any git push
 └── skills/
+    ├── agent-zero/SKILL.md     # /agent-zero — setup audit: 4-agent infrastructure analysis (config, memory, skills, patterns) → setup score + auto-fix
     ├── builder/SKILL.md        # /builder — agent architect: analyzes friction in git/memory/code, proposes new skills from evidence
     ├── delight/SKILL.md        # /delight — delight audit: 4-agent emotional/voice/craft/surprise analysis → ranked delight opportunities
     ├── devil/SKILL.md          # /devil — devil's advocate: 4-agent assumption/competition/dropout/technical analysis → pre-mortem failure scenarios
@@ -409,48 +413,14 @@ The sections above are a **map, not the source of truth.** They may be outdated.
 
 ## How to work with me
 
-0. **Never push to remote without my explicit approval.** After committing, always stop and ask "Ready to push?" before running `git push`. This applies every single time — no exceptions, no assumptions.
-
-0.5. **Always sync main before starting new work.** At the start of every session or before creating a new branch, run `git fetch origin && git checkout main && git pull origin main` to make sure local main is up to date with remote. Then branch from there.
-
-1. **Explain your plan in plain English before writing any code.** Before touching a single file, tell me what you're going to do in 2-3 sentences. Say which files you'll change and why. Wait for my approval before proceeding.
-
-2. **Make the smallest possible change that solves the problem.** Do not refactor, reorganize, or "improve" anything beyond what I asked for. One task = one focused change. If you think something else should be fixed, mention it separately — don't just do it.
-
-3. **If my request is ambiguous, ask me one clarifying question before starting.** Never guess what I meant. Ask a single, specific question. Do not ask multiple questions at once.
-
-4. **After every change, tell me how to verify it works.** Give me the exact command to run or the exact thing to check in the browser. Do not assume I know how to test things.
-
-5. **Do one step at a time — never chain multiple changes together.** If a task has multiple steps, do step 1, show me the result, then move to step 2. Do not combine steps into one giant edit.
-
-6. **When I hit an error, explain what the error means before fixing it.** Read the error message to me in plain English. Tell me why it happened. Then fix it. This is how I learn.
-
-7. **Use plain, descriptive names for everything.** Variables, functions, files — name them so a beginner can guess what they do. No abbreviations, no single-letter variables, no clever names.
-
-8. **Keep your responses short.** No preambles. No summaries of what you already did. No "Great question!" filler. Just the plan, the code, and the verification step.
-
-9. **Never install a new dependency without telling me why.** If you want to add a package, library, or tool, explain in one sentence what it does and why we need it. Wait for my OK.
-
-10. **Never delete code or files without asking first.** If you think something should be removed, tell me what and why. Let me decide.
-
-11. **When you run a terminal command, tell me what it does.** Before or after running a command, give me a one-line explanation. Example: "This starts the development server so we can see changes in the browser."
-
-12. **Write commit messages that explain why, not just what.** Bad: "Update index.js" Good: "Add login button to homepage so users can sign in"
+Universal working preferences (communication style, git conventions, code quality rules) live in `~/.claude/CLAUDE.md` and apply to all projects. The rules below are Dreamboard-specific:
 
 13. **Match the patterns already in the codebase.** If the project uses a certain file structure, naming convention, or coding style, follow it. Do not introduce new patterns without discussing it first.
 
-14. **When showing me code, point to the exact file and line number.** Don't just say "in the component." Say "in src/components/Header.jsx, line 42."
-
-15. **Prefer the simplest solution that works.** Do not over-engineer. No premature abstractions. If a simple if/else works, don't build a lookup table. We can refactor later when there's a real reason to.
-
-16. **Read the relevant file before editing it.** Always read the current state of a file before making changes. Do not assume you know what's in it from earlier in the conversation.
-
-17. **When something could be done multiple ways, pick one and tell me why.** Do not present me with three options and ask me to choose unless the tradeoffs genuinely matter. You're the expert — make a recommendation and explain your reasoning briefly.
-
-18. **Pin specific versions when installing packages.** Use exact version numbers, not ranges. Example: `npm install react@18.2.0` not `npm install react`.
-
-19. **After completing a task, give me a one-line summary of what changed.** Just one line. Example: "Added a /login route that shows a username and password form." No bullet-point recaps.
-
-20. **If I ask "what does this do?", explain it like I'm smart but unfamiliar.** Don't dumb it down to the point of being patronizing. Don't assume jargon I haven't used. Find the middle ground — clear, accurate, concise.
-
 21. **Keep CLAUDE.md accurate after structural changes.** If your change adds a new file, new type, new exported function, or changes a key pattern documented in CLAUDE.md, update the relevant section of CLAUDE.md in the same commit. Don't update it for small bug fixes or styling tweaks — only when the doc would become misleading without the update.
+
+## Infrastructure
+
+- **Pre-push hook:** `.claude/hooks/pre-push-gate.sh` runs `npm run build && npx vitest run` before any `git push`. Configured in `.claude/settings.local.json` as a `PreToolUse` hook on `Bash` commands. If build or tests fail, the push is blocked.
+- **Dev server preview:** `.claude/launch.json` configures `npm run dev` on port 3000. Use `preview_start` with name `"dev"` to launch, then `preview_screenshot`/`preview_snapshot` to verify UI changes visually.
+- **Self-review in /ship:** The `/ship` skill includes a self-review step that reviews the diff for bugs, debug artifacts, style drift, and type safety issues before committing. Fixes are applied autonomously.
