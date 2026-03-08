@@ -20,21 +20,25 @@ import { BoardReadingModal } from "@/components/BoardReadingModal";
 import { ArrowLeft, Sparkles, Plus, Eye } from "lucide-react";
 import Link from "next/link";
 
-// Floating luminous particles — warm motes of light drifting upward across the corkboard
+// Ambient bokeh orbs — soft glowing spheres drifting gently upward
 function FloatingParticles() {
-  const particles = Array.from({ length: 15 }, (_, i) => ({
-    left: `${(i * 19 + 7) % 100}%`,
-    size: 2 + (i % 3),
-    delay: i * 1.2,
-    duration: 8 + (i % 5) * 2,
-    // Mix of white, purple, and golden motes
-    color:
-      i % 4 === 0
-        ? "rgba(168, 85, 247, 0.15)"
-        : i % 4 === 1
-          ? "rgba(250, 200, 60, 0.12)"
-          : "rgba(255, 255, 255, 0.2)",
-  }));
+  const particles = Array.from({ length: 12 }, (_, i) => {
+    const colors = [
+      "rgba(168, 130, 255, 0.12)",  // soft purple
+      "rgba(130, 180, 255, 0.10)",  // soft blue
+      "rgba(255, 180, 200, 0.10)",  // soft pink
+      "rgba(255, 210, 130, 0.08)",  // warm gold
+      "rgba(180, 220, 255, 0.08)",  // ice blue
+    ];
+    return {
+      left: `${(i * 23 + 5) % 95}%`,
+      size: 6 + (i % 4) * 4,
+      delay: i * 1.8,
+      duration: 12 + (i % 5) * 3,
+      color: colors[i % colors.length],
+      peakOpacity: 0.3 + (i % 3) * 0.1,
+    };
+  });
 
   return (
     <div
@@ -44,7 +48,7 @@ function FloatingParticles() {
       {particles.map((particle, i) => (
         <div
           key={i}
-          className="absolute rounded-full vision-particle"
+          className="absolute vision-particle"
           style={{
             left: particle.left,
             width: `${particle.size}px`,
@@ -52,9 +56,26 @@ function FloatingParticles() {
             backgroundColor: particle.color,
             animationDelay: `${particle.delay}s`,
             animationDuration: `${particle.duration}s`,
-          }}
+            "--particle-peak": particle.peakOpacity,
+          } as React.CSSProperties}
         />
       ))}
+    </div>
+  );
+}
+
+// Ambient background glow orbs — large static blurred shapes for depth
+function BackgroundOrbs() {
+  return (
+    <div className="fixed inset-0 pointer-events-none z-0" aria-hidden="true">
+      <div className="absolute w-[300px] h-[300px] rounded-full top-[-50px] left-[-80px] opacity-30"
+        style={{ background: "radial-gradient(circle, rgba(120, 80, 200, 0.4) 0%, transparent 70%)" }} />
+      <div className="absolute w-[250px] h-[250px] rounded-full top-[30%] right-[-60px] opacity-20"
+        style={{ background: "radial-gradient(circle, rgba(80, 140, 220, 0.4) 0%, transparent 70%)" }} />
+      <div className="absolute w-[350px] h-[350px] rounded-full bottom-[10%] left-[20%] opacity-15"
+        style={{ background: "radial-gradient(circle, rgba(200, 120, 180, 0.3) 0%, transparent 70%)" }} />
+      <div className="absolute w-[200px] h-[200px] rounded-full top-[60%] right-[10%] opacity-20"
+        style={{ background: "radial-gradient(circle, rgba(100, 180, 240, 0.3) 0%, transparent 70%)" }} />
     </div>
   );
 }
@@ -140,28 +161,29 @@ export default function VisionBoardPage() {
 
   return (
     <main className="vision-corkboard pb-24">
+      <BackgroundOrbs />
       <FloatingParticles />
-      <div className="max-w-lg mx-auto relative z-10">
+      <div className="max-w-3xl mx-auto relative z-10">
       {/* Toast */}
       {actionToast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-fadeIn">
-          <div className="px-4 py-2 rounded-full bg-stone-700 text-white text-sm font-semibold shadow-lg">
+          <div className="px-4 py-2 rounded-full bg-white/15 backdrop-blur-md text-white/90 text-sm font-semibold shadow-lg border border-white/10">
             {actionToast}
           </div>
         </div>
       )}
 
       {/* Header */}
-      <header className="flex items-center justify-between p-4 pb-2">
+      <header className="flex items-center justify-between px-4 pt-5 pb-4">
         <Link
           href="/"
-          className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/70 hover:bg-white/90 transition-colors text-stone-400 hover:text-stone-500 shadow-sm"
+          className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors text-white/50 hover:text-white/70 border border-white/5"
           aria-label="Back to home"
         >
           <ArrowLeft size={18} />
         </Link>
-        <h1 className="text-2xl font-extrabold text-stone-700 flex items-center gap-2">
-          <Sparkles size={22} className="text-purple-400" />
+        <h1 className="text-2xl font-extrabold text-white/90 flex items-center gap-2">
+          <Sparkles size={22} className="text-purple-300" />
           Vision Board
         </h1>
         <div className="w-9" />
@@ -170,18 +192,18 @@ export default function VisionBoardPage() {
       {/* Empty state — atmospheric, evocative */}
       {cards.length === 0 && (
         <div className="animate-fadeIn mt-16 text-center px-4">
-          <div className="w-20 h-20 rounded-full bg-white/60 flex items-center justify-center mx-auto mb-5 vision-empty-glow">
+          <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-5 vision-empty-glow">
             <Sparkles size={32} className="text-purple-300" />
           </div>
-          <h2 className="text-xl font-bold text-stone-600 mb-2">
+          <h2 className="text-xl font-bold text-white/85 mb-2">
             This board is waiting for your dreams
           </h2>
-          <p className="text-sm text-stone-600 mb-8 max-w-xs mx-auto leading-relaxed">
+          <p className="text-sm text-white/50 mb-8 max-w-xs mx-auto leading-relaxed">
             Describe a wish, a goal, or a vibe. The Oracle can turn your words into vivid images.
           </p>
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-7 py-3.5 rounded-2xl bg-purple-500 hover:bg-purple-600 text-white font-semibold text-sm transition-colors shadow-lg shadow-purple-500/20"
+            className="px-7 py-3.5 rounded-2xl bg-purple-500 hover:bg-purple-400 text-white font-semibold text-sm transition-colors shadow-lg shadow-purple-500/30"
           >
             Begin dreaming
           </button>
@@ -190,14 +212,14 @@ export default function VisionBoardPage() {
 
       {/* Cards grid */}
       {cards.length > 0 && (
-        <div className="px-4 pt-2">
+        <div className="px-5 pt-1">
           <VisionCardGrid cards={cards} onCardTap={setSelectedCard} />
 
           {/* Board Reading button — show when 3+ cards */}
           {cards.length >= 3 && (
             <button
               onClick={() => setShowBoardReading(true)}
-              className="w-full mt-4 py-3 rounded-xl border border-purple-200 bg-white/70 hover:bg-white/90 text-purple-600 text-sm font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm"
+              className="w-full mt-5 py-3.5 rounded-2xl bg-white/8 hover:bg-white/12 border border-white/10 text-purple-300 text-sm font-semibold transition-all flex items-center justify-center gap-2 backdrop-blur-sm"
             >
               <Eye size={16} />
               What does the Oracle see?
@@ -210,7 +232,7 @@ export default function VisionBoardPage() {
       {cards.length > 0 && !atLimit && (
         <button
           onClick={() => setShowAddModal(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-purple-500 hover:bg-purple-600 text-white flex items-center justify-center shadow-lg transition-colors z-40"
+          className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-purple-500 hover:bg-purple-400 text-white flex items-center justify-center shadow-lg shadow-purple-500/30 transition-colors z-40"
           aria-label="Add a vision"
         >
           <Plus size={24} />

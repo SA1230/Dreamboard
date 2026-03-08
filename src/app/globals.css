@@ -458,54 +458,45 @@
   100% { opacity: 0; transform: scale(0.97) translateY(-8px); }
 }
 
-/* Vision Board: corkboard background with texture */
+/* Vision Board: ethereal gradient background with depth */
 .vision-corkboard {
-  background-color: #C4A882;
-  background-image:
-    /* Fine grain noise via tiny repeated gradients */
-    repeating-conic-gradient(rgba(160, 130, 90, 0.08) 0% 25%, transparent 0% 50%) 0 0 / 4px 4px,
-    repeating-conic-gradient(rgba(190, 160, 120, 0.06) 0% 25%, transparent 0% 50%) 2px 2px / 6px 6px,
-    /* Broad color variation */
-    radial-gradient(ellipse at 20% 50%, rgba(210, 180, 140, 0.4) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(180, 150, 110, 0.3) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 80%, rgba(200, 170, 130, 0.3) 0%, transparent 50%);
+  background: linear-gradient(170deg, #1e1b2e 0%, #2a2244 30%, #1f2937 60%, #1a1625 100%);
   min-height: 100vh;
   min-height: 100dvh;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Vision Board: card shadows with accent-colored hover glow */
+/* Vision Board: floating card with ambient glow */
 .vision-card-shadow {
   box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.06),
-    0 4px 16px rgba(0, 0, 0, 0.10),
-    0 1px 2px rgba(120, 90, 50, 0.08);
+    0 0 20px 2px var(--card-glow, rgba(180, 160, 220, 0.12)),
+    0 4px 24px rgba(0, 0, 0, 0.3),
+    0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 .group:hover .vision-card-shadow {
   box-shadow:
-    0 0 20px 4px var(--card-glow, rgba(180, 160, 200, 0.15)),
-    0 2px 6px rgba(0, 0, 0, 0.08),
-    0 8px 24px rgba(0, 0, 0, 0.14),
-    0 2px 4px rgba(120, 90, 50, 0.10);
+    0 0 32px 8px var(--card-glow, rgba(180, 160, 220, 0.25)),
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 /* Pinned card golden ring */
 .vision-card-pinned.vision-card-shadow {
   box-shadow:
-    0 0 0 1.5px rgba(245, 200, 60, 0.35),
-    0 0 10px 1px rgba(245, 200, 60, 0.08),
-    0 1px 3px rgba(0, 0, 0, 0.06),
-    0 4px 16px rgba(0, 0, 0, 0.10),
-    0 1px 2px rgba(120, 90, 50, 0.08);
+    0 0 0 1.5px rgba(245, 200, 60, 0.4),
+    0 0 24px 4px rgba(245, 200, 60, 0.1),
+    0 0 20px 2px var(--card-glow, rgba(180, 160, 220, 0.12)),
+    0 4px 24px rgba(0, 0, 0, 0.3);
 }
 
 .group:hover .vision-card-pinned.vision-card-shadow {
   box-shadow:
-    0 0 0 1.5px rgba(245, 200, 60, 0.5),
-    0 0 20px 4px var(--card-glow, rgba(180, 160, 200, 0.15)),
-    0 2px 6px rgba(0, 0, 0, 0.08),
-    0 8px 24px rgba(0, 0, 0, 0.14),
-    0 2px 4px rgba(120, 90, 50, 0.10);
+    0 0 0 1.5px rgba(245, 200, 60, 0.55),
+    0 0 32px 8px rgba(245, 200, 60, 0.15),
+    0 0 32px 8px var(--card-glow, rgba(180, 160, 220, 0.2)),
+    0 8px 32px rgba(0, 0, 0, 0.35);
 }
 
 /* Vision Board: dreamy card entrance — slower, softer fadeIn with upward drift */
@@ -535,22 +526,24 @@
   50% { opacity: 1; }
 }
 
-/* Vision Board: floating ambient particles — luminous motes drifting upward */
+/* Vision Board: soft bokeh orbs drifting gently */
 .vision-particle {
   animation: floatParticle linear infinite;
-  bottom: -10px;
+  bottom: -20px;
+  border-radius: 50%;
+  filter: blur(1px);
 }
 
 @keyframes floatParticle {
   0% {
     opacity: 0;
-    transform: translateY(0) translateX(0);
+    transform: translateY(0) translateX(0) scale(0.8);
   }
-  10% { opacity: 0.6; }
-  85% { opacity: 0.3; }
+  15% { opacity: var(--particle-peak, 0.4); }
+  80% { opacity: calc(var(--particle-peak, 0.4) * 0.5); }
   100% {
     opacity: 0;
-    transform: translateY(-100vh) translateX(30px);
+    transform: translateY(-100vh) translateX(40px) scale(1.2);
   }
 }
 
@@ -577,8 +570,8 @@
 }
 
 @keyframes emptyGlow {
-  0%, 100% { box-shadow: 0 0 20px 8px rgba(168, 85, 247, 0.08); }
-  50% { box-shadow: 0 0 40px 16px rgba(168, 85, 247, 0.18); }
+  0%, 100% { box-shadow: 0 0 30px 12px rgba(168, 85, 247, 0.15); }
+  50% { box-shadow: 0 0 60px 24px rgba(168, 85, 247, 0.3); }
 }
 
 body {
