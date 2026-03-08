@@ -1,8 +1,9 @@
-import { GameData, StatKey, HabitKey, DamageKey, Activity, StatProgress, CustomStatOverride, FeedEvent, PlayerInventory, EquipmentSlot, Prize, Challenge, ChainStep } from "./types";
+import { GameData, StatKey, HabitKey, DamageKey, Activity, StatProgress, CustomStatOverride, FeedEvent, PlayerInventory, EquipmentSlot, Prize, Challenge, ChainStep, VisionCard, BoardReading } from "./types";
 import { getItemById } from "./items";
 import { STAT_KEYS, STAT_DEFINITIONS, StatDefinition, COLOR_PRESETS } from "./stats";
 import { getRankTitle } from "./ranks";
 import { MAX_USER_PRIZES } from "./prizes";
+import { MAX_VISION_CARDS, VISION_COLORS } from "./visionColors";
 
 const STORAGE_KEY = "dreamboard-data";
 
@@ -1130,4 +1131,82 @@ export function dismissChallenge(data: GameData): GameData {
   };
   saveGameData(newData);
   return newData;
+}
+
+// --- Vision Board ---
+
+/** Get all vision cards, sorted with pinned first, then newest first. */
+export function getVisionCards(data: GameData): VisionCard[] {
+  const cards = [...(data.visionCards ?? [])];
+  return cards.sort((a, b) => {
+    // Pinned cards first
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    // Then newest first
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+}
+
+/** Add a new vision card. Returns updated GameData, or null if at the 20-card cap. */
+export function addVisionCard(data: GameData, rawText: string, weavedText: string, imageBase64?: string): GameData | null {
+  const existing = data.visionCards ?? [];
+  if (existing.length >= MAX_VISION_CARDS) return null;
+
+  const card: VisionCard = {
+    id: crypto.randomUUID(),
+    rawText: rawText.trim(),
+    weavedText: weavedText.trim(),
+    colorIndex: existing.length % VISION_COLORS.length,
+    createdAt: new Date().toISOString(),
+    ...(imageBase64 ? { imageBase64 } : {}),
+  };
+
+  const newData: GameData = {
+    ...data,
+    visionCards: [...existing, card],
+  };
+  saveGameData(newData);
+  return newData;
+}
+
+/** Delete a vision card by ID. */
+export function deleteVisionCard(data: GameData, cardId: string): GameData {
+  const newData: GameData = {
+    ...data,
+    visionCards: (data.visionCards ?? []).filter((c) => c.id !== cardId),
+  };
+  saveGameData(newData);
+  return newData;
+}
+
+/** Toggle the pinned state of a vision card. */
+export function togglePinVisionCard(data: GameData, cardId: string): GameData | null {
+  const existing = data.visionCards ?? [];
+  const index = existing.findIndex((c) => c.id === cardId);
+  if (index === -1) return null;
+
+  const updated = { ...existing[index], pinned: !existing[index].pinned };
+  const newCards = [...existing];
+  newCards[index] = updated;
+
+  const newData: GameData = { ...data, visionCards: newCards };
+  saveGameData(newData);
+  return newData;
+}
+
+/** Save the Oracle's board reading. */
+export function saveBoardReading(data: GameData, text: string): GameData {
+  const reading: BoardReading = {
+    id: crypto.randomUUID(),
+    text: text.trim(),
+    createdAt: new Date().toISOString(),
+  };
+  const newData: GameData = { ...data, lastBoardReading: reading };
+  saveGameData(newData);
+  return newData;
+}
+
+/** Get the most recent board reading, or null if none exists. */
+export function getLastBoardReading(data: GameData): BoardReading | null {
+  return data.lastBoardReading ?? null;
 }
