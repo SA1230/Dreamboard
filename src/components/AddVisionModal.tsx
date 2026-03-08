@@ -69,11 +69,11 @@ export function AddVisionModal({ onClose, onSave }: AddVisionModalProps) {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("The Oracle is resting. Try again later.");
-      }
-
       const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "The Oracle is resting. Try again later.");
+      }
       setWeavedText(result.weavedText);
       setImageBase64(result.imageBase64);
       setState("preview");
