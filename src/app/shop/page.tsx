@@ -51,9 +51,9 @@ export default function ShopPage() {
 
   if (!gameData) {
     return (
-      <main className="min-h-screen p-6 flex items-center justify-center">
-        <div className="text-stone-400 text-sm">Loading...</div>
-      </main>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-stone-300 border-t-stone-500 animate-spin" />
+      </div>
     );
   }
 

@@ -727,25 +727,6 @@ export default function Home() {
         />
       )}
 
-      {/* Floating Captain FAB — always visible in bottom-right corner */}
-      {!showJudge && !isFirstRun && (
-        <button
-          onClick={() => setShowJudge(true)}
-          className="fixed bottom-6 right-6 z-40 w-16 h-16 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-transform cursor-pointer"
-          style={{
-            background: "linear-gradient(135deg, #D4A44A 0%, #B4722A 100%)",
-            boxShadow: "0 4px 16px rgba(180, 114, 42, 0.35), 0 2px 4px rgba(0,0,0,0.1)",
-          }}
-          aria-label="Tell the Captain what you accomplished"
-        >
-          <img
-            src="/mascots/judge-hero.svg"
-            alt="The Captain"
-            className="w-full h-full rounded-full p-1.5"
-            style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.15))" }}
-          />
-        </button>
-      )}
 
       {/* Level-up celebration overlay (confetti + toast + overall level-up) */}
       {celebrationInfo && (
