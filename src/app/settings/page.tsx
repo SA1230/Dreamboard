@@ -5,8 +5,9 @@ import { GameData, StatKey, HabitKey, DamageKey, CustomStatOverride } from "@/li
 import { STAT_DEFINITIONS, STAT_KEYS, COLOR_PRESETS, StatDefinition } from "@/lib/stats";
 import { loadGameData, saveCustomDefinitions, getEnabledHabits, saveEnabledHabits, getEnabledDamage, saveEnabledDamage, resetAllData, saveProfilePicture, getProfilePicture, getOverallLevel, getTotalLifetimeXP, getMascotName, setMascotName, isMascotNameUnlocked } from "@/lib/storage";
 import { StatIcon, ICON_OPTIONS } from "@/components/StatIcons";
-import { ArrowLeft, RotateCcw, Trash2, Camera, X } from "lucide-react";
+import { ArrowLeft, RotateCcw, Trash2, Camera, X, BarChart3 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { HABIT_DEFINITIONS } from "@/lib/habits";
 import { DAMAGE_DEFINITIONS } from "@/lib/damage";
 import { ModalBackdrop } from "@/components/ModalBackdrop";
@@ -27,6 +28,7 @@ export default function SettingsPage() {
   const [mascotNameValue, setMascotNameValue] = useState("Skipper");
   const [overallLevel, setOverallLevel] = useState(1);
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const savedOverridesRef = useRef<string>("{}");
   const savedMascotNameRef = useRef<string>("Skipper");
@@ -44,6 +46,11 @@ export default function SettingsPage() {
     setOverallLevel(getOverallLevel(getTotalLifetimeXP(data)).level);
     savedOverridesRef.current = JSON.stringify(data.customDefinitions ?? {});
     savedMascotNameRef.current = mascotName;
+
+    // Check admin access silently
+    fetch("/api/admin/overview")
+      .then((res) => { if (res.ok) setIsAdmin(true); })
+      .catch(() => {});
   }, []);
 
   const isDirty =
@@ -572,6 +579,25 @@ export default function SettingsPage() {
           );
         })}
       </div>
+
+      {/* Section: Admin (only visible to admin users) */}
+      {isAdmin && (
+        <>
+          <h2 className="text-lg font-bold text-stone-500 mt-12 mb-2">Admin</h2>
+          <Link
+            href="/admin"
+            className="flex items-center gap-3 p-4 rounded-2xl bg-stone-50 border-2 border-stone-200 hover:border-stone-300 hover:bg-stone-100 transition-colors"
+          >
+            <div className="w-10 h-10 rounded-xl bg-stone-200 flex items-center justify-center">
+              <BarChart3 size={20} className="text-stone-500" />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-sm text-stone-600">Analytics Dashboard</p>
+              <p className="text-xs text-stone-400">View usage metrics, retention, and live events</p>
+            </div>
+          </Link>
+        </>
+      )}
 
       {/* Section: Danger Zone */}
       <h2 className="text-lg font-bold text-stone-500 mt-12 mb-2">Danger Zone</h2>
