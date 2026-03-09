@@ -60,6 +60,7 @@ The shared state file lives at `~/.claude/projects/-Users-shiroy-Dreamboard-clon
 - **Charts:** None — we build visualizations with plain CSS/SVG (no recharts, no d3)
 - **Animations:** 6 custom keyframe animations in `globals.css` (fadeIn, modalSlideUp, xpPop, levelUpGlow, levelUpText, particle) + AutoAnimate for list transitions + canvas-confetti for level-up celebrations
 - **Sound:** Native HTML5 Audio API via `src/lib/sound.ts` — 4 royalty-free MP3s in `public/sounds/`. Off by default, opt-in via Settings. No external sound library
+- **Error Tracking:** Sentry (`@sentry/nextjs@10.42.0`) — client + server + edge error capture, session replay (10% sessions, 100% on error), performance tracing (100% dev, 10% prod). Org: `shiroy`, project: `dreamboard`. Source maps uploaded via `SENTRY_AUTH_TOKEN` in CI/Vercel. Vercel + GitHub integrations connected
 - **Performance:** React Compiler (`babel-plugin-react-compiler`) enabled via `next.config.ts` experimental flag — automatic memoization at build time
 - **Viewport:** Designed for mobile-width viewports (375–430px). No desktop breakpoints currently — do not add responsive layouts unless asked
 - **Hosting:** Vercel (Production) — custom domain `dreamboard.net` (redirects to `www.dreamboard.net`)
@@ -70,6 +71,9 @@ The shared state file lives at `~/.claude/projects/-Users-shiroy-Dreamboard-clon
 ## Project structure
 
 ```
+sentry.client.config.ts      # Sentry client SDK init — replay integration, performance tracing
+sentry.server.config.ts      # Sentry server SDK init — performance tracing
+sentry.edge.config.ts        # Sentry edge runtime SDK init
 src/
 ├── app/
 │   ├── page.tsx            # Homepage — YesterdayReview, Judge CTA, Skipper companion CTA, level display, stat cards, monthly XP, activity log
@@ -84,6 +88,7 @@ src/
 │   ├── api/admin/overview/route.ts  # GET endpoint — KPI snapshot (DAU, WAU, totals, trends). Admin-gated
 │   ├── api/admin/metrics/route.ts   # GET endpoint — time-series data (sessions/day, XP/day, heatmap, retention). Admin-gated
 │   ├── api/admin/events/route.ts    # GET endpoint — recent raw events feed (paginated). Admin-gated
+│   ├── global-error.tsx    # App Router error boundary — captures React rendering errors to Sentry
 │   ├── admin/              # Admin analytics dashboard — KPI cards, charts, heatmap, retention, user table, live feed
 │   ├── calendar/           # Month-at-a-glance view — daily XP totals with habit/damage icons, tap a day to see detail modal
 │   ├── settings/           # Customize stat names, descriptions, colors, icons + enable/disable habits & damage + sound toggle
@@ -92,6 +97,7 @@ src/
 │   ├── terms/              # Terms of Service — static legal page (company-favorable, binding arbitration, class action waiver)
 │   ├── privacy/            # Privacy Policy — static legal page (local storage model, third-party disclosures, CCPA rights)
 │   └── vision/             # Vision Board — cozy mood/inspiration board with AI Oracle that weaves dreams into vivid visions
+├── instrumentation.ts      # Next.js 15 instrumentation hook — loads Sentry server/edge configs, captures request errors
 ├── components/
 │   ├── StatCard.tsx         # One card per stat (icon fill effect, level, XP bar, streak flame, dormant dimming) — read-only, no + button
 │   ├── MonthlyXPSummary.tsx # Monthly XP total with sparkline bar chart + trend vs last month
@@ -509,6 +515,15 @@ Universal working preferences (communication style, git conventions, code qualit
 - **Dev server preview:** `.claude/launch.json` configures `npm run dev` on port 3000. Use `preview_start` with name `"dev"` to launch, then `preview_screenshot`/`preview_snapshot` to verify UI changes visually.
 - **Self-review in /ship:** The `/ship` skill includes a self-review step that reviews the diff for bugs, debug artifacts, style drift, and type safety issues before committing. Fixes are applied autonomously.
 - **Connected services (MCP connectors):** Canva, Figma, GitHub, Google Drive, Jam.dev, Slack, Supabase, and Vercel are connected via Claude Code MCP connectors. Use their native tools (e.g., `mcp__canva__*`, `mcp__slack__*`, `mcp__supabase__*`, `mcp__vercel__*`, `mcp__jam__*`) instead of API calls when interacting with these services.
+- **Plugins (Claude Code marketplace):** 8 plugins installed for enhanced development workflows:
+  - **Typescript lsp** — TypeScript/JavaScript language server for type checking and code intelligence
+  - **Frontend design** — production-grade frontend UI generation with high design quality
+  - **Security guidance** — security reminder hook that warns about command injection, XSS, and unsafe patterns when editing files
+  - **Code review** — automated PR review using multiple specialized agents with confidence-based scoring
+  - **Ralph loop** — iterative self-refinement technique where Claude repeatedly improves its own work
+  - **Playwright** — browser automation and E2E testing by Microsoft
+  - **Context7** — pulls version-specific docs and code examples from source repos (Next.js 15, React 19, etc.)
+  - **Superpowers** — brainstorming, subagent-driven development, systematic debugging, and red/green TDD
 - **Two-tier memory system:**
   - **Curated memory** (manual) — markdown files in `~/.claude/projects/-Users-shiroy-Dreamboard-clone/memory/`. Hand-maintained institutional knowledge: project decisions, design taste, skills catalog, review history. Updated by `/wrapup` and during development. These are the source of truth for strategic context.
   - **claude-mem** (automatic) — installed at `~/claude-mem`, hooks configured in `~/.claude/settings.json`. Automatically captures tool usage, observations, and session summaries. Stores in `~/.claude-mem/` (SQLite + Chroma). Web viewer at `http://localhost:37777`. Injects relevant context from past sessions on SessionStart. Both systems run independently — no hierarchy, no merging. Query whichever has the answer.
