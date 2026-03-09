@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run build
+        env:
+          ANTHROPIC_API_KEY: sk-placeholder
+          OPENAI_API_KEY: sk-placeholder
+          GOOGLE_CLIENT_ID: placeholder
+          GOOGLE_CLIENT_SECRET: placeholder
+          AUTH_SECRET: placeholder-secret-for-ci
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+
+      - run: npm test
