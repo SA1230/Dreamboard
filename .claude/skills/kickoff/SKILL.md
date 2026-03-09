@@ -19,13 +19,19 @@ Run this at the beginning of a conversation to get oriented. Autonomous — no u
    - Only run build+test if the last CI run on main failed OR there are uncommitted changes. Otherwise skip and report "Build/Tests: skipped (main is clean per CI)". Check CI status with `gh run list --branch main --limit 1`
    - If build+test needed: `npm run build 2>&1 | tail -5` and `npx vitest run 2>&1 | tail -5`
 
-4. **Surface deferred items:**
+4. **Check failure journal patterns:**
+   - Read `.claude/hook-failures.log` (if it exists)
+   - Group failures by type (lint, build, test) in the last 7 days
+   - If 3+ failures of the same type: surface as a pattern alert ("Build has failed 5 times this week — investigate root cause")
+   - If the file doesn't exist or has no recent entries: skip silently
+
+5. **Surface deferred items:**
    - Read `~/.claude/projects/-Users-shiroy-Dreamboard-clone/memory/reviews.md`
    - Extract any items marked as "deferred", "Tier 3", or "not worth doing" from the most recent review
    - For each deferred item, note how many reviews it has survived (if it appears in multiple reviews, flag it as aging)
    - Include a "Deferred items aging" section if any item has been deferred 2+ reviews
 
-5. **Present a session briefing:**
+6. **Present a session briefing:**
 
 ```
 ## Session Briefing
@@ -37,6 +43,9 @@ Run this at the beginning of a conversation to get oriented. Autonomous — no u
 
 **Last session shipped:**
 - [1-3 most recent PRs with one-line descriptions]
+
+**Failure patterns (7d):**
+- [Type]: X failures — [pattern note] (or "none")
 
 **Deferred items (aging):**
 - [Item] — deferred since Review #X (N reviews ago)

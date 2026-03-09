@@ -44,9 +44,16 @@ The user invoking `/ship` IS explicit approval to push AND merge. No extra confi
    - If the change is a user-facing feature, suggest: "Want me to run `/metrics` in a few days to check impact?"
    - Suggest running `/wrapup` if this looks like the last task of the session
 
+7. **Post-deploy health check:**
+   - Wait ~30 seconds for Vercel to pick up the merge
+   - Run `/pulse` to verify production health (deployment status, runtime errors, event flow, API health)
+   - If `/pulse` reports DEGRADED or DOWN: surface the issue immediately with rollback instructions
+   - If `/pulse` reports HEALTHY: include "Production: healthy" in the ship summary
+
 ## Rules
 - If there's nothing to commit, say so and stop.
 - If the current branch is `main`, create a new branch first (ask the user for a name or generate one from the changes).
 - Always run lint + build + tests before pushing. No exceptions.
 - One PR per branch. If there are unrelated changes, warn the user.
 - If auto-merge fails, don't panic — return the PR link and explain what blocked it.
+- The post-deploy health check is non-blocking — MCP tool failures don't prevent reporting a successful merge.

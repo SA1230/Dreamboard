@@ -35,7 +35,20 @@ Mechanical maintenance that accumulates silently between sessions. Run monthly, 
    - Keep only the last ~20-25 PRs in MEMORY.md's "Recently Completed Work"
    - Report: "Archived X PR entries, MEMORY.md now at Y/200 lines"
 
-4. **Audit CLAUDE.md project structure:**
+4. **Auto-archive stale memory:**
+   - Read `~/.claude/projects/-Users-shiroy-Dreamboard-clone/memory/MEMORY.md`
+   - In the "Recently Completed Work" section, find PR entries older than 30 days
+   - Move those entries to `~/.claude/projects/-Users-shiroy-Dreamboard-clone/memory/completed-work-archive.md` (create if needed, append if exists)
+   - Report: "Auto-archived X PR entries older than 30 days"
+   - If no entries are old enough, skip silently
+
+5. **Rotate failure journal:**
+   - Read `.claude/hook-failures.log` (if it exists)
+   - Remove entries older than 30 days
+   - If the file is now empty, delete it
+   - Report: "Rotated failure journal — removed X old entries" (or skip silently if no file)
+
+6. **Audit CLAUDE.md project structure:**
    - Run `find .claude/skills/*/SKILL.md` to get actual skill files
    - Compare against the skills listed in CLAUDE.md's project structure section
    - Run `ls src/components/*.tsx src/lib/*.ts src/app/api/*/route.ts` to check for new files
@@ -43,7 +56,7 @@ Mechanical maintenance that accumulates silently between sessions. Run monthly, 
    - Report discrepancies: "CLAUDE.md is missing: [list]" or "CLAUDE.md lists files that no longer exist: [list]"
    - Do NOT auto-fix CLAUDE.md — just report. The user or `/guard` handles updates
 
-5. **Summary:**
+7. **Summary:**
 
 ```
 ## Sweep Report — [date]
@@ -51,6 +64,8 @@ Mechanical maintenance that accumulates silently between sessions. Run monthly, 
 **Branches:** Pruned X merged remote branches (Y remain)
 **Skills catalog:** Regenerated — now tracking Z skills
 **MEMORY.md:** [at Y/200 lines / archived X old entries, now at Y/200 lines]
+**Auto-archive:** [archived X stale PR entries / nothing to archive]
+**Failure journal:** [rotated X old entries / clean / no journal file]
 **CLAUDE.md accuracy:** [all entries match / X discrepancies found (listed above)]
 ```
 
