@@ -61,7 +61,7 @@ Organize into:
 
 1. **Quick Wins** — Small changes (< 30 min each) that immediately make the product feel more alive. These are copy changes, animation tweaks, timing adjustments, tiny visual touches.
 2. **Craft Projects** — Medium-effort (1-2 hours) changes that create genuinely new moments of delight. A new animation sequence, a personality-driven feature, a surprising interaction.
-3. **Signature Moments** — Larger efforts that could define the product's identity. The thing that makes someone say "you have to see this." Every great product has 1-2 of these.
+3. **Signature Moments** — Larger efforts that could define the product's identity. The thing that makes someone say "you have to see this." Every great product has 1-2 of these. Consider whether Canva concept art (via `/announce`) could visualize these before building.
 
 For each item:
 - **The moment:** What the user is doing when this happens
