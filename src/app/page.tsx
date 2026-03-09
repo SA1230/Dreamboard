@@ -17,9 +17,7 @@ import { Download, Settings, CalendarDays, ShoppingBag, Trophy, Sparkles } from 
 import Link from "next/link";
 import { getRankTitle } from "@/lib/ranks";
 import { UserMenu } from "@/components/UserMenu";
-import { CaptainQuip } from "@/components/CaptainQuip";
 import { CompanionModal } from "@/components/CompanionModal";
-import { getCaptainQuip } from "@/lib/captainQuips";
 import { track } from "@/lib/tracker";
 import { playSound, playSoundWithHaptic } from "@/lib/sound";
 import { STAT_DEFINITIONS } from "@/lib/stats";
@@ -59,42 +57,27 @@ function LandingPage() {
     <main className="min-h-screen flex items-center justify-center px-4 py-6 sm:py-8">
       <div className="w-full max-w-md sm:max-w-xl lg:max-w-2xl flex flex-col items-center bg-white/60 sm:rounded-3xl sm:border sm:border-stone-200/60 sm:py-10 lg:py-12 sm:px-10 lg:px-16 py-0 px-2">
         {/* Logo */}
-        <div className="flex items-center gap-2 sm:gap-3 mb-1">
+        <div className="flex items-center gap-2 sm:gap-3 mb-8 sm:mb-10">
           <img src="/logos/dreamboard-icon-blue.svg" alt="" className="h-10 sm:h-14 lg:h-16" />
           <img src="/brand/dreamboard-wordmark-blue.svg" alt="Dreamboard" className="h-10 sm:h-14 lg:h-16" />
         </div>
-        <p className="text-sm sm:text-base font-medium text-stone-400 tracking-wide mb-6 sm:mb-8">Level Up Your Life</p>
 
         {/* Skipper hero */}
-        <div className="relative mb-4 sm:mb-5">
+        <div className="relative mb-6 sm:mb-8">
           <div
-            className="w-28 h-28 sm:w-36 sm:h-36 rounded-full flex items-center justify-center border-2 border-amber-200"
+            className="w-32 h-32 sm:w-40 sm:h-40 rounded-full flex items-center justify-center border-2 border-amber-200"
             style={{ background: "radial-gradient(circle at 50% 40%, #FFF8EB, #FFF0D4)" }}
           >
             <img
               src="/mascots/judge-hero.svg"
               alt="Skipper the Captain"
-              className="w-20 h-20 sm:w-28 sm:h-28"
+              className="w-24 h-24 sm:w-32 sm:h-32"
             />
           </div>
         </div>
 
-        {/* Value prop */}
-        <div className="max-w-sm sm:max-w-md text-center mb-5 sm:mb-6">
-          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-stone-700 mb-2 sm:mb-3">
-            Your life is an RPG.
-            <br />
-            Start keeping score.
-          </h2>
-          <p className="text-sm sm:text-base text-stone-500 leading-relaxed">
-            Tell the Captain what you did today. They&apos;ll interview you,
-            judge your effort with some sass, and award XP across 8 stats.
-            Level up by living.
-          </p>
-        </div>
-
         {/* Stat preview chips */}
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6 sm:mb-8 max-w-xs sm:max-w-md">
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-8 sm:mb-10 max-w-xs sm:max-w-md">
           {statPreviews.map((stat) => (
             <span
               key={stat.name}
@@ -129,10 +112,8 @@ function LandingPage() {
           Get Started with Google
         </button>
 
-        <p className="text-xs sm:text-sm text-stone-400 mt-3">Free forever. Your data stays on your device.</p>
-
         {/* Legal links */}
-        <p className="text-xs text-stone-400 mt-4">
+        <p className="text-xs text-stone-400 mt-6">
           By signing up, you agree to our{" "}
           <Link href="/terms" className="underline underline-offset-2 hover:text-stone-600 transition-colors">Terms of Service</Link>
           {" "}and{" "}
@@ -423,18 +404,6 @@ function AuthenticatedHome() {
   // First-run detection — user has never logged XP via the Judge
   const isFirstRun = gameData.activities.length === 0;
 
-  // Daily Captain quip (deterministic — same all day, rotates tomorrow)
-  const quipText = !isFirstRun && definitions && streaks
-    ? getCaptainQuip({
-        activities: gameData.activities,
-        streaks,
-        activeChallenge: gameData.activeChallenge ?? null,
-        overallLevel,
-        rank: getRankTitle(overallLevel),
-        definitions,
-      })
-    : null;
-
   // Weekly quote — hidden for now, may bring back later
   // const weeklyQuotes / currentWeekNumber / weeklyQuote removed from render
 
@@ -503,21 +472,23 @@ function AuthenticatedHome() {
         </h1>
       </header>
 
-      {/* Yesterday Review — retrospective habit/damage checklist (hidden for first-run users) */}
-      {!isFirstRun && (
-        <div className="mt-14 mb-4 animate-fadeIn">
-          <YesterdayReview
-            gameData={gameData}
-            onToggleHabit={handleToggleHabit}
-            onToggleDamage={handleToggleDamage}
-            ppToast={ppToast}
+      {/* Level Display — Skipper character with progress ring (hero position) */}
+      <div className="flex justify-center mt-14 mb-4">
+        <div style={{ transform: "scale(1.05)", transformOrigin: "center center" }}>
+          <LevelDisplay
+            level={overallLevel}
+            progressPercent={overallProgressPercent}
+            xpIntoLevel={xpIntoLevel}
+            xpForNextLevel={xpForNextLevel}
+            equippedItems={getInventory(gameData).equippedItems}
+            mascotName={getMascotName(gameData)}
           />
         </div>
-      )}
+      </div>
 
       {/* Welcome Card — shown only on first run */}
       {isFirstRun && (
-        <div className="mt-14 mb-6 animate-fadeIn">
+        <div className="mb-6 animate-fadeIn">
           <div className="rounded-2xl border border-stone-200 p-5 text-center" style={{ backgroundColor: "#FDFBF7" }}>
             <h2 className="text-lg font-bold text-stone-700 mb-2">Welcome to Dreamboard</h2>
             <p className="text-sm text-stone-500 leading-relaxed">
@@ -608,12 +579,7 @@ function AuthenticatedHome() {
         </div>
       )}
 
-      {/* Daily Captain Quip + Chat with Skipper */}
-      {!isFirstRun && quipText && (
-        <div className="mb-4 animate-fadeIn">
-          <CaptainQuip quipText={quipText} />
-        </div>
-      )}
+      {/* Chat with Skipper */}
       {!isFirstRun && (
         <div className="mb-4">
           <button
@@ -632,6 +598,18 @@ function AuthenticatedHome() {
             <span className="text-sm font-medium text-sky-700 flex-1 text-left">Chat with Skipper</span>
             <span className="text-xs text-sky-400">Just vibes</span>
           </button>
+        </div>
+      )}
+
+      {/* Yesterday Review — retrospective habit/damage checklist (hidden for first-run users) */}
+      {!isFirstRun && (
+        <div className="mb-4 animate-fadeIn">
+          <YesterdayReview
+            gameData={gameData}
+            onToggleHabit={handleToggleHabit}
+            onToggleDamage={handleToggleDamage}
+            ppToast={ppToast}
+          />
         </div>
       )}
 
@@ -745,20 +723,6 @@ function AuthenticatedHome() {
           </div>
         </div>
       )}
-
-      {/* Level Display — Skipper character with progress ring */}
-      <div className="flex justify-center mb-6">
-        <div style={{ transform: "scale(1.05)", transformOrigin: "center center" }}>
-          <LevelDisplay
-            level={overallLevel}
-            progressPercent={overallProgressPercent}
-            xpIntoLevel={xpIntoLevel}
-            xpForNextLevel={xpForNextLevel}
-            equippedItems={getInventory(gameData).equippedItems}
-            mascotName={getMascotName(gameData)}
-          />
-        </div>
-      </div>
 
       {/* Stat Card Grid — active stats first, then inactive */}
       <div className="grid grid-cols-2 gap-2.5 mb-8">
