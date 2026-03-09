@@ -12,11 +12,20 @@ import Link from "next/link";
 import { HABIT_DEFINITIONS } from "@/lib/habits";
 import { DAMAGE_DEFINITIONS } from "@/lib/damage";
 import { ModalBackdrop } from "@/components/ModalBackdrop";
+import { AuthGate } from "@/components/AuthProvider";
 
 const ALL_HABITS = HABIT_DEFINITIONS;
 const ALL_DAMAGE = DAMAGE_DEFINITIONS;
 
 export default function SettingsPage() {
+  return (
+    <AuthGate>
+      <SettingsPageContent />
+    </AuthGate>
+  );
+}
+
+function SettingsPageContent() {
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [overrides, setOverrides] = useState<Partial<Record<StatKey, CustomStatOverride>>>({});
   const [enabledHabits, setEnabledHabits] = useState<HabitKey[]>([]);

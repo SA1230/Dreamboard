@@ -10,8 +10,17 @@ import { playSoundWithHaptic } from "@/lib/sound";
 import { SkipperCharacter } from "@/components/SkipperCharacter";
 import { ArrowLeft, ShoppingBag, Check, Sword } from "lucide-react";
 import Link from "next/link";
+import { AuthGate } from "@/components/AuthProvider";
 
 export default function ShopPage() {
+  return (
+    <AuthGate>
+      <ShopPageContent />
+    </AuthGate>
+  );
+}
+
+function ShopPageContent() {
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<VisibleSlot | "all">("all");
   const [actionToast, setActionToast] = useState<string | null>(null);
