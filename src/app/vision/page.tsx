@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { AuthGate } from "@/components/AuthProvider";
 import { GameData, VisionCard } from "@/lib/types";
 import {
   loadGameData,
@@ -150,6 +151,14 @@ function OraclePresence({ onReadBoard }: { onReadBoard: () => void }) {
 }
 
 export default function VisionBoardPage() {
+  return (
+    <AuthGate>
+      <VisionBoardPageContent />
+    </AuthGate>
+  );
+}
+
+function VisionBoardPageContent() {
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedCard, setSelectedCard] = useState<VisionCard | null>(null);
