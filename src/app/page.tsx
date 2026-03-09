@@ -18,6 +18,7 @@ import Link from "next/link";
 import { getRankTitle } from "@/lib/ranks";
 import { UserMenu } from "@/components/UserMenu";
 import { CaptainQuip } from "@/components/CaptainQuip";
+import { CompanionModal } from "@/components/CompanionModal";
 import { getCaptainQuip } from "@/lib/captainQuips";
 import { track } from "@/lib/tracker";
 import { playSound, playSoundWithHaptic } from "@/lib/sound";
@@ -147,6 +148,7 @@ function AuthenticatedHome() {
   const [xpGainedStat, setXpGainedStat] = useState<{ stat: StatKey; amount: number } | null>(null);
   const [isActivityExpanded, setIsActivityExpanded] = useState(true);
   const [showJudge, setShowJudge] = useState(false);
+  const [showCompanion, setShowCompanion] = useState(false);
 
   // Post-verdict XP toasts
   const [xpToasts, setXpToasts] = useState<{ id: string; statKey: StatKey; amount: number; color: string; iconKey: string; name: string }[]>([]);
@@ -606,10 +608,30 @@ function AuthenticatedHome() {
         </div>
       )}
 
-      {/* Daily Captain Quip */}
+      {/* Daily Captain Quip + Chat with Skipper */}
       {!isFirstRun && quipText && (
         <div className="mb-4 animate-fadeIn">
           <CaptainQuip quipText={quipText} />
+        </div>
+      )}
+      {!isFirstRun && (
+        <div className="mb-4">
+          <button
+            onClick={() => {
+              setShowCompanion(true);
+              track("companion_opened", {});
+            }}
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border border-sky-200/50 hover:border-sky-300 transition-all cursor-pointer group active:scale-[0.98]"
+            style={{
+              background: "linear-gradient(to right, #F0F9FF, #E8F4FD)",
+            }}
+          >
+            <div className="w-8 h-8 rounded-full bg-sky-50 border border-sky-200 p-0.5 group-hover:scale-110 transition-transform flex-shrink-0 flex items-center justify-center">
+              <img src="/mascots/judge-hero.svg" alt="Skipper" className="w-full h-full rounded-full" />
+            </div>
+            <span className="text-sm font-medium text-sky-700 flex-1 text-left">Chat with Skipper</span>
+            <span className="text-xs text-sky-400">Just vibes</span>
+          </button>
         </div>
       )}
 
@@ -856,6 +878,14 @@ function AuthenticatedHome() {
           profilePicture={gameData.profilePicture ?? null}
           onAcceptVerdict={handleJudgeVerdict}
           onCancel={() => setShowJudge(false)}
+        />
+      )}
+
+      {/* Companion Modal */}
+      {showCompanion && (
+        <CompanionModal
+          profilePicture={gameData.profilePicture ?? null}
+          onClose={() => setShowCompanion(false)}
         />
       )}
 
