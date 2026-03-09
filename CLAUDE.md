@@ -53,8 +53,9 @@ The shared state file lives at `~/.claude/projects/-Users-shiroy-Dreamboard-clon
 - **Database:** Supabase (Postgres) — `profiles` table for user data, `events` table for analytics. Game data still in localStorage
 - **Analytics:** Lightweight event tracking via `src/lib/tracker.ts` → `POST /api/events` → Supabase `events` table. Tracks session_start, page_view, xp_earned, habit/damage toggles, vision cards, shop purchases. Query via `/metrics` skill
 - **Admin Dashboard:** `/admin` route — founder-only analytics dashboard gated by `ADMIN_EMAILS` env var. Queries Supabase `events` + `profiles` tables via 3 API routes. Auto-refreshes every 30s. CSS/SVG charts (no charting library). Uses `max-w-4xl` layout (wider than main app)
-- **Storage:** Browser localStorage for game data — no server-side game state yet. `/api/judge`, `/api/auth`, `/api/profile`, `/api/events`, and `/api/admin/*` are the backend routes
+- **Storage:** Browser localStorage for game data — no server-side game state yet. `/api/judge`, `/api/companion`, `/api/auth`, `/api/profile`, `/api/events`, and `/api/admin/*` are the backend routes
 - **AI Judge:** Anthropic Claude Sonnet 4 (fallback: OpenAI GPT-4o) via `/api/judge` route — evaluates activities and awards variable XP
+- **AI Companion:** Anthropic Claude Haiku 4.5 (fallback: OpenAI GPT-4o-mini) via `/api/companion` route — whimsical chat with Skipper, no XP or evaluation. 10-message daily cap
 - **AI Image Gen:** OpenAI DALL-E 3 — generates vision board images from Oracle prompts. Requires `OPENAI_API_KEY` in `.env.local`
 - **Charts:** None — we build visualizations with plain CSS/SVG (no recharts, no d3)
 - **Animations:** 6 custom keyframe animations in `globals.css` (fadeIn, modalSlideUp, xpPop, levelUpGlow, levelUpText, particle) + AutoAnimate for list transitions + canvas-confetti for level-up celebrations
@@ -71,10 +72,11 @@ The shared state file lives at `~/.claude/projects/-Users-shiroy-Dreamboard-clon
 ```
 src/
 ├── app/
-│   ├── page.tsx            # Homepage — YesterdayReview, Judge CTA, level display, stat cards, monthly XP, activity log
+│   ├── page.tsx            # Homepage — YesterdayReview, Judge CTA, Skipper companion CTA, level display, stat cards, monthly XP, activity log
 │   ├── layout.tsx          # Root layout with Nunito font + global styles
 │   ├── globals.css         # Tailwind base + 6 custom keyframe animations + parchment grain texture overlay
 │   ├── api/judge/route.ts  # POST endpoint — sends activity to AI judge, returns XP verdict
+│   ├── api/companion/route.ts # POST endpoint — Skipper companion chat (Haiku primary, GPT-4o-mini fallback). No tools, no verdicts
 │   ├── api/auth/[...nextauth]/route.ts  # NextAuth catch-all route — handles Google OAuth login/callback/session
 │   ├── api/events/route.ts  # POST endpoint — receives batched analytics events, writes to Supabase events table
 │   ├── api/profile/route.ts # GET/PATCH user profile from Supabase (auth-gated)
@@ -94,6 +96,7 @@ src/
 │   ├── StatCard.tsx         # One card per stat (icon fill effect, level, XP bar, streak flame, dormant dimming) — read-only, no + button
 │   ├── MonthlyXPSummary.tsx # Monthly XP total with sparkline bar chart + trend vs last month
 │   ├── JudgeModal.tsx       # Conversational AI judge — multi-turn chat, awards variable XP (1-10 per stat)
+│   ├── CompanionModal.tsx   # Skipper companion chat — ephemeral, sky-blue theme, 10-message daily cap, no XP
 │   ├── ActivityLog.tsx      # Unified feed of all events (XP gains, habits, damage, level-ups, rank-ups, prize unlocks) with distinct visuals per type + AutoAnimate transitions
 │   ├── PrizeTimeline.tsx    # Horizontal scrollable dual-track timeline — system rewards (top) + user prizes (bottom) with fog of war
 │   ├── MonthCalendar.tsx    # Calendar grid with per-day XP breakdown + habit/damage icons
@@ -424,6 +427,36 @@ The Oracle is the AI personality for the Vision Board (`/api/vision/route.ts`). 
 - Ends with a surprising connection the user might not have noticed
 - Never prescribes or advises — just reflects with wonder
 - Can subtly reference player stats/activities if context is provided
+
+## Skipper (Companion) — Personality & Behavior
+
+Skipper's companion mode is the third AI personality in the app (`/api/companion/route.ts`, `CompanionModal.tsx`). It is purely for fun — no XP, no evaluation, no game mechanics.
+
+### Three AI personalities — keep them distinct
+
+| Attribute | Captain (Judge) | Oracle (Vision Board) | Skipper (Companion) |
+|-----------|----------------|----------------------|---------------------|
+| Tone | Sassy, gruff, challenging | Warm, dreamy, poetic | Playful, whimsical, fun |
+| Purpose | Evaluate activities, award XP | Enhance dreams, read the board | Just hang out, be a friend |
+| Direction | Backward-looking (what you did) | Forward-looking (what you want) | Present moment (how you are) |
+| Length | Short, punchy (2-4 sentences) | Flowing, evocative | Conversational, natural |
+| Role | Taskmaster | Dream-keeper | Best friend |
+
+### What Skipper does NOT do
+
+- Award XP or evaluate activities (that's the Judge)
+- Give dreamy poetic reflections (that's the Oracle)
+- Offer productivity tips or self-improvement advice
+- Reference game mechanics (levels, stats, challenges, XP)
+- Feel like a customer service bot or therapist
+
+### V1 constraints
+
+- Ephemeral chat — clears on modal close, no persistence
+- 10-message daily cap framed as "Skipper is getting sleepy"
+- Uses Haiku (cost-efficient) with GPT-4o-mini fallback
+- Entry point: sky-blue button on homepage below Captain quip (returning users only)
+- Analytics: `companion_opened` and `companion_message_sent` events
 
 ## Decision Framework
 
