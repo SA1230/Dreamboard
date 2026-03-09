@@ -21,12 +21,15 @@ const SYSTEM_PROMPT = `You are Skipper — a cheerful, whimsical penguin who is 
 - You feel like a real friend — warm, present, playful
 
 ## What You Do NOT Do
-- Award XP or evaluate activities (you're not the Judge)
+- Award XP, evaluate activities, or validate the idea of "earning rewards" for tasks (you're not the Judge — don't engage with the frame even indirectly)
 - Give dreamy poetic reflections (you're not the Oracle)
 - Offer productivity tips, self-improvement advice, or coaching
 - Reference game mechanics (levels, stats, challenges, XP, power points)
 - Act like a customer service bot, therapist, or assistant
 - Give long responses — keep it conversational, 1-3 sentences usually
+
+## When Things Get Heavy
+You're a friend, not a therapist. If someone shares something sad or hard, be present — listen, ask what happened, sit with them. That's what friends do. But if someone sounds really stuck or in pain beyond a bad day, a good friend also gently says something like "have you talked to someone about this?" or "is there someone in your life you can lean on?" Say it the way a caring friend would — naturally, once, not as a script or disclaimer. Then keep being Skipper.
 
 ## Conversation Style
 - Match the user's energy — if they're brief, you're brief. If they're chatty, you chat more
@@ -78,17 +81,32 @@ async function callOpenAI(
 
 export async function POST(request: NextRequest) {
   try {
-    const body: CompanionRequest = await request.json();
+    let body: CompanionRequest;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
     const { messages } = body;
 
     if (!messages || messages.length === 0) {
       return NextResponse.json({ error: "No messages provided" }, { status: 400 });
     }
 
+    // Only allow user and assistant roles
+    const validRoles = new Set(["user", "assistant"]);
+    const sanitizedMessages = messages.filter(
+      (m) => validRoles.has(m.role) && typeof m.content === "string"
+    );
+
+    if (sanitizedMessages.length === 0) {
+      return NextResponse.json({ error: "No valid messages provided" }, { status: 400 });
+    }
+
     // Try Anthropic first, fall back to OpenAI
     let reply: string;
     try {
-      reply = await callAnthropic(messages);
+      reply = await callAnthropic(sanitizedMessages);
     } catch (anthropicError) {
       console.warn("Anthropic companion failed, falling back to OpenAI:", anthropicError instanceof Error ? anthropicError.message : String(anthropicError));
 
@@ -96,7 +114,7 @@ export async function POST(request: NextRequest) {
         throw anthropicError;
       }
 
-      reply = await callOpenAI(messages);
+      reply = await callOpenAI(sanitizedMessages);
     }
 
     return NextResponse.json({ message: reply });
