@@ -23,11 +23,6 @@ import { track } from "@/lib/tracker";
 export default function Home() {
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [xpGainedStat, setXpGainedStat] = useState<{ stat: StatKey; amount: number } | null>(null);
-  // Overall level-up animation state for the LevelDisplay ring
-  const [isOverallLevelingUp, setIsOverallLevelingUp] = useState(false);
-  const [previousOverallLevel, setPreviousOverallLevel] = useState<number | undefined>(undefined);
-  // Page-wide screen shake on overall level-up
-  const [isScreenShaking, setIsScreenShaking] = useState(false);
   const [isActivityExpanded, setIsActivityExpanded] = useState(true);
   const [showJudge, setShowJudge] = useState(false);
 
@@ -198,11 +193,6 @@ export default function Home() {
             overallNewLevel: isOverallLevelUp ? overallAfter.level : undefined,
             overallNewRank: isOverallLevelUp ? getRankTitle(overallAfter.level) : undefined,
           });
-
-          if (isOverallLevelUp) {
-            setPreviousOverallLevel(overallBefore.level);
-            setIsOverallLevelingUp(true);
-          }
         }
       }
 
@@ -320,8 +310,7 @@ export default function Home() {
 
   return (
     <main
-      className={`max-w-4xl mx-auto px-4 py-8 pb-20 ${isScreenShaking ? "animate-screenShake" : ""}`}
-      onAnimationEnd={() => setIsScreenShaking(false)}
+      className="max-w-4xl mx-auto px-4 py-8 pb-20"
     >
       {/* Header */}
       <header className="text-center mb-10 relative sticky top-0 z-50 bg-[#FDF8F4]/80 backdrop-blur-md -mx-4 px-4 py-3 border-b border-stone-200/50">
@@ -615,9 +604,6 @@ export default function Home() {
             progressPercent={overallProgressPercent}
             xpIntoLevel={xpIntoLevel}
             xpForNextLevel={xpForNextLevel}
-            isLevelingUp={isOverallLevelingUp}
-            previousOverallLevel={previousOverallLevel}
-            onShake={() => setIsScreenShaking(true)}
             equippedItems={getInventory(gameData).equippedItems}
             mascotName={getMascotName(gameData)}
           />
@@ -746,7 +732,7 @@ export default function Home() {
       )}
 
 
-      {/* Level-up celebration overlay (confetti + toast + overall level-up) */}
+      {/* Level-up celebration overlay */}
       {celebrationInfo && (
         <LevelUpCelebration
           statKey={celebrationInfo.statKey}
@@ -757,8 +743,6 @@ export default function Home() {
           overallNewRank={celebrationInfo.overallNewRank}
           onComplete={() => {
             setCelebrationInfo(null);
-            setIsOverallLevelingUp(false);
-            setPreviousOverallLevel(undefined);
           }}
         />
       )}
