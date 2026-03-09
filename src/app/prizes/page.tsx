@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { AuthGate } from "@/components/AuthProvider";
 import { GameData, Prize } from "@/lib/types";
 import {
   loadGameData,
@@ -26,6 +27,14 @@ interface PrizeFormState {
 }
 
 export default function PrizesPage() {
+  return (
+    <AuthGate>
+      <PrizesPageContent />
+    </AuthGate>
+  );
+}
+
+function PrizesPageContent() {
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingPrize, setEditingPrize] = useState<Prize | null>(null);

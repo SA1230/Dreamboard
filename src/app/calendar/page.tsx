@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { AuthGate } from "@/components/AuthProvider";
 import { GameData, Activity, StatKey, HabitKey, DamageKey } from "@/lib/types";
 import { loadGameData, getEffectiveDefinitions, getActivitiesByDay, getHabitsByDay, getDamageByDay, getEnabledHabits, getEnabledDamage } from "@/lib/storage";
 import { StatDefinition } from "@/lib/stats";
@@ -167,6 +168,14 @@ function DayDetailModal({
 }
 
 export default function CalendarPage() {
+  return (
+    <AuthGate>
+      <CalendarPageContent />
+    </AuthGate>
+  );
+}
+
+function CalendarPageContent() {
   const [gameData, setGameData] = useState<GameData | null>(null);
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
