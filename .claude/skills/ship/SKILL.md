@@ -5,6 +5,7 @@ The user invoking `/ship` IS explicit approval to push AND merge. No extra confi
 ## Steps
 
 1. **Pre-flight checks (parallel):**
+   - `npm run lint` — must pass. If it fails, stop and fix.
    - `npm run build` — must pass. If it fails, stop and fix.
    - `npx vitest run` — must pass. If tests fail, stop and fix.
 
@@ -36,14 +37,16 @@ The user invoking `/ship` IS explicit approval to push AND merge. No extra confi
    - `gh pr merge --squash --delete-branch` — squash-merge the PR and clean up the branch
    - If merge fails (e.g. CI required, branch protection), report the error and return the PR link for manual merge
 
-6. **Post-ship:**
+6. **Post-merge cleanup:**
    - `git checkout main && git pull origin main` — sync local main with the merge
+   - `git remote prune origin` — clean up stale remote branch references
    - If the change is user-facing (new feature, UX improvement, visual change), suggest: "Want me to run `/announce` to create a release card for this?"
+   - If the change is a user-facing feature, suggest: "Want me to run `/metrics` in a few days to check impact?"
    - Suggest running `/wrapup` if this looks like the last task of the session
 
 ## Rules
 - If there's nothing to commit, say so and stop.
 - If the current branch is `main`, create a new branch first (ask the user for a name or generate one from the changes).
-- Always run build + tests before pushing. No exceptions.
+- Always run lint + build + tests before pushing. No exceptions.
 - One PR per branch. If there are unrelated changes, warn the user.
 - If auto-merge fails, don't panic — return the PR link and explain what blocked it.
