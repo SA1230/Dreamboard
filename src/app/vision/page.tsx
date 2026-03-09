@@ -83,7 +83,7 @@ function BackgroundOrbs() {
 }
 
 // Interactive Oracle on the main board — blinks, wiggles on tap, sparkles burst out
-function OraclePresence({ onReadBoard }: { onReadBoard: () => void }) {
+function OraclePresence({ onReadBoard, showReadButton }: { onReadBoard: () => void; showReadButton: boolean }) {
   const [wiggling, setWiggling] = useState(false);
   const [sparkles, setSparkles] = useState<{ id: number; sx: number; sy: number }[]>([]);
   const sparkleIdRef = useRef(0);
@@ -139,13 +139,15 @@ function OraclePresence({ onReadBoard }: { onReadBoard: () => void }) {
           </div>
         ))}
       </button>
-      <button
-        onClick={onReadBoard}
-        className="w-full py-3.5 rounded-2xl bg-white/8 hover:bg-white/12 border border-white/10 text-purple-300 text-sm font-semibold transition-all flex items-center justify-center gap-2 backdrop-blur-sm"
-      >
-        <Sparkles size={14} />
-        What does the Oracle see?
-      </button>
+      {showReadButton && (
+        <button
+          onClick={onReadBoard}
+          className="w-full py-3.5 rounded-2xl bg-white/8 hover:bg-white/12 border border-white/10 text-purple-300 text-sm font-semibold transition-all flex items-center justify-center gap-2 backdrop-blur-sm"
+        >
+          <Sparkles size={14} />
+          What does the Oracle see?
+        </button>
+      )}
     </div>
   );
 }
@@ -295,10 +297,11 @@ function VisionBoardPageContent() {
             <VisionCardGrid cards={cards} onCardTap={setSelectedCard} />
           </div>
 
-          {/* Oracle + Board Reading — show when 3+ cards */}
-          {cards.length >= 3 && (
-            <OraclePresence onReadBoard={() => setShowBoardReading(true)} />
-          )}
+          {/* Oracle presence — always visible; board reading unlocks at 3+ cards */}
+          <OraclePresence
+            onReadBoard={() => setShowBoardReading(true)}
+            showReadButton={cards.length >= 3}
+          />
         </div>
       )}
 
