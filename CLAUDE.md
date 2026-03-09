@@ -57,7 +57,9 @@ The shared state file lives at `~/.claude/projects/-Users-shiroy-Dreamboard-clon
 - **AI Judge:** Anthropic Claude Sonnet 4 (fallback: OpenAI GPT-4o) via `/api/judge` route — evaluates activities and awards variable XP
 - **AI Image Gen:** OpenAI DALL-E 3 — generates vision board images from Oracle prompts. Requires `OPENAI_API_KEY` in `.env.local`
 - **Charts:** None — we build visualizations with plain CSS/SVG (no recharts, no d3)
-- **Animations:** 6 custom keyframe animations in `globals.css` (fadeIn, modalSlideUp, xpPop, levelUpGlow, levelUpText, particle)
+- **Animations:** 6 custom keyframe animations in `globals.css` (fadeIn, modalSlideUp, xpPop, levelUpGlow, levelUpText, particle) + AutoAnimate for list transitions + canvas-confetti for level-up celebrations
+- **Sound:** Native HTML5 Audio API via `src/lib/sound.ts` — 4 royalty-free MP3s in `public/sounds/`. Off by default, opt-in via Settings. No external sound library
+- **Performance:** React Compiler (`babel-plugin-react-compiler`) enabled via `next.config.ts` experimental flag — automatic memoization at build time
 - **Viewport:** Designed for mobile-width viewports (375–430px). No desktop breakpoints currently — do not add responsive layouts unless asked
 - **Hosting:** Vercel (Production) — custom domain `dreamboard.net` (redirects to `www.dreamboard.net`)
 - **Run locally:** `npm run dev` (port 3000) / `npm run build` to check for errors
@@ -70,7 +72,7 @@ src/
 ├── app/
 │   ├── page.tsx            # Homepage — YesterdayReview, Judge CTA, level display, stat cards, monthly XP, activity log
 │   ├── layout.tsx          # Root layout with Nunito font + global styles
-│   ├── globals.css         # Tailwind base + 6 custom keyframe animations
+│   ├── globals.css         # Tailwind base + 6 custom keyframe animations + parchment grain texture overlay
 │   ├── api/judge/route.ts  # POST endpoint — sends activity to AI judge, returns XP verdict
 │   ├── api/auth/[...nextauth]/route.ts  # NextAuth catch-all route — handles Google OAuth login/callback/session
 │   ├── api/events/route.ts  # POST endpoint — receives batched analytics events, writes to Supabase events table
@@ -81,7 +83,7 @@ src/
 │   ├── api/admin/events/route.ts    # GET endpoint — recent raw events feed (paginated). Admin-gated
 │   ├── admin/              # Admin analytics dashboard — KPI cards, charts, heatmap, retention, user table, live feed
 │   ├── calendar/           # Month-at-a-glance view — daily XP totals with habit/damage icons, tap a day to see detail modal
-│   ├── settings/           # Customize stat names, descriptions, colors, icons + enable/disable habits & damage
+│   ├── settings/           # Customize stat names, descriptions, colors, icons + enable/disable habits & damage + sound toggle
 │   ├── shop/               # Power-Up Store — buy and equip cosmetic items on Skipper
 │   ├── prizes/             # Prize Track — dual-track timeline with system rewards (rank milestones) + user-created IRL prizes
 │   └── vision/             # Vision Board — cozy mood/inspiration board with AI Oracle that weaves dreams into vivid visions
@@ -89,19 +91,19 @@ src/
 │   ├── StatCard.tsx         # One card per stat (icon fill effect, level, XP bar, streak flame, dormant dimming) — read-only, no + button
 │   ├── MonthlyXPSummary.tsx # Monthly XP total with sparkline bar chart + trend vs last month
 │   ├── JudgeModal.tsx       # Conversational AI judge — multi-turn chat, awards variable XP (1-10 per stat)
-│   ├── ActivityLog.tsx      # Unified feed of all events (XP gains, habits, damage, level-ups, rank-ups, prize unlocks) with distinct visuals per type
+│   ├── ActivityLog.tsx      # Unified feed of all events (XP gains, habits, damage, level-ups, rank-ups, prize unlocks) with distinct visuals per type + AutoAnimate transitions
 │   ├── PrizeTimeline.tsx    # Horizontal scrollable dual-track timeline — system rewards (top) + user prizes (bottom) with fog of war
 │   ├── MonthCalendar.tsx    # Calendar grid with per-day XP breakdown + habit/damage icons
 │   ├── YesterdayReview.tsx   # Compact yesterday checklist — habit/damage toggles with emoji labels, PP summary row with toast
 │   ├── CaptainQuip.tsx      # Daily Captain quip card — deterministic rotation, 6 priority tiers
-│   ├── LevelUpCelebration.tsx # Level-up celebration animation overlay
+│   ├── LevelUpCelebration.tsx # Level-up celebration — canvas-confetti bursts (gold for overall, stat-colored for stat level-ups)
 │   ├── ModalBackdrop.tsx    # Shared modal backdrop (role="dialog", aria-modal, auto-focus, Escape key, click-to-close)
 │   ├── SkipperCharacter.tsx # Inline SVG paper-doll — renders Skipper with layered equipment overlays
 │   ├── StatIcons.tsx        # 20 SVG icons (8 stat defaults + 12 extras for customization)
 │   ├── TrackerProvider.tsx   # Client wrapper for analytics — auto-tracks session_start, page_view, user identification
 │   ├── AuthProvider.tsx     # Client wrapper for NextAuth SessionProvider (used in layout.tsx)
 │   ├── UserMenu.tsx         # Login/logout button — shows Google avatar when signed in, "Sign in" when not
-│   ├── VisionCardGrid.tsx   # Masonry grid of vision cards — CSS columns layout, pastel card tints, staggered dreamFadeIn
+│   ├── VisionCardGrid.tsx   # Masonry grid of vision cards — CSS columns layout, pastel card tints, AutoAnimate transitions
 │   ├── VisionCardDetail.tsx # Tap-to-view detail modal — full text, original/weaved toggle, pin/unpin, delete
 │   ├── AddVisionModal.tsx   # Bottom-sheet modal for creating visions — "Just add it" or "Let the Oracle weave it" AI path
 │   ├── BoardReadingModal.tsx # Modal showing the Oracle's interpretation of the whole board
@@ -121,7 +123,8 @@ src/
     ├── tracker.ts           # Client-side analytics — track() queues events, batches to /api/events, identifyUser() links anon→auth
     ├── auth.ts              # NextAuth v5 config — Google OAuth provider, JWT session strategy, Supabase profile upsert on sign-in
     ├── supabase.ts          # Supabase client factories — createServiceClient (server, bypasses RLS) + createBrowserClient (client, subject to RLS)
-    └── adminQueries.ts      # Admin dashboard server-side queries — isAdmin(), getOverviewMetrics(), getMetrics(), getUserSummaries(), getRecentEvents()
+    ├── adminQueries.ts      # Admin dashboard server-side queries — isAdmin(), getOverviewMetrics(), getMetrics(), getUserSummaries(), getRecentEvents()
+    └── sound.ts             # Sound effects + haptic feedback utility — playSound, vibrate, playSoundWithHaptic, isMuted/setMuted. Off by default
 
 src/types/
 └── next-auth.d.ts           # TypeScript module augmentation — adds googleSub to Session and JWT types
@@ -148,6 +151,8 @@ src/types/
     ├── stranger/SKILL.md       # /stranger — first-impression audit: 4-agent new-user simulation → clarity/friction/hook/jargon fixes
     ├── subtractor/SKILL.md     # /subtractor — deletion agent: 4-agent audit for dead code, unused features, over-abstractions → ranked removal list
     ├── announce/SKILL.md       # /announce — generate branded Canva assets (social cards, marketing, release announcements) via MCP
+    ├── recap/SKILL.md          # /recap — session recap card: visual summary of what was shipped (Canva, internal-only)
+    ├── snapshot/SKILL.md       # /snapshot — before/after visual diff: side-by-side UI change card (Canva, internal-only)
     ├── wrapup/SKILL.md         # /wrapup — session end: sync main, check dangling work, update CLAUDE.md + memory + strategic lessons
     ├── xp-debug/SKILL.md       # /xp-debug — injects temporary +5 XP debug button into page.tsx (never committed)
     └── xp-debug-off/SKILL.md   # /xp-debug-off — removes the debug button via git checkout
