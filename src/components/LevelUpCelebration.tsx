@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import confetti from "canvas-confetti";
 import { StatKey } from "@/lib/types";
 
 // --- Stat-specific toast messages (3-5 per stat, rotated by level) ---
@@ -101,8 +102,43 @@ export function LevelUpCelebration({
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
 
-    // After a brief stillness, reveal the toast
-    timers.push(setTimeout(() => setShowToast(true), isOverallLevelUp ? 700 : 450));
+    // After a brief stillness, reveal the toast + fire confetti
+    timers.push(setTimeout(() => {
+      setShowToast(true);
+
+      if (isOverallLevelUp) {
+        // Big gold burst for overall level-up
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.5 },
+          colors: ["#D4A373", "#C9943E", "#E8D5B7", "#B8860B"],
+          disableForReducedMotion: true,
+        });
+
+        // Extra burst for rank-up
+        if (overallNewRank) {
+          timers.push(setTimeout(() => {
+            confetti({
+              particleCount: 50,
+              spread: 100,
+              origin: { y: 0.45 },
+              colors: ["#D4A373", "#C9943E", "#f5c842", "#E8D5B7"],
+              disableForReducedMotion: true,
+            });
+          }, 200));
+        }
+      } else {
+        // Smaller burst in stat color for stat level-up
+        confetti({
+          particleCount: 40,
+          spread: 55,
+          origin: { y: 0.5 },
+          colors: [statColor, "#D4A373", "#C9943E"],
+          disableForReducedMotion: true,
+        });
+      }
+    }, isOverallLevelUp ? 700 : 450));
 
     // Begin fade out
     timers.push(setTimeout(() => setFading(true), isOverallLevelUp ? 2200 : 1600));
@@ -111,7 +147,7 @@ export function LevelUpCelebration({
     timers.push(setTimeout(() => onCompleteRef.current(), isOverallLevelUp ? 2500 : 1900));
 
     return () => timers.forEach(clearTimeout);
-  }, [isOverallLevelUp]);
+  }, [isOverallLevelUp, overallNewRank, statColor]);
 
   return (
     <div

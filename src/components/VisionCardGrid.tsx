@@ -1,5 +1,6 @@
 "use client";
 
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { VisionCard } from "@/lib/types";
 import { getCardGradient } from "@/lib/visionColors";
 import { Pin } from "lucide-react";
@@ -30,9 +31,11 @@ function getTextStyle(text: string): { fontSize: string; fontWeight: string; lin
 }
 
 export function VisionCardGrid({ cards, onCardTap }: VisionCardGridProps) {
+  const [animatedParent] = useAutoAnimate();
+
   return (
-    <div className="columns-2 md:columns-3 gap-5 space-y-5">
-      {cards.map((card, index) => {
+    <div ref={animatedParent} className="columns-2 md:columns-3 gap-5 space-y-5">
+      {cards.map((card) => {
         const hasImage = !!card.imageBase64;
         const gradient = getCardGradient(card.id);
         const float = getFloatTiming(card.id);
@@ -42,8 +45,7 @@ export function VisionCardGrid({ cards, onCardTap }: VisionCardGridProps) {
           /* Outer: masonry layout + entrance animation */
           <div
             key={card.id}
-            className="break-inside-avoid animate-dreamFadeIn"
-            style={{ animationDelay: `${index * 80}ms` }}
+            className="break-inside-avoid"
           >
             {/* Button: click handler + group context for hover */}
             <button

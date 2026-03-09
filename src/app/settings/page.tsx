@@ -5,7 +5,8 @@ import { GameData, StatKey, HabitKey, DamageKey, CustomStatOverride } from "@/li
 import { STAT_DEFINITIONS, STAT_KEYS, COLOR_PRESETS, StatDefinition } from "@/lib/stats";
 import { loadGameData, saveCustomDefinitions, getEnabledHabits, saveEnabledHabits, getEnabledDamage, saveEnabledDamage, resetAllData, saveProfilePicture, getProfilePicture, getOverallLevel, getTotalLifetimeXP, getMascotName, setMascotName, isMascotNameUnlocked } from "@/lib/storage";
 import { StatIcon, ICON_OPTIONS } from "@/components/StatIcons";
-import { ArrowLeft, RotateCcw, Trash2, Camera, X, BarChart3 } from "lucide-react";
+import { ArrowLeft, RotateCcw, Trash2, Camera, X, BarChart3, Volume2 } from "lucide-react";
+import { isMuted, setMuted } from "@/lib/sound";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { HABIT_DEFINITIONS } from "@/lib/habits";
@@ -28,6 +29,7 @@ export default function SettingsPage() {
   const [mascotNameValue, setMascotNameValue] = useState("Skipper");
   const [overallLevel, setOverallLevel] = useState(1);
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const savedOverridesRef = useRef<string>("{}");
@@ -46,6 +48,7 @@ export default function SettingsPage() {
     setOverallLevel(getOverallLevel(getTotalLifetimeXP(data)).level);
     savedOverridesRef.current = JSON.stringify(data.customDefinitions ?? {});
     savedMascotNameRef.current = mascotName;
+    setSoundEnabled(!isMuted());
 
     // Check admin access silently
     fetch("/api/admin/overview")
@@ -579,6 +582,48 @@ export default function SettingsPage() {
           );
         })}
       </div>
+
+      {/* Section: Sound & Vibration */}
+      <h2 className="text-lg font-bold text-stone-500 mt-12 mb-2">Sound & Vibration</h2>
+      <p className="text-xs text-stone-400 mb-4">Play sounds and haptic feedback on key actions.</p>
+      <button
+        onClick={() => {
+          const next = !soundEnabled;
+          setSoundEnabled(next);
+          setMuted(!next);
+        }}
+        className="w-full flex items-center gap-3 p-4 rounded-2xl transition-all duration-200"
+        style={{
+          backgroundColor: soundEnabled ? "#fef3c7" : "#fafaf9",
+          border: soundEnabled ? "2px solid #d9770630" : "2px solid #e7e5e4",
+        }}
+      >
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center"
+          style={{
+            backgroundColor: soundEnabled ? "#d9770620" : "#f5f5f4",
+          }}
+        >
+          <Volume2 size={20} style={{ color: soundEnabled ? "#d97706" : "#a8a29e" }} />
+        </div>
+        <div className="flex-1 text-left">
+          <div className="font-bold text-sm" style={{ color: soundEnabled ? "#d97706" : "#a8a29e" }}>
+            Sound effects
+          </div>
+          <div className="text-xs" style={{ color: soundEnabled ? "#d9770699" : "#d6d3d1" }}>
+            Level-up chimes, XP dings, toggle clicks
+          </div>
+        </div>
+        <div
+          className="w-11 h-6 rounded-full relative transition-colors duration-200 shrink-0"
+          style={{ backgroundColor: soundEnabled ? "#d97706" : "#d6d3d1" }}
+        >
+          <div
+            className="w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all duration-200 shadow-sm"
+            style={{ left: soundEnabled ? "22px" : "2px" }}
+          />
+        </div>
+      </button>
 
       {/* Section: Admin (only visible to admin users) */}
       {isAdmin && (

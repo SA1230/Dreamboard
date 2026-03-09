@@ -6,6 +6,7 @@ import { loadGameData, getPointsBalance, getInventory, purchaseItem, equipItem, 
 import { ITEM_CATALOG, RARITY_COLORS, VISIBLE_SLOTS, getItemById } from "@/lib/items";
 import { ITEM_THUMBNAIL_REGISTRY } from "@/lib/itemSvgs";
 import { track } from "@/lib/tracker";
+import { playSoundWithHaptic } from "@/lib/sound";
 import { SkipperCharacter } from "@/components/SkipperCharacter";
 import { ArrowLeft, ShoppingBag, Check, Sword } from "lucide-react";
 import Link from "next/link";
@@ -30,6 +31,7 @@ export default function ShopPage() {
     if (result) {
       setGameData(result);
       showToast("Purchased!");
+      playSoundWithHaptic("purchase", 0.5, [30, 20, 50]);
       const item = getItemById(itemId);
       track("shop_purchase", { itemId, itemName: item?.name, rarity: item?.rarity });
     }
