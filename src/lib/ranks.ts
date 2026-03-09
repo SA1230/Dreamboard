@@ -33,33 +33,31 @@ export const RANK_COLORS: Record<number, [string, string]> = {
   60: ["#c89820", "#f0c030"],  // Transcendent: rich gold → brilliant gold
 };
 
-export function getRankTitle(level: number): string {
-  let title = "Novice";
-  for (const [threshold, name] of RANK_TITLES) {
-    if (level >= threshold) title = name;
+// Shared helper: find the current and next rank bracket for a given level
+function findRankBracket(level: number): { currentIndex: number; currentThreshold: number; nextThreshold: number | null } {
+  let currentIndex = 0;
+  for (let i = 0; i < RANK_TITLES.length; i++) {
+    if (level >= RANK_TITLES[i][0]) currentIndex = i;
   }
-  return title;
+  const currentThreshold = RANK_TITLES[currentIndex][0];
+  const nextThreshold = currentIndex + 1 < RANK_TITLES.length ? RANK_TITLES[currentIndex + 1][0] : null;
+  return { currentIndex, currentThreshold, nextThreshold };
+}
+
+export function getRankTitle(level: number): string {
+  return RANK_TITLES[findRankBracket(level).currentIndex][1];
 }
 
 // Returns the next rank name the player will reach, or null if already at max rank
 export function getNextRankTitle(level: number): string | null {
-  for (const [threshold, name] of RANK_TITLES) {
-    if (threshold > level) return name;
-  }
-  return null;
+  const { currentIndex } = findRankBracket(level);
+  return currentIndex + 1 < RANK_TITLES.length ? RANK_TITLES[currentIndex + 1][1] : null;
 }
 
 // Returns 0–1 representing fine-grained progress through the current rank bracket.
 // levelFraction (0–1) is XP progress within the current level, so the color shifts smoothly per XP.
 export function getRankProgress(level: number, levelFraction: number = 0): number {
-  let currentThreshold = 1;
-  let nextThreshold: number | null = null;
-  for (let i = 0; i < RANK_TITLES.length; i++) {
-    if (level >= RANK_TITLES[i][0]) {
-      currentThreshold = RANK_TITLES[i][0];
-      nextThreshold = i + 1 < RANK_TITLES.length ? RANK_TITLES[i + 1][0] : null;
-    }
-  }
+  const { currentThreshold, nextThreshold } = findRankBracket(level);
   if (nextThreshold === null) return 1; // max rank reached
   const range = nextThreshold - currentThreshold;
   if (range <= 0) return 1;
@@ -68,13 +66,8 @@ export function getRankProgress(level: number, levelFraction: number = 0): numbe
 
 // Get the color pair for the player's current rank
 export function getRankColorPair(level: number): [string, string] {
-  let colors: [string, string] = RANK_COLORS[1];
-  for (const [threshold] of RANK_TITLES) {
-    if (level >= threshold && RANK_COLORS[threshold]) {
-      colors = RANK_COLORS[threshold];
-    }
-  }
-  return colors;
+  const { currentThreshold } = findRankBracket(level);
+  return RANK_COLORS[currentThreshold] ?? RANK_COLORS[1];
 }
 
 // Linearly interpolate between two hex colors (e.g. "#ff0000", "#00ff00", 0.5 → "#808000")
