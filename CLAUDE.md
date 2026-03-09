@@ -62,6 +62,7 @@ The shared state file lives at `~/.claude/projects/-Users-shiroy-Dreamboard-clon
 - **Performance:** React Compiler (`babel-plugin-react-compiler`) enabled via `next.config.ts` experimental flag — automatic memoization at build time
 - **Viewport:** Designed for mobile-width viewports (375–430px). No desktop breakpoints currently — do not add responsive layouts unless asked
 - **Hosting:** Vercel (Production) — custom domain `dreamboard.net` (redirects to `www.dreamboard.net`)
+- **Environment:** `.env.example` lists all required env vars — copy to `.env.local` and fill in keys
 - **Run locally:** `npm run dev` (port 3000) / `npm run build` to check for errors
 - **Design Tools:** Canva (read/write via MCP), Figma (read-only via MCP), Rive (manual editor + React runtime integration). See "Design Tools" section below for workflow details
 
@@ -150,6 +151,7 @@ src/types/
     ├── thesis/SKILL.md         # /thesis — thesis examiner: 4-agent stress-test of a product idea before building (user, builder, skeptic, strategist)
     ├── stranger/SKILL.md       # /stranger — first-impression audit: 4-agent new-user simulation → clarity/friction/hook/jargon fixes
     ├── subtractor/SKILL.md     # /subtractor — deletion agent: 4-agent audit for dead code, unused features, over-abstractions → ranked removal list
+    ├── eli5/SKILL.md           # /eli5 — plain-language explainer: re-explains technical concepts with analogies, no jargon
     ├── announce/SKILL.md       # /announce — generate branded Canva assets (social cards, marketing, release announcements) via MCP
     ├── recap/SKILL.md          # /recap — session recap card: visual summary of what was shipped (Canva, internal-only)
     ├── snapshot/SKILL.md       # /snapshot — before/after visual diff: side-by-side UI change card (Canva, internal-only)
@@ -458,6 +460,7 @@ Universal working preferences (communication style, git conventions, code qualit
 
 ## Infrastructure
 
+- **CI (GitHub Actions):** `.github/workflows/ci.yml` runs lint + build + test on every PR and push to main. Uses placeholder env vars for the build step (no real secrets needed). This is the server-side enforcement — complements the local pre-push hook.
 - **Pre-push hook:** `.claude/hooks/pre-push-gate.sh` runs `npm run build && npx vitest run` before any `git push`. Configured in `.claude/settings.local.json` as a `PreToolUse` hook on `Bash` commands. If build or tests fail, the push is blocked.
 - **Dev server preview:** `.claude/launch.json` configures `npm run dev` on port 3000. Use `preview_start` with name `"dev"` to launch, then `preview_screenshot`/`preview_snapshot` to verify UI changes visually.
 - **Self-review in /ship:** The `/ship` skill includes a self-review step that reviews the diff for bugs, debug artifacts, style drift, and type safety issues before committing. Fixes are applied autonomously.
