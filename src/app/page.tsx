@@ -56,32 +56,32 @@ function LandingPage() {
   ];
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md sm:max-w-xl lg:max-w-2xl flex flex-col items-center bg-white/60 sm:rounded-3xl sm:border sm:border-stone-200/60 sm:py-16 lg:py-20 sm:px-10 lg:px-16 py-0 px-2">
+    <main className="min-h-screen flex items-center justify-center px-4 py-6 sm:py-8">
+      <div className="w-full max-w-md sm:max-w-xl lg:max-w-2xl flex flex-col items-center bg-white/60 sm:rounded-3xl sm:border sm:border-stone-200/60 sm:py-10 lg:py-12 sm:px-10 lg:px-16 py-0 px-2">
         {/* Logo */}
-        <div className="flex items-center gap-2 sm:gap-3 mb-2">
+        <div className="flex items-center gap-2 sm:gap-3 mb-1">
           <img src="/logos/dreamboard-icon-blue.svg" alt="" className="h-10 sm:h-14 lg:h-16" />
           <img src="/brand/dreamboard-wordmark-blue.svg" alt="Dreamboard" className="h-10 sm:h-14 lg:h-16" />
         </div>
-        <p className="text-sm sm:text-base font-medium text-stone-400 tracking-wide mb-10 sm:mb-14">Level Up Your Life</p>
+        <p className="text-sm sm:text-base font-medium text-stone-400 tracking-wide mb-6 sm:mb-8">Level Up Your Life</p>
 
         {/* Skipper hero */}
-        <div className="relative mb-8 sm:mb-10">
+        <div className="relative mb-4 sm:mb-5">
           <div
-            className="w-32 h-32 sm:w-44 sm:h-44 rounded-full flex items-center justify-center border-2 border-amber-200"
+            className="w-28 h-28 sm:w-36 sm:h-36 rounded-full flex items-center justify-center border-2 border-amber-200"
             style={{ background: "radial-gradient(circle at 50% 40%, #FFF8EB, #FFF0D4)" }}
           >
             <img
               src="/mascots/judge-hero.svg"
               alt="Skipper the Captain"
-              className="w-24 h-24 sm:w-32 sm:h-32"
+              className="w-20 h-20 sm:w-28 sm:h-28"
             />
           </div>
         </div>
 
         {/* Value prop */}
-        <div className="max-w-sm sm:max-w-md text-center mb-8 sm:mb-10">
-          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-stone-700 mb-3 sm:mb-4">
+        <div className="max-w-sm sm:max-w-md text-center mb-5 sm:mb-6">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-stone-700 mb-2 sm:mb-3">
             Your life is an RPG.
             <br />
             Start keeping score.
@@ -94,7 +94,7 @@ function LandingPage() {
         </div>
 
         {/* Stat preview chips */}
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-10 sm:mb-12 max-w-xs sm:max-w-md">
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6 sm:mb-8 max-w-xs sm:max-w-md">
           {statPreviews.map((stat) => (
             <span
               key={stat.name}

@@ -145,6 +145,8 @@ export type FeedEvent =
   | { type: "challenge_completed"; id: string; timestamp: string; challengeId: string; description: string; stat: StatKey; bonusXP: number };
 
 export interface GameData {
+  /** Schema version for data migrations — auto-upgraded on load */
+  schemaVersion?: number;
   stats: Record<StatKey, StatProgress>;
   activities: Activity[];
   customDefinitions?: Partial<Record<StatKey, CustomStatOverride>>;

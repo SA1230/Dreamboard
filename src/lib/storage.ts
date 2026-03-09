@@ -7,6 +7,59 @@ import { MAX_VISION_CARDS, VISION_COLORS } from "./visionColors";
 
 const STORAGE_KEY = "dreamboard-data";
 
+// --- Schema Versioning & Data Migrations ---
+// Self-healing data layer: new fields never corrupt old data.
+// Add migrations here when GameData shape changes.
+
+const SCHEMA_VERSION = 1;
+
+interface SchemaMigration {
+  version: number;
+  name: string;
+  migrate: (data: GameData) => GameData;
+}
+
+const SCHEMA_MIGRATIONS: SchemaMigration[] = [
+  {
+    version: 1,
+    name: "clean_future_dated_habits",
+    migrate: (data: GameData): GameData => {
+      if (!data.healthyHabits) return data;
+      const todayStr = getTodayString();
+      let changed = false;
+      const cleanedHabits = { ...data.healthyHabits };
+      for (const habitKey of Object.keys(cleanedHabits) as HabitKey[]) {
+        const dates = cleanedHabits[habitKey];
+        if (!dates) continue;
+        const filtered = dates.filter((d) => d <= todayStr);
+        if (filtered.length !== dates.length) {
+          cleanedHabits[habitKey] = filtered;
+          changed = true;
+        }
+      }
+      return changed ? { ...data, healthyHabits: cleanedHabits } : data;
+    },
+  },
+];
+
+/** Run all pending schema migrations and return the upgraded data. */
+function migrateGameData(data: GameData): { data: GameData; migrated: boolean } {
+  const currentVersion = data.schemaVersion ?? 0;
+  if (currentVersion >= SCHEMA_VERSION) return { data, migrated: false };
+
+  let result = data;
+  for (const migration of SCHEMA_MIGRATIONS) {
+    if (migration.version > currentVersion) {
+      result = migration.migrate(result);
+    }
+  }
+  result = { ...result, schemaVersion: SCHEMA_VERSION };
+  return { data: result, migrated: true };
+}
+
+/** The current schema version — exported for tests */
+export { SCHEMA_VERSION };
+
 // Fibonacci-ish XP thresholds: how much XP is needed to go from level N to N+1
 // Level 1→2: 3, Level 2→3: 5, Level 3→4: 8, Level 4→5: 13, etc.
 const XP_THRESHOLDS = [3, 5, 8, 13, 21, 34, 55, 89, 144, 233];
@@ -54,25 +107,13 @@ export function loadGameData(): GameData {
       }
     }
 
-    // Migration: remove future-dated habit entries caused by old UTC bug
-    if (parsed.healthyHabits) {
-      const todayStr = getTodayString();
-      let hadFutureDates = false;
-      for (const habitKey of Object.keys(parsed.healthyHabits) as HabitKey[]) {
-        const dates = parsed.healthyHabits[habitKey];
-        if (!dates) continue;
-        const filtered = dates.filter((d) => d <= todayStr);
-        if (filtered.length !== dates.length) {
-          parsed.healthyHabits[habitKey] = filtered;
-          hadFutureDates = true;
-        }
-      }
-      if (hadFutureDates) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
-      }
+    // Run schema migrations (self-healing: auto-upgrades data on load)
+    const { data: migrated, migrated: didMigrate } = migrateGameData(parsed);
+    if (didMigrate) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
     }
 
-    return parsed;
+    return migrated;
   } catch {
     return createDefaultGameData();
   }
