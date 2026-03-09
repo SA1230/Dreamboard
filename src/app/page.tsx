@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useSession, signIn } from "next-auth/react";
 import { GameData, StatKey, HabitKey, DamageKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
 import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForDate, toggleDamageForDate, isHabitCompletedForDate, isDamageMarkedForDate, formatRelativeTime, getInventory, getMascotName, checkPrizeUnlocks, issueChallenge, issueChallengeChain, completeChallenge, dismissChallenge } from "@/lib/storage";
@@ -20,8 +21,120 @@ import { CaptainQuip } from "@/components/CaptainQuip";
 import { getCaptainQuip } from "@/lib/captainQuips";
 import { track } from "@/lib/tracker";
 import { playSound, playSoundWithHaptic } from "@/lib/sound";
+import { STAT_DEFINITIONS } from "@/lib/stats";
 
 export default function Home() {
+  const { data: session, status } = useSession();
+
+  // Auth gate — show landing page for unauthenticated users
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-stone-300 border-t-stone-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <LandingPage />;
+  }
+
+  return <AuthenticatedHome />;
+}
+
+function LandingPage() {
+  const statPreviews = [
+    { name: "Strength", color: STAT_DEFINITIONS.strength.color, iconKey: STAT_DEFINITIONS.strength.iconKey },
+    { name: "Wisdom", color: STAT_DEFINITIONS.wisdom.color, iconKey: STAT_DEFINITIONS.wisdom.iconKey },
+    { name: "Vitality", color: STAT_DEFINITIONS.vitality.color, iconKey: STAT_DEFINITIONS.vitality.iconKey },
+    { name: "Charisma", color: STAT_DEFINITIONS.charisma.color, iconKey: STAT_DEFINITIONS.charisma.iconKey },
+    { name: "Craft", color: STAT_DEFINITIONS.craft.color, iconKey: STAT_DEFINITIONS.craft.iconKey },
+    { name: "Discipline", color: STAT_DEFINITIONS.discipline.color, iconKey: STAT_DEFINITIONS.discipline.iconKey },
+    { name: "Spirit", color: STAT_DEFINITIONS.spirit.color, iconKey: STAT_DEFINITIONS.spirit.iconKey },
+    { name: "Wealth", color: STAT_DEFINITIONS.wealth.color, iconKey: STAT_DEFINITIONS.wealth.iconKey },
+  ];
+
+  return (
+    <main className="min-h-screen flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md sm:max-w-xl lg:max-w-2xl flex flex-col items-center bg-white/60 sm:rounded-3xl sm:border sm:border-stone-200/60 sm:py-16 lg:py-20 sm:px-10 lg:px-16 py-0 px-2">
+        {/* Logo */}
+        <div className="flex items-center gap-2 sm:gap-3 mb-2">
+          <img src="/logos/dreamboard-icon-blue.svg" alt="" className="h-10 sm:h-14 lg:h-16" />
+          <img src="/brand/dreamboard-wordmark-blue.svg" alt="Dreamboard" className="h-10 sm:h-14 lg:h-16" />
+        </div>
+        <p className="text-sm sm:text-base font-medium text-stone-400 tracking-wide mb-10 sm:mb-14">Level Up Your Life</p>
+
+        {/* Skipper hero */}
+        <div className="relative mb-8 sm:mb-10">
+          <div
+            className="w-32 h-32 sm:w-44 sm:h-44 rounded-full flex items-center justify-center border-2 border-amber-200"
+            style={{ background: "radial-gradient(circle at 50% 40%, #FFF8EB, #FFF0D4)" }}
+          >
+            <img
+              src="/mascots/judge-hero.svg"
+              alt="Skipper the Captain"
+              className="w-24 h-24 sm:w-32 sm:h-32"
+            />
+          </div>
+        </div>
+
+        {/* Value prop */}
+        <div className="max-w-sm sm:max-w-md text-center mb-8 sm:mb-10">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-stone-700 mb-3 sm:mb-4">
+            Your life is an RPG.
+            <br />
+            Start keeping score.
+          </h2>
+          <p className="text-sm sm:text-base text-stone-500 leading-relaxed">
+            Tell the Captain what you did today. They&apos;ll interview you,
+            judge your effort with some sass, and award XP across 8 stats.
+            Level up by living.
+          </p>
+        </div>
+
+        {/* Stat preview chips */}
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-10 sm:mb-12 max-w-xs sm:max-w-md">
+          {statPreviews.map((stat) => (
+            <span
+              key={stat.name}
+              className="inline-flex items-center gap-1.5 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium"
+              style={{
+                backgroundColor: stat.color + "15",
+                color: stat.color,
+              }}
+            >
+              <StatIcon iconKey={stat.iconKey} className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              {stat.name}
+            </span>
+          ))}
+        </div>
+
+        {/* Sign in CTA */}
+        <button
+          onClick={() => signIn("google")}
+          className="flex items-center gap-3 px-6 py-3 sm:px-8 sm:py-4 rounded-xl text-sm sm:text-base font-bold text-white shadow-md hover:shadow-lg hover:scale-105 transition-all active:scale-[0.98]"
+          style={{
+            background: "linear-gradient(90deg, #B4722A 0%, #D4A44A 30%, #F5D680 50%, #D4A44A 70%, #B4722A 100%)",
+            backgroundSize: "200% 100%",
+            animation: "ctaShimmer 4s ease-in-out infinite",
+          }}
+        >
+          <svg className="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#fff" />
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#fff" />
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#fff" />
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#fff" />
+          </svg>
+          Sign in with Google
+        </button>
+
+        <p className="text-xs sm:text-sm text-stone-400 mt-4">Free forever. Your data stays on your device.</p>
+      </div>
+    </main>
+  );
+}
+
+function AuthenticatedHome() {
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [xpGainedStat, setXpGainedStat] = useState<{ stat: StatKey; amount: number } | null>(null);
   const [isActivityExpanded, setIsActivityExpanded] = useState(true);
@@ -373,7 +486,7 @@ export default function Home() {
             className="h-7 inline-block"
           />
           <img
-            src="/logos/dreamboard-wordmark-blue.svg"
+            src="/brand/dreamboard-wordmark-blue.svg"
             alt="Dreamboard"
             className="h-7 inline-block"
           />
