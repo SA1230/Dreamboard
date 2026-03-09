@@ -38,6 +38,7 @@ The user invoking `/ship` IS explicit approval to push AND merge. No extra confi
 
 6. **Post-ship:**
    - `git checkout main && git pull origin main` — sync local main with the merge
+   - If the change is user-facing (new feature, UX improvement, visual change), suggest: "Want me to run `/announce` to create a release card for this?"
    - Suggest running `/wrapup` if this looks like the last task of the session
 
 ## Rules

@@ -70,7 +70,7 @@ Structure:
 1. **The Thesis (restated clearly):** "If [X], then [Y], because [Z]."
 2. **Core Assumptions:** The 2-3 things that must be true for this to work, ranked by confidence
 3. **Strength of the Bet:** Honest assessment — is this a strong thesis, a reasonable gamble, or a hope?
-4. **The Cheapest Test:** The smallest possible thing that would provide signal on the core assumption. This might be a prototype, a partial build, a manual simulation, or even a question to ask yourself
+4. **The Cheapest Test:** The smallest possible thing that would provide signal on the core assumption. This might be a prototype, a partial build, a manual simulation, a Canva mockup (via `/announce`), or even a question to ask yourself
 5. **The Full Build (if we proceed):** What it would actually take, what it touches, estimated scope
 6. **What We'd Measure:** How we'd know if this worked — specific metrics, behaviors, or signals to watch. Flag if measurement infrastructure doesn't exist yet
 7. **The Alternative:** The single strongest alternative use of the same effort. Not to be contrarian — to make sure we're choosing, not defaulting
