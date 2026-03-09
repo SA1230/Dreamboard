@@ -150,6 +150,7 @@ src/types/
     ├── observe/SKILL.md        # /observe — field notes: 4-agent codebase observation (shape, drift, connections, outsider view) → observations only, no prescriptions
     ├── persona/SKILL.md        # /persona — persona simulator: 4-agent user-type walkthrough → conflict map + core user verdict
     ├── protocol/SKILL.md       # /protocol — strategic review: 4-agent codebase analysis → tiered build list
+    ├── probe/SKILL.md          # /probe — AI personality red-team: adversarial testing of Judge, Oracle, and Companion behavioral contracts
     ├── qa/SKILL.md             # /qa — visual smoke test: screenshots all routes, checks console errors, reports issues (read-only)
     ├── ship/SKILL.md           # /ship — build, commit, push, auto-merge in one step (invoking = push + merge approval)
     ├── storyteller/SKILL.md    # /storyteller — narrative coherence audit: 4-agent timeline walk (Day 0 → Month 1) → arc map with chapter markers
