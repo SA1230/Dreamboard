@@ -87,6 +87,8 @@ src/
 │   ├── settings/           # Customize stat names, descriptions, colors, icons + enable/disable habits & damage + sound toggle
 │   ├── shop/               # Power-Up Store — buy and equip cosmetic items on Skipper
 │   ├── prizes/             # Prize Track — dual-track timeline with system rewards (rank milestones) + user-created IRL prizes
+│   ├── terms/              # Terms of Service — static legal page (company-favorable, binding arbitration, class action waiver)
+│   ├── privacy/            # Privacy Policy — static legal page (local storage model, third-party disclosures, CCPA rights)
 │   └── vision/             # Vision Board — cozy mood/inspiration board with AI Oracle that weaves dreams into vivid visions
 ├── components/
 │   ├── StatCard.tsx         # One card per stat (icon fill effect, level, XP bar, streak flame, dormant dimming) — read-only, no + button
