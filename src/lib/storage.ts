@@ -449,33 +449,48 @@ export function getYesterdayString(): string {
   return `${year}-${month}-${day}`;
 }
 
+// --- Generic date-entry toggle (shared by habits and damage) ---
+
+/** Check if a key has a date entry in a date-string map */
+function isDateEntryPresent<K extends string>(
+  dateMap: Partial<Record<K, string[]>> | undefined,
+  key: K,
+  dateString: string
+): boolean {
+  const dates = dateMap?.[key];
+  return dates ? dates.includes(dateString) : false;
+}
+
+/** Toggle a date entry on/off, returning the updated date-string map field */
+function toggleDateEntry<K extends string>(
+  dateMap: Partial<Record<K, string[]>> | undefined,
+  key: K,
+  dateString: string
+): { updatedMap: Partial<Record<K, string[]>>; wasPresent: boolean } {
+  const currentDates = dateMap?.[key] ?? [];
+  const wasPresent = currentDates.includes(dateString);
+  const updatedDates = wasPresent
+    ? currentDates.filter((date) => date !== dateString)
+    : [...currentDates, dateString];
+  return {
+    updatedMap: { ...dateMap, [key]: updatedDates },
+    wasPresent,
+  };
+}
+
 // --- Date-parameterized habit functions ---
 
 export function isHabitCompletedForDate(data: GameData, habitKey: HabitKey, dateString: string): boolean {
-  const dates = data.healthyHabits?.[habitKey];
-  if (!dates) return false;
-  return dates.includes(dateString);
+  return isDateEntryPresent(data.healthyHabits, habitKey, dateString);
 }
 
 export function toggleHabitForDate(data: GameData, habitKey: HabitKey, dateString: string): GameData {
-  const currentDates = data.healthyHabits?.[habitKey] ?? [];
-  const alreadyCompleted = currentDates.includes(dateString);
+  const { updatedMap, wasPresent } = toggleDateEntry(data.healthyHabits, habitKey, dateString);
 
-  const updatedDates = alreadyCompleted
-    ? currentDates.filter((date) => date !== dateString)
-    : [...currentDates, dateString];
+  let newData: GameData = { ...data, healthyHabits: updatedMap };
 
-  let newData: GameData = {
-    ...data,
-    healthyHabits: {
-      ...data.healthyHabits,
-      [habitKey]: updatedDates,
-    },
-  };
-
-  // Push feed event for habit toggle
   newData = pushFeedEvent(newData, {
-    type: alreadyCompleted ? "habit_removed" : "habit_completed",
+    type: wasPresent ? "habit_removed" : "habit_completed",
     id: crypto.randomUUID(),
     timestamp: new Date().toISOString(),
     habitKey,
@@ -650,30 +665,16 @@ const DEFAULT_ENABLED_DAMAGE: DamageKey[] = [];
 // --- Date-parameterized damage functions ---
 
 export function isDamageMarkedForDate(data: GameData, damageKey: DamageKey, dateString: string): boolean {
-  const dates = data.dailyDamage?.[damageKey];
-  if (!dates) return false;
-  return dates.includes(dateString);
+  return isDateEntryPresent(data.dailyDamage, damageKey, dateString);
 }
 
 export function toggleDamageForDate(data: GameData, damageKey: DamageKey, dateString: string): GameData {
-  const currentDates = data.dailyDamage?.[damageKey] ?? [];
-  const alreadyMarked = currentDates.includes(dateString);
+  const { updatedMap, wasPresent } = toggleDateEntry(data.dailyDamage, damageKey, dateString);
 
-  const updatedDates = alreadyMarked
-    ? currentDates.filter((date) => date !== dateString)
-    : [...currentDates, dateString];
+  let newData: GameData = { ...data, dailyDamage: updatedMap };
 
-  let newData: GameData = {
-    ...data,
-    dailyDamage: {
-      ...data.dailyDamage,
-      [damageKey]: updatedDates,
-    },
-  };
-
-  // Push feed event for damage toggle
   newData = pushFeedEvent(newData, {
-    type: alreadyMarked ? "damage_removed" : "damage_marked",
+    type: wasPresent ? "damage_removed" : "damage_marked",
     id: crypto.randomUUID(),
     timestamp: new Date().toISOString(),
     damageKey,
@@ -715,26 +716,24 @@ export function saveEnabledDamage(data: GameData, enabledDamage: DamageKey[]): G
 
 // --- Points Wallet (AA System) ---
 
-// Counts total habit completions across all time
-function countTotalHabitCompletions(data: GameData): number {
-  const habits = data.healthyHabits;
-  if (!habits) return 0;
+/** Count total date entries across all keys in a date-string map */
+function countDateEntries<K extends string>(dateMap: Partial<Record<K, string[]>> | undefined): number {
+  if (!dateMap) return 0;
   let total = 0;
-  for (const habitKey of Object.keys(habits) as HabitKey[]) {
-    total += habits[habitKey]?.length ?? 0;
+  for (const dates of Object.values(dateMap)) {
+    if (Array.isArray(dates)) total += dates.length;
   }
   return total;
 }
 
+// Counts total habit completions across all time
+function countTotalHabitCompletions(data: GameData): number {
+  return countDateEntries(data.healthyHabits);
+}
+
 // Counts total damage marks across all time
 function countTotalDamageMarks(data: GameData): number {
-  const damage = data.dailyDamage;
-  if (!damage) return 0;
-  let total = 0;
-  for (const damageKey of Object.keys(damage) as DamageKey[]) {
-    total += damage[damageKey]?.length ?? 0;
-  }
-  return total;
+  return countDateEntries(data.dailyDamage);
 }
 
 // Calculates effective points using day-by-day floor-at-zero logic.
@@ -753,10 +752,14 @@ function calculateEffectivePoints(data: GameData): number {
   // Collect all unique dates from both habits and damage
   const allDates = new Set<string>();
   for (const dates of Object.values(habits)) {
-    for (const d of (dates as string[])) allDates.add(d);
+    if (Array.isArray(dates)) {
+      for (const d of dates) allDates.add(d);
+    }
   }
   for (const dates of Object.values(damage)) {
-    for (const d of (dates as string[])) allDates.add(d);
+    if (Array.isArray(dates)) {
+      for (const d of dates) allDates.add(d);
+    }
   }
 
   // Process each day chronologically
@@ -768,10 +771,10 @@ function calculateEffectivePoints(data: GameData): number {
     let dayDamage = 0;
 
     for (const dates of Object.values(habits)) {
-      if ((dates as string[]).includes(date)) dayHabits++;
+      if (Array.isArray(dates) && dates.includes(date)) dayHabits++;
     }
     for (const dates of Object.values(damage)) {
-      if ((dates as string[]).includes(date)) dayDamage++;
+      if (Array.isArray(dates) && dates.includes(date)) dayDamage++;
     }
 
     balance = Math.max(0, balance + dayHabits - dayDamage);
