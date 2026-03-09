@@ -412,68 +412,70 @@ function AuthenticatedHome() {
       className="max-w-4xl mx-auto px-4 py-8 pb-20"
     >
       {/* Header */}
-      <header className="text-center mb-10 relative sticky top-0 z-50 bg-[#FDF8F4]/80 backdrop-blur-md -mx-4 px-4 py-3 border-b border-stone-200/50">
-        <div className="absolute left-0 top-2">
-          <UserMenu />
+      <header className="sticky top-0 z-50 bg-[#FDF8F4]/80 backdrop-blur-md -mx-4 px-3 py-2.5 border-b border-stone-200/50 mb-10">
+        <div className="flex items-center justify-between gap-1">
+          <div className="flex-shrink-0">
+            <UserMenu />
+          </div>
+          <Link href="/" className="flex items-center gap-1 flex-shrink-0" aria-label="Home">
+            <img
+              src="/logos/dreamboard-icon-blue.svg"
+              alt=""
+              className="h-6 inline-block"
+            />
+            <img
+              src="/brand/dreamboard-wordmark-blue.svg"
+              alt="Dreamboard"
+              className="h-6 inline-block"
+            />
+          </Link>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <Link
+              href="/calendar"
+              className="w-8 h-8 rounded-lg flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
+              title="Monthly calendar"
+              aria-label="Monthly calendar"
+            >
+              <CalendarDays size={16} />
+            </Link>
+            <Link
+              href="/shop"
+              className="w-8 h-8 rounded-lg flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
+              title="Power-Up Store"
+              aria-label="Shop"
+            >
+              <ShoppingBag size={16} />
+            </Link>
+            <Link
+              href="/prizes"
+              className="w-8 h-8 rounded-lg flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
+              title="Prize Track"
+              aria-label="Prize Track"
+            >
+              <Trophy size={16} />
+            </Link>
+            <Link
+              href="/vision"
+              className="w-8 h-8 rounded-lg flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
+              title="Vision Board"
+              aria-label="Vision Board"
+            >
+              <Sparkles size={16} />
+            </Link>
+            <Link
+              href="/settings"
+              className="w-8 h-8 rounded-lg flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
+              title="Customize stats"
+              aria-label="Settings"
+            >
+              <Settings size={16} />
+            </Link>
+          </div>
         </div>
-        <div className="absolute right-0 top-1 flex items-center gap-2">
-          <Link
-            href="/calendar"
-            className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
-            title="Monthly calendar"
-            aria-label="Monthly calendar"
-          >
-            <CalendarDays size={18} />
-          </Link>
-          <Link
-            href="/shop"
-            className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
-            title="Power-Up Store"
-            aria-label="Shop"
-          >
-            <ShoppingBag size={18} />
-          </Link>
-          <Link
-            href="/prizes"
-            className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
-            title="Prize Track"
-            aria-label="Prize Track"
-          >
-            <Trophy size={18} />
-          </Link>
-          <Link
-            href="/vision"
-            className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
-            title="Vision Board"
-            aria-label="Vision Board"
-          >
-            <Sparkles size={18} />
-          </Link>
-          <Link
-            href="/settings"
-            className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
-            title="Customize stats"
-            aria-label="Settings"
-          >
-            <Settings size={18} />
-          </Link>
-        </div>
-        <h1 className="mb-1 flex items-center justify-center gap-1.5">
-          <img
-            src="/logos/dreamboard-icon-blue.svg"
-            alt=""
-            className="h-7 inline-block"
-          />
-          <img
-            src="/brand/dreamboard-wordmark-blue.svg"
-            alt="Dreamboard"
-            className="h-7 inline-block"
-          />
-        </h1>
       </header>
 
       {/* Level Display — Skipper character with progress ring (hero position) */}
-      <div className="flex justify-center mt-14 mb-4">
+      <div className="flex justify-center mt-2 mb-4">
         <div style={{ transform: "scale(1.05)", transformOrigin: "center center" }}>
           <LevelDisplay
             level={overallLevel}
