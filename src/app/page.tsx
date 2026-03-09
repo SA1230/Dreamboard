@@ -109,7 +109,7 @@ function LandingPage() {
           ))}
         </div>
 
-        {/* Sign in CTA */}
+        {/* Sign up CTA */}
         <button
           onClick={() => signIn("google")}
           className="flex items-center gap-3 px-6 py-3 sm:px-8 sm:py-4 rounded-xl text-sm sm:text-base font-bold text-white shadow-md hover:shadow-lg hover:scale-105 transition-all active:scale-[0.98]"
@@ -125,10 +125,18 @@ function LandingPage() {
             <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#fff" />
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#fff" />
           </svg>
-          Sign in with Google
+          Get Started with Google
         </button>
 
-        <p className="text-xs sm:text-sm text-stone-400 mt-4">Free forever. Your data stays on your device.</p>
+        <p className="text-xs sm:text-sm text-stone-400 mt-3">Free forever. Your data stays on your device.</p>
+
+        {/* Legal links */}
+        <p className="text-xs text-stone-400 mt-4">
+          By signing up, you agree to our{" "}
+          <Link href="/terms" className="underline underline-offset-2 hover:text-stone-600 transition-colors">Terms of Service</Link>
+          {" "}and{" "}
+          <Link href="/privacy" className="underline underline-offset-2 hover:text-stone-600 transition-colors">Privacy Policy</Link>.
+        </p>
       </div>
     </main>
   );
