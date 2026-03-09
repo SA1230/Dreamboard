@@ -16,24 +16,31 @@ Run this at the beginning of a conversation to get oriented. Autonomous — no u
 3. **Check project state (parallel):**
    - `git log --oneline -10` — what shipped recently?
    - `gh pr list --state open` — any open PRs needing attention?
-   - `npm run build 2>&1 | tail -5` — is the build clean?
-   - `npx vitest run 2>&1 | tail -5` — do tests pass?
+   - Only run build+test if the last CI run on main failed OR there are uncommitted changes. Otherwise skip and report "Build/Tests: skipped (main is clean per CI)". Check CI status with `gh run list --branch main --limit 1`
+   - If build+test needed: `npm run build 2>&1 | tail -5` and `npx vitest run 2>&1 | tail -5`
 
-4. **Present a session briefing:**
+4. **Surface deferred items:**
+   - Read `~/.claude/projects/-Users-shiroy-Dreamboard-clone/memory/reviews.md`
+   - Extract any items marked as "deferred", "Tier 3", or "not worth doing" from the most recent review
+   - For each deferred item, note how many reviews it has survived (if it appears in multiple reviews, flag it as aging)
+   - Include a "Deferred items aging" section if any item has been deferred 2+ reviews
+
+5. **Present a session briefing:**
 
 ```
 ## Session Briefing
 
 **Main branch:** clean / dirty
-**Build:** passing / failing
-**Tests:** X passing / Y failing
+**Build:** passing / failing / skipped (CI clean)
+**Tests:** X passing / Y failing / skipped (CI clean)
 **Open PRs:** [list or "none"]
 
 **Last session shipped:**
 - [1-3 most recent PRs with one-line descriptions]
 
-**Deferred from last review:**
-- [Items from Tier 3 / Not Worth Doing that might be worth revisiting]
+**Deferred items (aging):**
+- [Item] — deferred since Review #X (N reviews ago)
+- [Item] — deferred since Review #X
 
 **Ready for:** [what the natural next task is based on context]
 ```

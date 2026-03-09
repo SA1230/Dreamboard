@@ -138,7 +138,7 @@ src/types/
 .claude/
 ├── launch.json              # Dev server config for Preview tools (npm run dev, port 3000)
 ├── hooks/
-│   └── pre-push-gate.sh     # Pre-push hook: runs build + tests before any git push
+│   └── pre-push-gate.sh     # Pre-push hook: runs lint + build + tests before any git push
 └── skills/
     ├── agent-zero/SKILL.md     # /agent-zero — setup audit: 4-agent infrastructure analysis (config, memory, skills, patterns) → setup score + auto-fix
     ├── builder/SKILL.md        # /builder — agent architect: analyzes friction in git/memory/code, proposes new skills from evidence
@@ -152,7 +152,8 @@ src/types/
     ├── protocol/SKILL.md       # /protocol — strategic review: 4-agent codebase analysis → tiered build list
     ├── probe/SKILL.md          # /probe — AI personality red-team: adversarial testing of Judge, Oracle, and Companion behavioral contracts
     ├── qa/SKILL.md             # /qa — visual smoke test: screenshots all routes, checks console errors, reports issues (read-only)
-    ├── ship/SKILL.md           # /ship — build, commit, push, auto-merge in one step (invoking = push + merge approval)
+    ├── guard/SKILL.md          # /guard — pre-ship documentation gate: checks CLAUDE.md/MEMORY.md accuracy against code changes
+    ├── ship/SKILL.md           # /ship — lint, build, test, self-review, commit, push, auto-merge, prune branches
     ├── storyteller/SKILL.md    # /storyteller — narrative coherence audit: 4-agent timeline walk (Day 0 → Month 1) → arc map with chapter markers
     ├── thesis/SKILL.md         # /thesis — thesis examiner: 4-agent stress-test of a product idea before building (user, builder, skeptic, strategist)
     ├── stranger/SKILL.md       # /stranger — first-impression audit: 4-agent new-user simulation → clarity/friction/hook/jargon fixes
@@ -161,6 +162,7 @@ src/types/
     ├── announce/SKILL.md       # /announce — generate branded Canva assets (social cards, marketing, release announcements) via MCP
     ├── recap/SKILL.md          # /recap — session recap card: visual summary of what was shipped (Canva, internal-only)
     ├── snapshot/SKILL.md       # /snapshot — before/after visual diff: side-by-side UI change card (Canva, internal-only)
+    ├── sweep/SKILL.md          # /sweep — repository hygiene: prune stale branches, regenerate skills catalog, archive old memory, audit CLAUDE.md accuracy
     ├── wrapup/SKILL.md         # /wrapup — session end: sync main, check dangling work, update CLAUDE.md + memory + strategic lessons
     ├── xp-debug/SKILL.md       # /xp-debug — injects temporary +5 XP debug button into page.tsx (never committed)
     └── xp-debug-off/SKILL.md   # /xp-debug-off — removes the debug button via git checkout
@@ -492,12 +494,14 @@ Universal working preferences (communication style, git conventions, code qualit
 
 13. **Match the patterns already in the codebase.** If the project uses a certain file structure, naming convention, or coding style, follow it. Do not introduce new patterns without discussing it first.
 
-21. **Keep CLAUDE.md accurate after structural changes.** If your change adds a new file, new type, new exported function, or changes a key pattern documented in CLAUDE.md, update the relevant section of CLAUDE.md in the same commit. Don't update it for small bug fixes or styling tweaks — only when the doc would become misleading without the update.
+21. **Keep CLAUDE.md accurate after structural changes.** If your change adds a new file, new type, new exported function, or changes a key pattern documented in CLAUDE.md, update the relevant section of CLAUDE.md in the same commit. Don't update it for small bug fixes or styling tweaks — only when the doc would become misleading without the update. Run `/guard` before `/ship` to catch gaps.
+
+22. **After shipping a user-facing feature, run `/metrics` to check impact.** Even a quick query ("any change in session count since the last ship?") validates the bet. Untested ships are wasted signal.
 
 ## Infrastructure
 
 - **CI (GitHub Actions):** `.github/workflows/ci.yml` runs lint + build + test on every PR and push to main. Uses placeholder env vars for the build step (no real secrets needed). This is the server-side enforcement — complements the local pre-push hook.
-- **Pre-push hook:** `.claude/hooks/pre-push-gate.sh` runs `npm run build && npx vitest run` before any `git push`. Configured in `.claude/settings.local.json` as a `PreToolUse` hook on `Bash` commands. If build or tests fail, the push is blocked.
+- **Pre-push hook:** `.claude/hooks/pre-push-gate.sh` runs `npm run lint && npm run build && npx vitest run` before any `git push`. Configured in `.claude/settings.local.json` as a `PreToolUse` hook on `Bash` commands. If lint, build, or tests fail, the push is blocked. Output is shown on failure for diagnostics.
 - **Dev server preview:** `.claude/launch.json` configures `npm run dev` on port 3000. Use `preview_start` with name `"dev"` to launch, then `preview_screenshot`/`preview_snapshot` to verify UI changes visually.
 - **Self-review in /ship:** The `/ship` skill includes a self-review step that reviews the diff for bugs, debug artifacts, style drift, and type safety issues before committing. Fixes are applied autonomously.
 - **Connected services (MCP connectors):** Canva, Figma, GitHub, Google Drive, Slack, Supabase, and Vercel are connected via Claude Code MCP connectors. Use their native tools (e.g., `mcp__canva__*`, `mcp__slack__*`, `mcp__supabase__*`, `mcp__vercel__*`) instead of API calls when interacting with these services.
