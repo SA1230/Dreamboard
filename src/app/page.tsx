@@ -19,6 +19,7 @@ import { UserMenu } from "@/components/UserMenu";
 import { CaptainQuip } from "@/components/CaptainQuip";
 import { getCaptainQuip } from "@/lib/captainQuips";
 import { track } from "@/lib/tracker";
+import { playSound, playSoundWithHaptic } from "@/lib/sound";
 
 export default function Home() {
   const [gameData, setGameData] = useState<GameData | null>(null);
@@ -193,6 +194,7 @@ export default function Home() {
             overallNewLevel: isOverallLevelUp ? overallAfter.level : undefined,
             overallNewRank: isOverallLevelUp ? getRankTitle(overallAfter.level) : undefined,
           });
+          playSoundWithHaptic("levelUp", 0.6, [50, 30, 80]);
         }
       }
 
@@ -217,6 +219,9 @@ export default function Home() {
         totalXP: awards.reduce((sum, a) => sum + a.amount, 0),
         challengeCompleted: challengeCompleted ?? false,
       });
+
+      // Sound: XP earned chime
+      playSound("xpGain", 0.4);
 
       // Post-verdict feedback: staggered XP toasts + Today pill pulse
       awards.forEach((award, index) => {
@@ -260,6 +265,7 @@ export default function Home() {
       const newData = toggleHabitForDate(gameData, habitKey, dateString);
       setGameData(newData);
       showPpToast(wasCompleted ? "-1 PP" : "+1 PP", wasCompleted ? "#ef4444" : "#10b981");
+      playSoundWithHaptic("habitToggle", 0.3, 15);
       track("habit_toggled", { habitKey, completed: !wasCompleted });
     },
     [gameData, showPpToast]
@@ -272,6 +278,7 @@ export default function Home() {
       const newData = toggleDamageForDate(gameData, damageKey, dateString);
       setGameData(newData);
       showPpToast(wasMarked ? "+1 PP" : "-1 PP", wasMarked ? "#10b981" : "#ef4444");
+      playSoundWithHaptic("habitToggle", 0.3, 15);
       track("damage_toggled", { damageKey, marked: !wasMarked });
     },
     [gameData, showPpToast]

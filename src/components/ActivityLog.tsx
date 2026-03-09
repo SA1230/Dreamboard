@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { FeedEvent, StatKey } from "@/lib/types";
 import { StatDefinition } from "@/lib/stats";
 import { HABIT_DEFINITIONS, HABIT_PAST_LABELS } from "@/lib/habits";
@@ -523,6 +524,7 @@ function ActivityGroupCard({ group, definitions }: { group: ActivityGroup; defin
 
 export function ActivityLog({ feedEvents, definitions }: ActivityLogProps) {
   const [visibleCount, setVisibleCount] = useState(30);
+  const [animatedParent] = useAutoAnimate();
   const recentEvents = feedEvents.slice(0, visibleCount);
   const hasMore = feedEvents.length > visibleCount;
 
@@ -537,7 +539,7 @@ export function ActivityLog({ feedEvents, definitions }: ActivityLogProps) {
   const feedItems = groupFeedEvents(recentEvents);
 
   return (
-    <div className="space-y-2">
+    <div ref={animatedParent} className="space-y-2">
       {feedItems.map((item, index) => {
         if (item.kind === "activity_group") {
           return (
