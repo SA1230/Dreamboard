@@ -113,6 +113,8 @@ src/
 │   ├── VisionCardDetail.tsx # Tap-to-view detail modal — full text, original/weaved toggle, pin/unpin, delete
 │   ├── AddVisionModal.tsx   # Bottom-sheet modal for creating visions — "Just add it" or "Let the Oracle weave it" AI path
 │   ├── BoardReadingModal.tsx # Modal showing the Oracle's interpretation of the whole board
+│   ├── OracleCharacter.tsx  # Inline SVG owl character for the Vision Board Oracle
+│   ├── LevelDisplay.tsx     # Skipper in SVG progress ring with level badge, rank title, parallax tilt + shatter animation
 │   └── admin/              # Admin dashboard components (MetricCard, BarChart, SparklineChart, ActivityHeatmap, FeatureBreakdown, RetentionTable, UserTable, LiveEventFeed)
 └── lib/
     ├── types.ts             # TypeScript types: StatKey, HabitKey, Activity, GameData, etc.
@@ -162,6 +164,7 @@ src/types/
     ├── announce/SKILL.md       # /announce — generate branded Canva assets (social cards, marketing, release announcements) via MCP
     ├── recap/SKILL.md          # /recap — session recap card: visual summary of what was shipped (Canva, internal-only)
     ├── snapshot/SKILL.md       # /snapshot — before/after visual diff: side-by-side UI change card (Canva, internal-only)
+    ├── pulse/SKILL.md          # /pulse — post-deploy health check: Vercel deployment, runtime logs, Supabase events, API health
     ├── sweep/SKILL.md          # /sweep — repository hygiene: prune stale branches, regenerate skills catalog, archive old memory, audit CLAUDE.md accuracy
     ├── wrapup/SKILL.md         # /wrapup — session end: sync main, check dangling work, update CLAUDE.md + memory + strategic lessons
     ├── xp-debug/SKILL.md       # /xp-debug — injects temporary +5 XP debug button into page.tsx (never committed)
