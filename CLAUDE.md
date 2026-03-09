@@ -61,6 +61,7 @@ The shared state file lives at `~/.claude/projects/-Users-shiroy-Dreamboard-clon
 - **Viewport:** Designed for mobile-width viewports (375–430px). No desktop breakpoints currently — do not add responsive layouts unless asked
 - **Hosting:** Vercel (Production) — custom domain `dreamboard.net` (redirects to `www.dreamboard.net`)
 - **Run locally:** `npm run dev` (port 3000) / `npm run build` to check for errors
+- **Design Tools:** Canva (read/write via MCP), Figma (read-only via MCP), Rive (manual editor + React runtime integration). See "Design Tools" section below for workflow details
 
 ## Project structure
 
@@ -146,6 +147,7 @@ src/types/
     ├── thesis/SKILL.md         # /thesis — thesis examiner: 4-agent stress-test of a product idea before building (user, builder, skeptic, strategist)
     ├── stranger/SKILL.md       # /stranger — first-impression audit: 4-agent new-user simulation → clarity/friction/hook/jargon fixes
     ├── subtractor/SKILL.md     # /subtractor — deletion agent: 4-agent audit for dead code, unused features, over-abstractions → ranked removal list
+    ├── announce/SKILL.md       # /announce — generate branded Canva assets (social cards, marketing, release announcements) via MCP
     ├── wrapup/SKILL.md         # /wrapup — session end: sync main, check dangling work, update CLAUDE.md + memory + strategic lessons
     ├── xp-debug/SKILL.md       # /xp-debug — injects temporary +5 XP debug button into page.tsx (never committed)
     └── xp-debug-off/SKILL.md   # /xp-debug-off — removes the debug button via git checkout
@@ -455,3 +457,50 @@ Universal working preferences (communication style, git conventions, code qualit
 - **Dev server preview:** `.claude/launch.json` configures `npm run dev` on port 3000. Use `preview_start` with name `"dev"` to launch, then `preview_screenshot`/`preview_snapshot` to verify UI changes visually.
 - **Self-review in /ship:** The `/ship` skill includes a self-review step that reviews the diff for bugs, debug artifacts, style drift, and type safety issues before committing. Fixes are applied autonomously.
 - **Connected services (MCP connectors):** Canva, Figma, GitHub, Google Drive, Slack, Supabase, and Vercel are connected via Claude Code MCP connectors. Use their native tools (e.g., `mcp__canva__*`, `mcp__slack__*`, `mcp__supabase__*`, `mcp__vercel__*`) instead of API calls when interacting with these services.
+
+## Design Tools
+
+Three external design tools are integrated into the workflow. Use the right tool for the right job:
+
+### Canva (read/write via MCP)
+
+Claude can generate, edit, and export Canva designs directly. Use for:
+- **Marketing assets** — social media cards, app store screenshots, promotional images
+- **Release announcements** — branded cards summarizing shipped features (via `/announce`)
+- **Concept exploration** — quick visual mockups before committing to code
+- **Presentations** — pitch decks, progress reports, investor updates
+- **Export** — PDF, PNG, JPG, PPTX, GIF, MP4
+
+Canva MCP tools: `generate-design`, `start-editing-transaction`, `perform-editing-operations`, `commit-editing-transaction`, `export-design`, `search-designs`, `upload-asset-from-url`, and more.
+
+**Brand voice for Canva prompts:** Warm earth tones (cream, stone, gold). Nunito-like rounded fonts. Cozy RPG aesthetic — not corporate, not childish. Skipper the penguin as mascot when appropriate. "Level Up Your Life" as tagline.
+
+### Figma (read-only via MCP)
+
+Claude can read, screenshot, and pull design specs — but cannot create or edit. Use for:
+- **Design system reference** — pull colors, spacing, typography from the source of truth
+- **Implementation specs** — screenshot a Figma frame and code it precisely
+- **Code Connect** — map Figma components to React components in the codebase
+
+Figma file: "Dreamboard Design System" (file key: `c68M2SUD1AWRJIig1Zs9jN`)
+
+### Rive (manual editor + React runtime)
+
+Claude cannot access the Rive editor — the founder creates animations manually. Claude handles all code integration. Use for:
+- **Skipper character animation** — idle breathing, tap reactions, celebration dances, equipment physics
+- **Interactive state machines** — visual state graphs triggered by game events (level-up, XP earned, equip)
+- **Runtime integration** — `@rive-app/react-canvas` in React components
+
+Pipeline: Design in Rive editor → export `.riv` file → Claude integrates into React with state machine inputs wired to game events.
+
+### When to use which tool
+
+| Need | Tool | Why |
+|------|------|-----|
+| Social media card | Canva | Full read/write, instant generation |
+| UI component spec | Figma | Industry standard for UI design |
+| Character animation | Rive | State machines for interactive characters |
+| Quick concept art | Canva | AI generation from text prompts |
+| Icon/illustration | Figma | Vector drawing with precise control |
+| Marketing deck | Canva | Template-based, export to PPTX/PDF |
+| In-app micro-animation | CSS/Tailwind | Already works, no new dependency |
