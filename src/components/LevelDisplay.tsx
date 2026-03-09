@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useCallback } from "react";
 import { getNextRankTitle, getRankProgress, getRankColorPair, interpolateHexColor } from "@/lib/ranks";
 import { useLevelUpAnimation } from "@/hooks/useLevelUpAnimation";
 import { useParallaxTilt } from "@/hooks/useParallaxTilt";
@@ -8,6 +8,15 @@ import { SkipperCharacter } from "@/components/SkipperCharacter";
 import { PlayerInventory } from "@/lib/types";
 import { isMascotNameUnlocked } from "@/lib/storage";
 import { Info } from "lucide-react";
+
+const SKIPPER_REACTIONS = [
+  { className: "animate-skipperWaddle", duration: 600 },
+  { className: "animate-skipperHop", duration: 500 },
+  { className: "animate-skipperSpin", duration: 600 },
+  { className: "animate-skipperWobble", duration: 600 },
+  { className: "animate-skipperPuffUp", duration: 700 },
+  { className: "animate-skipperPeekaboo", duration: 700 },
+] as const;
 
 export function LevelDisplay({
   level,
@@ -38,6 +47,19 @@ export function LevelDisplay({
     useLevelUpAnimation({ level, isLevelingUp, previousOverallLevel, onShake });
 
   useParallaxTilt(containerRef, numberRef);
+
+  // Random tap reaction pool
+  const [tapReaction, setTapReaction] = useState<string | null>(null);
+
+  const handleSkipperTap = useCallback(() => {
+    if (tapReaction) return;
+    // Block taps during level-up animation phases
+    if (animPhase === "anticipation" || animPhase === "ring-fill" || animPhase === "shatter" || animPhase === "number-swap") return;
+
+    const reaction = SKIPPER_REACTIONS[Math.floor(Math.random() * SKIPPER_REACTIONS.length)];
+    setTapReaction(reaction.className);
+    setTimeout(() => setTapReaction(null), reaction.duration);
+  }, [tapReaction, animPhase]);
 
   const isMaxLevel = level >= 60;
 
@@ -259,11 +281,16 @@ export function LevelDisplay({
           className="absolute inset-0 flex items-center justify-center select-none overflow-visible"
           style={{ transition: "transform 0.2s ease-out" }}
         >
-          <SkipperCharacter
-            equippedItems={equippedItems}
-            size={108}
-            className={animPhase === "number-swap" ? "animate-levelIn" : animPhase === "anticipation" ? "animate-mascotAnticipate" : ""}
-          />
+          <div
+            className={`cursor-pointer ${tapReaction ?? ""}`}
+            onClick={handleSkipperTap}
+          >
+            <SkipperCharacter
+              equippedItems={equippedItems}
+              size={108}
+              className={animPhase === "number-swap" ? "animate-levelIn" : animPhase === "anticipation" ? "animate-mascotAnticipate" : ""}
+            />
+          </div>
         </div>
       </div>
 
