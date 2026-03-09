@@ -25,7 +25,7 @@ export function UserMenu() {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       {session.user?.image && (
         <img
           src={session.user.image}
@@ -34,12 +34,9 @@ export function UserMenu() {
           referrerPolicy="no-referrer"
         />
       )}
-      <span className="text-sm text-stone-600 font-medium max-w-[100px] truncate">
-        {session.user?.name?.split(" ")[0]}
-      </span>
       <button
         onClick={() => signOut()}
-        className="p-1.5 rounded-full hover:bg-stone-200 text-stone-400 hover:text-stone-600 transition-colors"
+        className="p-1 rounded-full hover:bg-stone-200 text-stone-400 hover:text-stone-600 transition-colors"
         title="Sign out"
       >
         <LogOut size={14} />
