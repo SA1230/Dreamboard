@@ -1,8 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback } from "react";
-import { getNextRankTitle, getRankProgress, getRankColorPair, interpolateHexColor } from "@/lib/ranks";
-import { useLevelUpAnimation } from "@/hooks/useLevelUpAnimation";
+import { getRankTitle, getNextRankTitle, getRankProgress, getRankColorPair, interpolateHexColor } from "@/lib/ranks";
 import { useParallaxTilt } from "@/hooks/useParallaxTilt";
 import { SkipperCharacter } from "@/components/SkipperCharacter";
 import { PlayerInventory } from "@/lib/types";
@@ -23,9 +22,6 @@ export function LevelDisplay({
   progressPercent,
   xpIntoLevel,
   xpForNextLevel,
-  isLevelingUp,
-  previousOverallLevel,
-  onShake,
   equippedItems,
   mascotName,
 }: {
@@ -33,18 +29,12 @@ export function LevelDisplay({
   progressPercent: number;
   xpIntoLevel: number;
   xpForNextLevel: number;
-  isLevelingUp?: boolean;
-  previousOverallLevel?: number;
-  onShake?: () => void;
   equippedItems?: PlayerInventory["equippedItems"];
   mascotName?: string;
 }) {
   const numberRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const displayName = mascotName ?? "Skipper";
-
-  const { animPhase, displayedLevel, displayedRank, rankChanging, shatterFragments } =
-    useLevelUpAnimation({ level, isLevelingUp, previousOverallLevel, onShake });
 
   useParallaxTilt(containerRef, numberRef);
 
@@ -53,21 +43,18 @@ export function LevelDisplay({
 
   const handleSkipperTap = useCallback(() => {
     if (tapReaction) return;
-    // Block taps during level-up animation phases
-    if (animPhase === "anticipation" || animPhase === "ring-fill" || animPhase === "shatter" || animPhase === "number-swap") return;
 
     const reaction = SKIPPER_REACTIONS[Math.floor(Math.random() * SKIPPER_REACTIONS.length)];
     setTapReaction(reaction.className);
     setTimeout(() => setTapReaction(null), reaction.duration);
-  }, [tapReaction, animPhase]);
+  }, [tapReaction]);
 
   const isMaxLevel = level >= 60;
 
   // Rank-specific colors — ring gradient + title color
-  // rankProgress (slow): tracks position across the full rank bracket, used for shimmer/glow thresholds
-  const rankProgress = getRankProgress(displayedLevel, progressPercent / 100);
-  const [rankStartColor, rankEndColor] = getRankColorPair(displayedLevel);
-  // Title color tracks the ring fill directly — full gradient sweep every level for maximum dynamism
+  const displayedRank = getRankTitle(level);
+  const rankProgress = getRankProgress(level, progressPercent / 100);
+  const [rankStartColor, rankEndColor] = getRankColorPair(level);
   const rankEdgeColor = interpolateHexColor(rankStartColor, rankEndColor, progressPercent / 100);
 
   // SVG ring dimensions
@@ -75,17 +62,7 @@ export function LevelDisplay({
   const strokeWidth = 6;
   const radius = (ringSize - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const targetStrokeDashoffset = circumference - (circumference * progressPercent) / 100;
-
-  // During ring-fill phase, animate to full (offset 0), then after number-swap settle to new progress
-  const isAnimatingRing = animPhase === "ring-fill";
-  // Hide the main ring during shatter and number-swap (fragments are visible instead)
-  const isRingHidden = animPhase === "shatter" || animPhase === "number-swap";
-  const effectiveStrokeDashoffset = isAnimatingRing ? 0 : targetStrokeDashoffset;
-
-  // Glow effect on the container during level-up
-  const isGlowing = animPhase === "ring-fill" || animPhase === "shatter" || animPhase === "number-swap";
-  const isAnticipating = animPhase === "anticipation";
+  const strokeDashoffset = circumference - (circumference * progressPercent) / 100;
 
   return (
     <div
@@ -93,36 +70,25 @@ export function LevelDisplay({
       className="flex flex-col items-center justify-center rounded-2xl px-8 py-6 relative cursor-default w-full"
       style={{
         background: "linear-gradient(135deg, #fefcf9 0%, #f5f0e8 50%, #ede4d6 100%)",
-        boxShadow: isGlowing
-          ? "0 2px 16px rgba(180, 150, 100, 0.12), inset 0 1px 0 rgba(255,255,255,0.7), 0 0 24px rgba(245, 158, 11, 0.25)"
-          : isAnticipating
-          ? "0 2px 16px rgba(180, 150, 100, 0.12), inset 0 1px 0 rgba(255,255,255,0.7), 0 0 12px rgba(245, 158, 11, 0.12)"
-          : "0 2px 16px rgba(180, 150, 100, 0.12), inset 0 1px 0 rgba(255,255,255,0.7)",
-        transition: "box-shadow 0.4s ease-out",
+        boxShadow: "0 2px 16px rgba(180, 150, 100, 0.12), inset 0 1px 0 rgba(255,255,255,0.7)",
       }}
     >
       {/* Rank title — color matches the leading edge of the ring gradient */}
       {(() => {
-        // Glow intensifies quadratically as player nears next rank
         const glowIntensity = rankProgress * rankProgress;
         const glowRadius = 4 + glowIntensity * 14;
         const glowAlpha = 0.1 + glowIntensity * 0.4;
         const textShadow = glowIntensity > 0.05
           ? `0 0 ${glowRadius}px ${rankEdgeColor.replace("rgb", "rgba").replace(")", `, ${glowAlpha})`)}`
           : "none";
-        // Shimmer kicks in past 50% rank progress — uses a lighter tint of the end color, not white
         const shimmerHighlight = interpolateHexColor(rankEndColor, "#ffffff", 0.5);
         const shimmerClass = rankProgress > 0.5 ? "animate-rankShimmer" : "";
         return (
           <span
-            className={`text-sm font-extrabold uppercase tracking-[0.25em] mb-0.5 ${
-              rankChanging ? "animate-titleReveal" : ""
-            } ${shimmerClass}`}
-            key={displayedRank}
+            className={`text-sm font-extrabold uppercase tracking-[0.25em] mb-0.5 ${shimmerClass}`}
             style={{
               color: rankEdgeColor,
               textShadow,
-              // Shimmer: a tinted highlight sweeps across, using a light version of the rank end color
               ...(rankProgress > 0.5
                 ? {
                     backgroundImage: `linear-gradient(
@@ -149,7 +115,7 @@ export function LevelDisplay({
 
       {/* Next rank milestone preview */}
       {(() => {
-        const nextRank = getNextRankTitle(displayedLevel);
+        const nextRank = getNextRankTitle(level);
         return nextRank ? (
           <span className="text-[10px] text-stone-300 font-medium mb-2">
             Next: {nextRank}
@@ -161,24 +127,12 @@ export function LevelDisplay({
         );
       })()}
 
-      {/* Ring + Number */}
+      {/* Ring + Skipper */}
       <div className="relative" style={{ width: ringSize, height: ringSize }}>
-        {/* Anticipation glow — warm pulse around the ring before level-up */}
-        {animPhase === "anticipation" && (
-          <div
-            className="absolute rounded-full animate-anticipationGlow"
-            style={{ inset: "-12px" }}
-          />
-        )}
-        {/* SVG progress ring — hidden during shatter so fragments take over */}
         <svg
           width={ringSize}
           height={ringSize}
           className="absolute inset-0 -rotate-90"
-          style={{
-            opacity: isRingHidden ? 0 : 1,
-            transition: isRingHidden ? "opacity 0.15s ease-out" : "opacity 0.4s ease-in",
-          }}
         >
           <defs>
             <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -206,12 +160,8 @@ export function LevelDisplay({
               strokeWidth={strokeWidth}
               strokeLinecap="round"
               strokeDasharray={circumference}
-              strokeDashoffset={effectiveStrokeDashoffset}
-              className={
-                isAnimatingRing
-                  ? "transition-[stroke-dashoffset] duration-500 ease-out"
-                  : "transition-all duration-700 ease-out"
-              }
+              strokeDashoffset={strokeDashoffset}
+              className="transition-all duration-700 ease-out"
             />
           )}
           {/* Full ring for max level */}
@@ -229,52 +179,6 @@ export function LevelDisplay({
           )}
         </svg>
 
-        {/* Shatter fragments — arc pieces that fly outward when ring breaks */}
-        {shatterFragments.length > 0 && (
-          <div className="absolute inset-0" style={{ overflow: "visible" }}>
-            {shatterFragments.map((fragment) => {
-              // Each fragment flies outward from its position on the ring
-              const flyDistance = 60 + Math.random() * 20;
-              const translateX = Math.cos(fragment.flyAngle) * flyDistance;
-              const translateY = Math.sin(fragment.flyAngle) * flyDistance;
-              const rotationDeg = ((fragment.flyAngle * 180) / Math.PI) + (Math.random() - 0.5) * 60;
-
-              // Build the arc path for this fragment
-              const cx = ringSize / 2;
-              const cy = ringSize / 2;
-              const x1 = cx + radius * Math.cos(fragment.startAngle);
-              const y1 = cy + radius * Math.sin(fragment.startAngle);
-              const x2 = cx + radius * Math.cos(fragment.endAngle);
-              const y2 = cy + radius * Math.sin(fragment.endAngle);
-
-              return (
-                <svg
-                  key={fragment.id}
-                  width={ringSize}
-                  height={ringSize}
-                  className="absolute inset-0"
-                  style={{
-                    overflow: "visible",
-                    animation: `shatterFly 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94) ${fragment.delay}ms forwards`,
-                    // CSS custom properties for the keyframe
-                    ["--shatter-tx" as string]: `${translateX}px`,
-                    ["--shatter-ty" as string]: `${translateY}px`,
-                    ["--shatter-rotate" as string]: `${rotationDeg}deg`,
-                  }}
-                >
-                  <path
-                    d={`M ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2}`}
-                    fill="none"
-                    stroke="url(#ringGradient)"
-                    strokeWidth={strokeWidth + 1}
-                    strokeLinecap="round"
-                  />
-                </svg>
-              );
-            })}
-          </div>
-        )}
-
         {/* Skipper mascot inside the ring */}
         <div
           ref={numberRef}
@@ -288,22 +192,16 @@ export function LevelDisplay({
             <SkipperCharacter
               equippedItems={equippedItems}
               size={108}
-              className={animPhase === "number-swap" ? "animate-levelIn" : animPhase === "anticipation" ? "animate-mascotAnticipate" : ""}
             />
           </div>
         </div>
       </div>
 
       {/* Level badge below the ring */}
-      <span
-        className="text-lg font-black mt-2 select-none text-black"
-      >
+      <span className="text-lg font-black mt-2 select-none text-black">
         <span className="text-sm font-bold mr-0.5">Lv.</span>
-        <span
-          key={displayedLevel}
-          className={animPhase === "number-swap" ? "animate-levelIn inline-block" : "inline-block"}
-        >
-          {displayedLevel}
+        <span className="inline-block">
+          {level}
         </span>
       </span>
 

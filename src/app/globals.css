@@ -207,45 +207,14 @@
   100% { filter: saturate(1); }
 }
 
-/* Toast: fade in, hold, fade out */
-.animate-toastIn {
-  animation: toastIn 2800ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+/* Level-up celebration: gentle stillness reveal */
+.animate-stillnessReveal {
+  animation: stillnessReveal 200ms ease-out forwards;
 }
 
-@keyframes toastIn {
-  0% { opacity: 0; transform: translateY(8px) scale(0.95); }
-  10% { opacity: 1; transform: translateY(0) scale(1); }
-  75% { opacity: 1; transform: translateY(0) scale(1); }
-  100% { opacity: 0; transform: translateY(-4px) scale(0.98); }
-}
-
-/* Anticipation: warm glow builds around ring before level-up shatter */
-.animate-anticipationGlow {
-  animation: anticipationGlow 600ms ease-in-out forwards;
-}
-
-@keyframes anticipationGlow {
-  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0), inset 0 0 0 0 rgba(245, 158, 11, 0); }
-  30% { box-shadow: 0 0 20px 4px rgba(245, 158, 11, 0.25), inset 0 0 12px 2px rgba(245, 158, 11, 0.08); }
-  55% { box-shadow: 0 0 12px 2px rgba(245, 158, 11, 0.15), inset 0 0 8px 1px rgba(245, 158, 11, 0.05); }
-  80% { box-shadow: 0 0 28px 6px rgba(245, 158, 11, 0.35), inset 0 0 16px 3px rgba(245, 158, 11, 0.1); }
-  100% { box-shadow: 0 0 32px 8px rgba(245, 158, 11, 0.4), inset 0 0 20px 4px rgba(245, 158, 11, 0.12); }
-}
-
-/* Anticipation: mascot excited double-hop before level-up */
-.animate-mascotAnticipate {
-  animation: mascotAnticipate 600ms cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
-}
-
-@keyframes mascotAnticipate {
-  0% { transform: translateY(0) scale(1); }
-  12% { transform: translateY(3px) scale(0.97, 1.03); }
-  24% { transform: translateY(-10px) scale(1.03, 0.97); }
-  36% { transform: translateY(0) scale(1); }
-  48% { transform: translateY(2px) scale(0.98, 1.02); }
-  60% { transform: translateY(-6px) scale(1.02, 0.98); }
-  72% { transform: translateY(0) scale(1); }
-  100% { transform: translateY(-2px) scale(1); }
+@keyframes stillnessReveal {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 /* Beat 4: Overall level ring fill animation */
@@ -265,61 +234,6 @@
 @keyframes rankShimmer {
   0% { background-position: 150% center; }
   100% { background-position: -50% center; }
-}
-
-/* Beat 4: Rank title text reveal */
-.animate-titleReveal {
-  animation: titleReveal 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes titleReveal {
-  0% { opacity: 0; transform: translateY(6px) scale(0.9); filter: blur(4px); }
-  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-}
-
-/* Overall level-up: Ring shatter — fragments fly outward and fade */
-@keyframes shatterFly {
-  0% {
-    transform: translate(0, 0) rotate(0deg) scale(1);
-    opacity: 1;
-  }
-  40% {
-    opacity: 0.8;
-  }
-  100% {
-    transform: translate(var(--shatter-tx, 40px), var(--shatter-ty, -40px)) rotate(var(--shatter-rotate, 30deg)) scale(0.4);
-    opacity: 0;
-  }
-}
-
-/* Overall level-up: Screen shake on the whole page */
-.animate-screenShake {
-  animation: screenShake 400ms cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
-}
-
-@keyframes screenShake {
-  0% { transform: translate(0, 0); }
-  10% { transform: translate(-4px, 2px); }
-  20% { transform: translate(5px, -3px); }
-  30% { transform: translate(-6px, 1px); }
-  40% { transform: translate(4px, -2px); }
-  50% { transform: translate(-3px, 3px); }
-  60% { transform: translate(3px, -1px); }
-  70% { transform: translate(-2px, 2px); }
-  80% { transform: translate(1px, -1px); }
-  100% { transform: translate(0, 0); }
-}
-
-/* Beat 4: Screen vignette flash */
-.animate-vignette {
-  animation: vignetteFlash 800ms ease-out forwards;
-  pointer-events: none;
-}
-
-@keyframes vignetteFlash {
-  0% { opacity: 0; }
-  15% { opacity: 1; }
-  100% { opacity: 0; }
 }
 
 @keyframes shimmerSlide {
