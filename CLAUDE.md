@@ -153,6 +153,7 @@ src/types/
     ├── persona/SKILL.md        # /persona — persona simulator: 4-agent user-type walkthrough → conflict map + core user verdict
     ├── protocol/SKILL.md       # /protocol — strategic review: 4-agent codebase analysis → tiered build list
     ├── probe/SKILL.md          # /probe — AI personality red-team: adversarial testing of Judge, Oracle, and Companion behavioral contracts
+    ├── pulse/SKILL.md          # /pulse — post-deploy health check: Vercel status, runtime errors, Supabase events, API health → HEALTHY/DEGRADED/DOWN
     ├── qa/SKILL.md             # /qa — visual smoke test: screenshots all routes, checks console errors, reports issues (read-only)
     ├── guard/SKILL.md          # /guard — pre-ship documentation gate: checks CLAUDE.md/MEMORY.md accuracy against code changes
     ├── ship/SKILL.md           # /ship — lint, build, test, self-review, commit, push, auto-merge, prune branches
