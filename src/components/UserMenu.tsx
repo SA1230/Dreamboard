@@ -16,31 +16,21 @@ export function UserMenu() {
     return (
       <button
         onClick={() => signIn("google")}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100 border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-200 transition-colors"
+        className="flex items-center gap-3 text-stone-600 hover:bg-stone-100 transition-colors rounded-xl"
       >
-        <LogIn size={14} />
-        Sign in
+        <LogIn size={18} className="text-stone-400" />
+        <span className="text-sm font-medium">Sign in</span>
       </button>
     );
   }
 
   return (
-    <div className="flex items-center gap-1.5">
-      {session.user?.image && (
-        <img
-          src={session.user.image}
-          alt=""
-          className="h-7 w-7 rounded-full border border-stone-200"
-          referrerPolicy="no-referrer"
-        />
-      )}
-      <button
-        onClick={() => signOut()}
-        className="p-1 rounded-full hover:bg-stone-200 text-stone-400 hover:text-stone-600 transition-colors"
-        title="Sign out"
-      >
-        <LogOut size={14} />
-      </button>
-    </div>
+    <button
+      onClick={() => signOut()}
+      className="flex items-center gap-3 text-stone-600 hover:bg-stone-100 transition-colors rounded-xl"
+    >
+      <LogOut size={18} className="text-stone-400" />
+      <span className="text-sm font-medium">Sign out</span>
+    </button>
   );
 }
