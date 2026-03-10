@@ -179,12 +179,14 @@ function AuthenticatedHome() {
     setGameData(updated);
   }, []);
 
-  // Auto-open Judge for first-time users after a brief delay
+  // Auto-open Judge for first-time users after a brief delay (once per session)
   const hasAutoOpenedJudge = useRef(false);
   useEffect(() => {
     if (!gameData) return;
     if (gameData.activities.length === 0 && !hasAutoOpenedJudge.current) {
       hasAutoOpenedJudge.current = true;
+      if (sessionStorage.getItem("judge_auto_opened")) return;
+      sessionStorage.setItem("judge_auto_opened", "1");
       track("onboarding_started", {});
       const timer = setTimeout(() => {
         setShowJudge(true);
