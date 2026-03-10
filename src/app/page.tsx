@@ -5,6 +5,7 @@ import { useSession, signIn } from "next-auth/react";
 import { GameData, StatKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
 import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForDate, toggleDamageForDate, isHabitCompletedForDate, isDamageMarkedForDate, formatRelativeTime, getInventory, getMascotName, checkPrizeUnlocks, checkItemRewardUnlocks, issueChallenge, issueChallengeChain, completeChallenge, dismissChallenge } from "@/lib/storage";
+import { checkAchievementUnlocks } from "@/lib/achievements";
 import { StatCard } from "@/components/StatCard";
 import { StatIcon } from "@/components/StatIcons";
 import { JudgeModal } from "@/components/JudgeModal";
@@ -13,9 +14,10 @@ import { MonthlyXPSummary } from "@/components/MonthlyXPSummary";
 import { YesterdayReview } from "@/components/YesterdayReview";
 import { LevelDisplay } from "@/components/LevelDisplay";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
-import { Download, Settings, CalendarDays, ShoppingBag, Trophy, Sparkles, Menu, X } from "lucide-react";
+import { Download, Settings, CalendarDays, ShoppingBag, Trophy, Sparkles, Menu, X, Award } from "lucide-react";
 import Link from "next/link";
 import { getRankTitle } from "@/lib/ranks";
+import { RARITY_COLORS } from "@/lib/items";
 import { UserMenu } from "@/components/UserMenu";
 import { CompanionModal } from "@/components/CompanionModal";
 import { track } from "@/lib/tracker";
@@ -160,6 +162,12 @@ function AuthenticatedHome() {
     chainTotal?: number;
   } | null>(null);
 
+  // Achievement unlock toast
+  const [achievementToast, setAchievementToast] = useState<{
+    name: string;
+    tier: string;
+  } | null>(null);
+
   // Celebration overlay state
   const [celebrationInfo, setCelebrationInfo] = useState<{
     statKey: StatKey;
@@ -176,7 +184,8 @@ function AuthenticatedHome() {
     const totalXP = getTotalLifetimeXP(data);
     const { level } = getOverallLevel(totalXP);
     const afterPrizes = checkPrizeUnlocks(data, level);
-    const updated = checkItemRewardUnlocks(afterPrizes, level);
+    const afterItems = checkItemRewardUnlocks(afterPrizes, level);
+    const updated = checkAchievementUnlocks(afterItems);
     setGameData(updated);
   }, []);
 
@@ -187,7 +196,8 @@ function AuthenticatedHome() {
       const totalXP = getTotalLifetimeXP(data);
       const { level } = getOverallLevel(totalXP);
       const afterPrizes = checkPrizeUnlocks(data, level);
-      const updated = checkItemRewardUnlocks(afterPrizes, level);
+      const afterItems = checkItemRewardUnlocks(afterPrizes, level);
+      const updated = checkAchievementUnlocks(afterItems);
       setGameData(updated);
     };
     window.addEventListener("dreamboard-data-hydrated", handleHydration);
@@ -357,6 +367,20 @@ function AuthenticatedHome() {
         }
       }
 
+      // Check for achievement unlocks after XP awards
+      const beforeAchievementCount = currentData.unlockedAchievements?.length ?? 0;
+      currentData = checkAchievementUnlocks(currentData);
+      const afterAchievementCount = currentData.unlockedAchievements?.length ?? 0;
+
+      // Show achievement toast if new achievements were unlocked
+      if (afterAchievementCount > beforeAchievementCount) {
+        const newestEvent = currentData.feedEvents?.find((e) => e.type === "achievement_unlocked");
+        if (newestEvent && newestEvent.type === "achievement_unlocked") {
+          setAchievementToast({ name: newestEvent.achievementName, tier: newestEvent.tier });
+          setTimeout(() => setAchievementToast(null), 3000);
+        }
+      }
+
       setGameData(currentData);
       setShowJudge(false);
 
@@ -513,6 +537,14 @@ function AuthenticatedHome() {
             >
               <Trophy size={18} className="text-stone-400" />
               <span className="text-sm font-medium">Prize Track</span>
+            </Link>
+            <Link
+              href="/achievements"
+              onClick={() => setNavOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-600 hover:bg-stone-100 transition-colors"
+            >
+              <Award size={18} className="text-stone-400" />
+              <span className="text-sm font-medium">Achievements</span>
             </Link>
             <Link
               href="/vision"
@@ -924,6 +956,28 @@ function AuthenticatedHome() {
         />
       )}
 
+
+      {/* Achievement unlock toast */}
+      {achievementToast && (
+        <div
+          className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg animate-fadeIn border"
+          style={{
+            background: RARITY_COLORS[achievementToast.tier as keyof typeof RARITY_COLORS]?.background ?? "#EEF1F4",
+            borderColor: RARITY_COLORS[achievementToast.tier as keyof typeof RARITY_COLORS]?.border ?? "#D0D8E0",
+          }}
+        >
+          <Award
+            size={16}
+            style={{ color: RARITY_COLORS[achievementToast.tier as keyof typeof RARITY_COLORS]?.text ?? "#6B7B8D" }}
+          />
+          <span
+            className="text-sm font-bold whitespace-nowrap"
+            style={{ color: RARITY_COLORS[achievementToast.tier as keyof typeof RARITY_COLORS]?.text ?? "#6B7B8D" }}
+          >
+            {achievementToast.name}
+          </span>
+        </div>
+      )}
 
       {/* Level-up celebration overlay */}
       {celebrationInfo && (

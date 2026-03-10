@@ -7,8 +7,9 @@ import { StatDefinition } from "@/lib/stats";
 import { HABIT_DEFINITIONS, HABIT_PAST_LABELS, findHabitDefinition } from "@/lib/habits";
 import { DAMAGE_DEFINITIONS, DAMAGE_PAST_LABELS, findDamageDefinition } from "@/lib/damage";
 import { StatIcon } from "./StatIcons";
-import { Trophy, Sword } from "lucide-react";
+import { Trophy, Sword, Award } from "lucide-react";
 import { getItemById, RARITY_COLORS } from "@/lib/items";
+import { getAchievementById } from "@/lib/achievements";
 
 interface ActivityLogProps {
   feedEvents: FeedEvent[];
@@ -470,6 +471,38 @@ function ChallengeIssuedRow({ event, definitions }: { event: Extract<FeedEvent, 
   );
 }
 
+function AchievementUnlockedRow({ event }: { event: Extract<FeedEvent, { type: "achievement_unlocked" }> }) {
+  const achievement = getAchievementById(event.achievementId);
+  const tier = event.tier ?? achievement?.tier ?? "common";
+  const rarityColors = RARITY_COLORS[tier];
+
+  return (
+    <div
+      className="flex items-center gap-3 px-4 py-3 rounded-xl border-2"
+      style={{
+        background: rarityColors.background,
+        borderColor: rarityColors.border,
+      }}
+    >
+      <div
+        className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center border"
+        style={{ backgroundColor: rarityColors.background, borderColor: rarityColors.border }}
+      >
+        <Award size={16} style={{ color: rarityColors.text }} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <span className="text-xs font-bold" style={{ color: rarityColors.text }}>Achievement Unlocked!</span>
+        <p className="text-xs" style={{ color: rarityColors.text, opacity: 0.8 }}>
+          {event.achievementName}
+        </p>
+      </div>
+      <span className="text-xs text-stone-300 flex-shrink-0">
+        {formatTimestamp(event.timestamp)}
+      </span>
+    </div>
+  );
+}
+
 function ChallengeCompletedRow({ event }: { event: Extract<FeedEvent, { type: "challenge_completed" }> }) {
   return (
     <div
@@ -632,6 +665,8 @@ export function ActivityLog({ feedEvents, definitions, gameData }: ActivityLogPr
             return <ChallengeIssuedRow key={event.id} event={event} definitions={definitions} />;
           case "challenge_completed":
             return <ChallengeCompletedRow key={event.id} event={event} />;
+          case "achievement_unlocked":
+            return <AchievementUnlockedRow key={event.id} event={event} />;
           default:
             return null;
         }

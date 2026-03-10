@@ -809,12 +809,12 @@ function countDateEntries<K extends string>(dateMap: Partial<Record<K, string[]>
 }
 
 // Counts total habit completions across all time
-function countTotalHabitCompletions(data: GameData): number {
+export function countTotalHabitCompletions(data: GameData): number {
   return countDateEntries(data.healthyHabits);
 }
 
 // Counts total damage marks across all time (only enabled damage types)
-function countTotalDamageMarks(data: GameData): number {
+export function countTotalDamageMarks(data: GameData): number {
   const enabledKeys = new Set<string>(getEnabledDamage(data));
   const damage = data.dailyDamage ?? {};
   let total = 0;
@@ -1345,6 +1345,11 @@ export function completeChallenge(data: GameData): { newData: GameData; nextChai
     description: completedChallenge.description,
     stat: completedChallenge.stat,
     bonusXP: completedChallenge.bonusXP,
+    ...(completedChallenge.chainId ? {
+      chainId: completedChallenge.chainId,
+      chainIndex: completedChallenge.chainIndex,
+      chainTotal: completedChallenge.chainTotal,
+    } : {}),
   });
 
   // If this was a chain step and there are more pending steps, auto-issue the next one
