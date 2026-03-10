@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { GameData, EquipmentSlot, VisibleSlot } from "@/lib/types";
-import { loadGameData, getPointsBalance, getInventory, purchaseItem, equipItem, unequipSlot, getOverallLevel, getTotalLifetimeXP, getMascotName } from "@/lib/storage";
-import { ITEM_CATALOG, RARITY_COLORS, VISIBLE_SLOTS, getItemById } from "@/lib/items";
+import { GameData, EquipmentSlot, VisibleSlot, ShopItem, StatKey } from "@/lib/types";
+import { loadGameData, getPointsBalance, getInventory, purchaseItem, equipItem, unequipSlot, getOverallLevel, getTotalLifetimeXP, getMascotName, getEffectiveDefinitions, getEquippedBonuses } from "@/lib/storage";
+import { ITEM_CATALOG, RARITY_COLORS, VISIBLE_SLOTS, SECONDARY_STAT_LABELS, RESIST_LABELS, getItemById } from "@/lib/items";
 import { ITEM_THUMBNAIL_REGISTRY } from "@/lib/itemSvgs";
 import { track } from "@/lib/tracker";
 import { playSoundWithHaptic } from "@/lib/sound";
@@ -17,6 +17,156 @@ export default function ShopPage() {
     <AuthGate>
       <ShopPageContent />
     </AuthGate>
+  );
+}
+
+/** Compact EQ-style stat block for an item card */
+function ItemStats({ item, effectiveDefinitions }: { item: ShopItem; effectiveDefinitions: Record<StatKey, { color: string; name: string }> }) {
+  const hasWeaponStats = !!item.weaponStats;
+  const hasStatMods = item.statModifiers && item.statModifiers.length > 0;
+  const hasSecondary = item.secondaryStats && Object.keys(item.secondaryStats).length > 0;
+  const hasResists = item.resistances && Object.keys(item.resistances).length > 0;
+  const hasFocus = !!item.focusEffect;
+  const hasProps = item.weight !== undefined || item.material;
+
+  if (!hasWeaponStats && !hasStatMods && !hasSecondary && !hasResists && !hasFocus && !hasProps) return null;
+
+  return (
+    <div className="mt-1.5 pt-1.5 border-t border-dashed" style={{ borderColor: "#e0d8ce" }}>
+      {/* Weapon stats — DMG / DLY monospace row */}
+      {hasWeaponStats && item.weaponStats && (
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-[10px] font-mono font-bold text-stone-600">
+            DMG: {item.weaponStats.damage} &nbsp; DLY: {item.weaponStats.delay}
+          </span>
+          {item.weaponStats.weaponType && (
+            <span className="text-[9px] text-stone-400 font-mono">{item.weaponStats.weaponType}</span>
+          )}
+        </div>
+      )}
+
+      {/* Primary stat modifiers */}
+      {hasStatMods && item.statModifiers && (
+        <div className="flex flex-wrap gap-x-2 gap-y-0.5 mb-1">
+          {item.statModifiers.map((mod, i) => {
+            const def = effectiveDefinitions[mod.stat];
+            return (
+              <span key={i} className="text-[10px] font-bold" style={{ color: def?.color ?? "#6B7B8D" }}>
+                +{mod.flatBonus} {def?.name ?? mod.stat}
+              </span>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Secondary stats — compact grid */}
+      {hasSecondary && item.secondaryStats && (
+        <div className="flex flex-wrap gap-x-2 gap-y-0.5 mb-1">
+          {Object.entries(item.secondaryStats).map(([key, value]) => {
+            if (!value) return null;
+            const label = SECONDARY_STAT_LABELS[key];
+            return (
+              <span key={key} className="text-[9px] text-stone-500">
+                {label?.label ?? key}: <span className="font-bold text-stone-600">{value}{label?.suffix ?? ""}</span>
+              </span>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Resistances */}
+      {hasResists && item.resistances && (
+        <div className="flex flex-wrap gap-x-2 gap-y-0.5 mb-1">
+          {Object.entries(item.resistances).map(([key, value]) => {
+            if (!value) return null;
+            const label = RESIST_LABELS[key];
+            return (
+              <span key={key} className="text-[9px] font-bold" style={{ color: label?.color ?? "#6B7B8D" }}>
+                +{value} {label?.label ?? key}
+              </span>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Focus effect */}
+      {hasFocus && item.focusEffect && (
+        <div className="mb-1">
+          <span className="text-[9px] text-purple-600 font-semibold">
+            Focus: {item.focusEffect.name}{item.focusEffect.tier ? ` ${["", "I", "II", "III", "IV", "V"][item.focusEffect.tier] ?? item.focusEffect.tier}` : ""}
+          </span>
+        </div>
+      )}
+
+      {/* Weight & Material */}
+      {hasProps && (
+        <div className="text-[9px] text-stone-300 flex gap-2">
+          {item.material && <span>{item.material}</span>}
+          {item.weight !== undefined && <span>WT: {item.weight}</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Total Bonuses summary for equipped items */
+function TotalBonuses({ gameData, effectiveDefinitions }: { gameData: GameData; effectiveDefinitions: Record<StatKey, { color: string; name: string }> }) {
+  const bonuses = getEquippedBonuses(gameData);
+
+  const hasStatMods = Object.keys(bonuses.statModifiers).length > 0;
+  const hasSecondary = Object.values(bonuses.secondaryStats).some((v) => v && v > 0);
+  const hasResists = Object.values(bonuses.resistances).some((v) => v && v > 0);
+
+  if (!hasStatMods && !hasSecondary && !hasResists) return null;
+
+  return (
+    <div className="rounded-xl border border-stone-200 bg-stone-50/80 p-3 mb-4">
+      <h3 className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-2">Equipment Bonuses</h3>
+
+      {/* Stat modifiers */}
+      {hasStatMods && (
+        <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2">
+          {(Object.entries(bonuses.statModifiers) as [StatKey, { flatBonus: number }][]).map(([stat, mod]) => {
+            const def = effectiveDefinitions[stat];
+            return (
+              <span key={stat} className="text-[10px] font-bold" style={{ color: def?.color ?? "#6B7B8D" }}>
+                +{mod.flatBonus} {def?.name ?? stat}
+              </span>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Secondary stats */}
+      {hasSecondary && (
+        <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2">
+          {Object.entries(bonuses.secondaryStats).map(([key, value]) => {
+            if (!value) return null;
+            const label = SECONDARY_STAT_LABELS[key];
+            return (
+              <span key={key} className="text-[10px] text-stone-500">
+                {label?.label ?? key}: <span className="font-bold text-stone-600">{value}{label?.suffix ?? ""}</span>
+              </span>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Resistances */}
+      {hasResists && (
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
+          {Object.entries(bonuses.resistances).map(([key, value]) => {
+            if (!value) return null;
+            const label = RESIST_LABELS[key];
+            return (
+              <span key={key} className="text-[10px] font-bold" style={{ color: label?.color ?? "#6B7B8D" }}>
+                +{value} {label?.label ?? key}
+              </span>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -119,6 +269,7 @@ function ShopPageContent() {
   const pointsBalance = getPointsBalance(gameData);
   const totalXP = getTotalLifetimeXP(gameData);
   const { level: overallLevel } = getOverallLevel(totalXP);
+  const effectiveDefinitions = getEffectiveDefinitions(gameData);
 
   // In preview mode, use preview equipped items instead of real inventory
   const displayEquipped = previewMode ? previewEquipped : inventory.equippedItems;
@@ -268,6 +419,9 @@ function ShopPageContent() {
         )}
       </div>
 
+      {/* Total Equipment Bonuses */}
+      <TotalBonuses gameData={gameData} effectiveDefinitions={effectiveDefinitions} />
+
       {/* Slot filter tabs */}
       <div className="flex gap-1.5 overflow-x-auto pb-2 mb-4 -mx-1 px-1 scrollbar-hide">
         <button
@@ -357,6 +511,9 @@ function ShopPageContent() {
                   Requires Lv. {item.levelRequirement}
                 </span>
               )}
+
+              {/* Item stats */}
+              <ItemStats item={item} effectiveDefinitions={effectiveDefinitions} />
 
               {/* Action button */}
               <div className="mt-2">
