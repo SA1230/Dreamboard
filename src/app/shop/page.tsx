@@ -25,6 +25,10 @@ function ShopPageContent() {
   const [selectedSlot, setSelectedSlot] = useState<VisibleSlot | "all">("all");
   const [actionToast, setActionToast] = useState<string | null>(null);
 
+  // Preview Mode — try on any item without owning it (visual only, no localStorage writes)
+  const [previewMode, setPreviewMode] = useState(false);
+  const [previewEquipped, setPreviewEquipped] = useState<Partial<Record<EquipmentSlot, string>>>({});
+
   useEffect(() => {
     setGameData(loadGameData());
   }, []);
@@ -62,6 +66,46 @@ function ShopPageContent() {
     showToast("Unequipped!");
   }, [showToast]);
 
+  // Preview mode handlers — must be before the early return (rules of hooks)
+  const handlePreviewEquip = useCallback((itemId: string) => {
+    const item = getItemById(itemId);
+    if (!item) return;
+    setPreviewEquipped((prev) => ({ ...prev, [item.slot]: itemId }));
+    showToast("Preview equipped!");
+  }, [showToast]);
+
+  const handlePreviewUnequip = useCallback((slot: EquipmentSlot) => {
+    setPreviewEquipped((prev) => {
+      const next = { ...prev };
+      delete next[slot];
+      return next;
+    });
+    showToast("Preview unequipped!");
+  }, [showToast]);
+
+  const handlePreviewEquipAll = useCallback(() => {
+    const allEquipped: Partial<Record<EquipmentSlot, string>> = {};
+    const rarityRank = { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4 };
+    for (const item of ITEM_CATALOG) {
+      const existing = allEquipped[item.slot];
+      if (!existing) {
+        allEquipped[item.slot] = item.id;
+      } else {
+        const existingItem = getItemById(existing);
+        if (existingItem && rarityRank[item.rarity] > rarityRank[existingItem.rarity]) {
+          allEquipped[item.slot] = item.id;
+        }
+      }
+    }
+    setPreviewEquipped(allEquipped);
+    showToast("All best items equipped!");
+  }, [showToast]);
+
+  const handlePreviewClear = useCallback(() => {
+    setPreviewEquipped({});
+    showToast("All items removed!");
+  }, [showToast]);
+
 
   if (!gameData) {
     return (
@@ -75,6 +119,9 @@ function ShopPageContent() {
   const pointsBalance = getPointsBalance(gameData);
   const totalXP = getTotalLifetimeXP(gameData);
   const { level: overallLevel } = getOverallLevel(totalXP);
+
+  // In preview mode, use preview equipped items instead of real inventory
+  const displayEquipped = previewMode ? previewEquipped : inventory.equippedItems;
 
   const filteredItems = selectedSlot === "all"
     ? ITEM_CATALOG
@@ -124,23 +171,78 @@ function ShopPageContent() {
         </p>
       )}
 
+      {/* Preview Mode Toggle */}
+      {/* Preview Mode — dev only (MMO-style: no try-on for users) */}
+      {process.env.NODE_ENV === "development" && (
+        <>
+          <div className="flex items-center justify-between mb-3 px-1">
+            <button
+              onClick={() => {
+                if (!previewMode) {
+                  setPreviewEquipped({ ...inventory.equippedItems });
+                }
+                setPreviewMode(!previewMode);
+              }}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                previewMode
+                  ? "bg-violet-100 text-violet-700 border border-violet-300"
+                  : "bg-stone-100 text-stone-500 border border-stone-200 hover:bg-stone-200"
+              }`}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              {previewMode ? "Preview Mode ON" : "Preview Mode"}
+            </button>
+            {previewMode && (
+              <div className="flex gap-1.5">
+                <button
+                  onClick={handlePreviewEquipAll}
+                  className="px-2.5 py-1 rounded-lg text-[10px] font-bold text-violet-600 bg-violet-50 border border-violet-200 hover:bg-violet-100 transition-colors"
+                >
+                  Equip Best
+                </button>
+                <button
+                  onClick={handlePreviewClear}
+                  className="px-2.5 py-1 rounded-lg text-[10px] font-bold text-stone-500 bg-stone-50 border border-stone-200 hover:bg-stone-100 transition-colors"
+                >
+                  Clear All
+                </button>
+              </div>
+            )}
+          </div>
+
+          {previewMode && (
+            <div className="rounded-lg border border-violet-200 bg-violet-50/60 px-3 py-2 mb-4">
+              <p className="text-[11px] text-violet-600 font-medium text-center">
+                Try on any item — changes are visual only, nothing is saved
+              </p>
+            </div>
+          )}
+        </>
+      )}
+
       {/* Skipper Preview */}
       <div className="flex flex-col items-center mb-6 py-4 rounded-2xl"
         style={{
-          background: "linear-gradient(135deg, #fefcf9 0%, #f5f0e8 50%, #ede4d6 100%)",
+          background: previewMode
+            ? "linear-gradient(135deg, #faf8ff 0%, #f0ecf8 50%, #e8e0f0 100%)"
+            : "linear-gradient(135deg, #fefcf9 0%, #f5f0e8 50%, #ede4d6 100%)",
           boxShadow: "0 2px 16px rgba(180, 150, 100, 0.12), inset 0 1px 0 rgba(255,255,255,0.7)",
+          border: previewMode ? "2px solid rgba(139, 107, 165, 0.2)" : "none",
         }}
       >
         <SkipperCharacter
-          equippedItems={inventory.equippedItems}
+          equippedItems={displayEquipped}
           size={140}
         />
         <span className="text-xs text-stone-400 mt-2 font-medium">Lv. {overallLevel}</span>
 
         {/* Equipped items quick strip */}
-        {Object.keys(inventory.equippedItems).length > 0 && (
+        {Object.keys(displayEquipped).length > 0 && (
           <div className="flex flex-wrap justify-center gap-1.5 mt-3 px-4">
-            {Object.entries(inventory.equippedItems).map(([slot, itemId]) => {
+            {Object.entries(displayEquipped).map(([slot, itemId]) => {
               if (!itemId) return null;
               const item = getItemById(itemId);
               if (!item) return null;
@@ -148,7 +250,7 @@ function ShopPageContent() {
               return (
                 <button
                   key={slot}
-                  onClick={() => handleUnequip(slot as EquipmentSlot)}
+                  onClick={() => previewMode ? handlePreviewUnequip(slot as EquipmentSlot) : handleUnequip(slot as EquipmentSlot)}
                   className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border transition-colors hover:opacity-80"
                   style={{
                     color: rarityColors.text,
@@ -258,7 +360,25 @@ function ShopPageContent() {
 
               {/* Action button */}
               <div className="mt-2">
-                {equipped ? (
+                {previewMode ? (
+                  // Preview mode: try on / remove any item
+                  Object.values(previewEquipped).includes(item.id) ? (
+                    <button
+                      onClick={() => handlePreviewUnequip(item.slot)}
+                      className="w-full py-1.5 rounded-lg text-xs font-bold border border-violet-300 text-violet-600 bg-violet-50 flex items-center justify-center gap-1"
+                    >
+                      <Check size={12} />
+                      Trying On
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handlePreviewEquip(item.id)}
+                      className="w-full py-1.5 rounded-lg text-xs font-bold border border-violet-300 text-violet-600 bg-violet-50 hover:bg-violet-100 transition-colors"
+                    >
+                      Try On
+                    </button>
+                  )
+                ) : equipped ? (
                   <button
                     onClick={() => handleUnequip(item.slot)}
                     className="w-full py-1.5 rounded-lg text-xs font-bold border border-emerald-300 text-emerald-600 bg-emerald-50 flex items-center justify-center gap-1"
