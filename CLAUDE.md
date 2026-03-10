@@ -114,7 +114,7 @@ src/
 │   ├── StatIcons.tsx        # 20 SVG icons (8 stat defaults + 12 extras for customization)
 │   ├── TrackerProvider.tsx   # Client wrapper for analytics — auto-tracks session_start, page_view, user identification
 │   ├── AuthProvider.tsx     # Client wrapper for NextAuth SessionProvider (used in layout.tsx)
-│   ├── UserMenu.tsx         # Login/logout button — shows Google avatar when signed in, "Sign in" when not
+│   ├── UserMenu.tsx         # Login/logout button — icon + text label ("Sign in" / "Sign out"), matches hamburger nav links
 │   ├── VisionCardGrid.tsx   # Masonry grid of vision cards — CSS columns layout, pastel card tints, AutoAnimate transitions
 │   ├── VisionCardDetail.tsx # Tap-to-view detail modal — full text, original/weaved toggle, pin/unpin, delete
 │   ├── AddVisionModal.tsx   # Bottom-sheet modal for creating visions — "Just add it" or "Let the Oracle weave it" AI path
