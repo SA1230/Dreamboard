@@ -13,7 +13,7 @@ import {
   checkAchievementUnlocks,
 } from "@/lib/achievements";
 import { RARITY_COLORS } from "@/lib/items";
-import { ArrowLeft, Award, Lock, HelpCircle } from "lucide-react";
+import { ArrowLeft, Award, HelpCircle } from "lucide-react";
 import { icons } from "lucide-react";
 import Link from "next/link";
 
