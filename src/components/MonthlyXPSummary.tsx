@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { StatDefinition, STAT_KEYS } from "@/lib/stats";
-import { StatKey, HabitKey } from "@/lib/types";
+import { StatKey } from "@/lib/types";
 import { HABIT_DEFINITIONS } from "@/lib/habits";
 
 interface MonthlyXPSummaryProps {
   currentMonthXP: number;
   lastMonthXP: number;
   activitiesByDay: Record<number, Partial<Record<StatKey, number>>>;
-  habitsByDay: Record<number, HabitKey[]>;
+  habitsByDay: Record<number, string[]>;
   statDefinitions: Record<StatKey, StatDefinition> | null;
   todayXP: number;
   todayXPPulsing?: boolean;
@@ -17,7 +17,7 @@ interface MonthlyXPSummaryProps {
 // Derive emoji map from shared habit definitions (single source of truth)
 const HABIT_EMOJI = Object.fromEntries(
   HABIT_DEFINITIONS.map((h) => [h.key, h.emoji])
-) as Record<HabitKey, string>;
+) as Record<string, string>;
 
 export function MonthlyXPSummary({
   currentMonthXP,

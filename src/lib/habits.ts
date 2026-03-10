@@ -1,4 +1,4 @@
-import { HabitKey } from "./types";
+import { HabitKey, GameData } from "./types";
 
 export interface HabitDefinition {
   key: HabitKey;
@@ -20,12 +20,28 @@ export const HABIT_DEFINITIONS: HabitDefinition[] = [
   { key: "steps", label: "10k steps", pastTenseLabel: "10k steps", completedLabel: "10k done!", description: "Walk 10,000 steps", emoji: "👟", color: "#10b981", enabledBackground: "#ecfdf5" },
 ];
 
+// The 6 built-in habit keys (custom habits use dynamic keys prefixed with "custom_habit_")
+export const BUILTIN_HABIT_KEYS: HabitKey[] = HABIT_DEFINITIONS.map((h) => h.key);
+
 // Quick lookup by key for components that need a single habit's label
-export const HABIT_LABELS: Record<HabitKey, string> = Object.fromEntries(
+export const HABIT_LABELS: Record<string, string> = Object.fromEntries(
   HABIT_DEFINITIONS.map((h) => [h.key, h.label])
-) as Record<HabitKey, string>;
+);
 
 // Past-tense lookup for retrospective views (calendar day detail)
-export const HABIT_PAST_LABELS: Record<HabitKey, string> = Object.fromEntries(
+export const HABIT_PAST_LABELS: Record<string, string> = Object.fromEntries(
   HABIT_DEFINITIONS.map((h) => [h.key, h.pastTenseLabel])
-) as Record<HabitKey, string>;
+);
+
+/** Unified lookup: finds a habit definition by key, checking built-in first, then custom.
+ *  Returns a normalized shape with optional emoji (built-in) or iconKey (custom). */
+export function findHabitDefinition(
+  data: GameData,
+  key: string
+): { label: string; pastTenseLabel: string; completedLabel: string; emoji?: string; iconKey?: string; color: string; enabledBackground: string } | undefined {
+  const builtIn = HABIT_DEFINITIONS.find((h) => h.key === key);
+  if (builtIn) return { label: builtIn.label, pastTenseLabel: builtIn.pastTenseLabel, completedLabel: builtIn.completedLabel, emoji: builtIn.emoji, color: builtIn.color, enabledBackground: builtIn.enabledBackground };
+  const custom = (data.customHabitDefinitions ?? []).find((h) => h.key === key);
+  if (custom) return { label: custom.label, pastTenseLabel: custom.pastTenseLabel, completedLabel: custom.completedLabel, iconKey: custom.iconKey, color: custom.color, enabledBackground: custom.enabledBackground };
+  return undefined;
+}

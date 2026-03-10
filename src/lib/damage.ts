@@ -1,4 +1,4 @@
-import { DamageKey } from "./types";
+import { DamageKey, GameData } from "./types";
 
 export interface DamageDefinition {
   key: DamageKey;
@@ -17,12 +17,28 @@ export const DAMAGE_DEFINITIONS: DamageDefinition[] = [
   { key: "badsleep", label: "Bad sleep", pastTenseLabel: "Slept badly", description: "Late nights or disrupted sleep", emoji: "🌙", color: "#ef4444", enabledBackground: "#fef2f2" },
 ];
 
+// The 4 built-in damage keys (custom damage uses dynamic keys prefixed with "custom_damage_")
+export const BUILTIN_DAMAGE_KEYS: DamageKey[] = DAMAGE_DEFINITIONS.map((d) => d.key);
+
 // Quick lookup by key for components that need a single damage label
-export const DAMAGE_LABELS: Record<DamageKey, string> = Object.fromEntries(
+export const DAMAGE_LABELS: Record<string, string> = Object.fromEntries(
   DAMAGE_DEFINITIONS.map((d) => [d.key, d.label])
-) as Record<DamageKey, string>;
+);
 
 // Past-tense lookup for retrospective views (calendar day detail, activity feed)
-export const DAMAGE_PAST_LABELS: Record<DamageKey, string> = Object.fromEntries(
+export const DAMAGE_PAST_LABELS: Record<string, string> = Object.fromEntries(
   DAMAGE_DEFINITIONS.map((d) => [d.key, d.pastTenseLabel])
-) as Record<DamageKey, string>;
+);
+
+/** Unified lookup: finds a damage definition by key, checking built-in first, then custom.
+ *  Returns a normalized shape with optional emoji (built-in) or iconKey (custom). */
+export function findDamageDefinition(
+  data: GameData,
+  key: string
+): { label: string; pastTenseLabel: string; emoji?: string; iconKey?: string; color: string; enabledBackground: string } | undefined {
+  const builtIn = DAMAGE_DEFINITIONS.find((d) => d.key === key);
+  if (builtIn) return { label: builtIn.label, pastTenseLabel: builtIn.pastTenseLabel, emoji: builtIn.emoji, color: builtIn.color, enabledBackground: builtIn.enabledBackground };
+  const custom = (data.customDamageDefinitions ?? []).find((d) => d.key === key);
+  if (custom) return { label: custom.label, pastTenseLabel: custom.pastTenseLabel, iconKey: custom.iconKey, color: custom.color, enabledBackground: custom.enabledBackground };
+  return undefined;
+}

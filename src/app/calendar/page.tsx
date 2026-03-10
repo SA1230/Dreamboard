@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { AuthGate } from "@/components/AuthProvider";
-import { GameData, Activity, StatKey, HabitKey, DamageKey } from "@/lib/types";
+import { GameData, Activity, StatKey } from "@/lib/types";
 import { loadGameData, getEffectiveDefinitions, getActivitiesByDay, getHabitsByDay, getDamageByDay, getEnabledHabits, getEnabledDamage } from "@/lib/storage";
 import { StatDefinition } from "@/lib/stats";
 import { MonthCalendar } from "@/components/MonthCalendar";
@@ -10,8 +10,8 @@ import { StatIcon } from "@/components/StatIcons";
 import { ArrowLeft, ChevronLeft, ChevronRight, X } from "lucide-react";
 import Link from "next/link";
 import { ModalBackdrop } from "@/components/ModalBackdrop";
-import { HABIT_PAST_LABELS } from "@/lib/habits";
-import { DAMAGE_PAST_LABELS } from "@/lib/damage";
+import { HABIT_PAST_LABELS, findHabitDefinition } from "@/lib/habits";
+import { DAMAGE_PAST_LABELS, findDamageDefinition } from "@/lib/damage";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -26,15 +26,17 @@ function DayDetailModal({
   habits,
   damage,
   definitions,
+  gameData,
   onClose,
 }: {
   day: number;
   month: number;
   year: number;
   activities: Activity[];
-  habits: HabitKey[];
-  damage: DamageKey[];
+  habits: string[];
+  damage: string[];
   definitions: Record<StatKey, StatDefinition>;
+  gameData: GameData;
   onClose: () => void;
 }) {
   const totalXP = activities.reduce((sum, a) => sum + (a.amount ?? 1), 0);
@@ -130,7 +132,7 @@ function DayDetailModal({
                     color: "#059669",
                   }}
                 >
-                  {HABIT_PAST_LABELS[habitKey]}
+                  {HABIT_PAST_LABELS[habitKey] ?? findHabitDefinition(gameData, habitKey)?.pastTenseLabel ?? habitKey}
                 </span>
               ))}
             </div>
@@ -151,7 +153,7 @@ function DayDetailModal({
                     color: "#dc2626",
                   }}
                 >
-                  {DAMAGE_PAST_LABELS[damageKey]}
+                  {DAMAGE_PAST_LABELS[damageKey] ?? findDamageDefinition(gameData, damageKey)?.pastTenseLabel ?? damageKey}
                 </span>
               ))}
             </div>
@@ -354,6 +356,7 @@ function CalendarPageContent() {
           habits={selectedDayHabits}
           damage={selectedDayDamage}
           definitions={definitions}
+          gameData={gameData}
           onClose={() => setSelectedDay(null)}
         />
       )}

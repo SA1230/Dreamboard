@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { GameData, StatKey, HabitKey, DamageKey, CustomStatOverride } from "@/lib/types";
+import { GameData, StatKey, CustomStatOverride, MAX_CUSTOM_HABITS, MAX_CUSTOM_DAMAGE } from "@/lib/types";
 import { STAT_DEFINITIONS, STAT_KEYS, COLOR_PRESETS, StatDefinition } from "@/lib/stats";
-import { loadGameData, saveCustomDefinitions, getEnabledHabits, saveEnabledHabits, getEnabledDamage, saveEnabledDamage, resetAllData, saveProfilePicture, getProfilePicture, getOverallLevel, getTotalLifetimeXP, getMascotName, setMascotName, isMascotNameUnlocked } from "@/lib/storage";
+import { loadGameData, saveCustomDefinitions, getEnabledHabits, saveEnabledHabits, getEnabledDamage, saveEnabledDamage, resetAllData, saveProfilePicture, getProfilePicture, getOverallLevel, getTotalLifetimeXP, getMascotName, setMascotName, isMascotNameUnlocked, addCustomHabit, deleteCustomHabit, addCustomDamage, deleteCustomDamage, generateCustomKey, getCustomHabits, getCustomDamage } from "@/lib/storage";
 import { StatIcon, ICON_OPTIONS } from "@/components/StatIcons";
-import { ArrowLeft, RotateCcw, Trash2, Camera, X, BarChart3, Volume2 } from "lucide-react";
+import { ArrowLeft, RotateCcw, Trash2, Camera, X, BarChart3, Volume2, Plus } from "lucide-react";
 import { isMuted, setMuted } from "@/lib/sound";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -13,9 +13,6 @@ import { HABIT_DEFINITIONS } from "@/lib/habits";
 import { DAMAGE_DEFINITIONS } from "@/lib/damage";
 import { ModalBackdrop } from "@/components/ModalBackdrop";
 import { AuthGate } from "@/components/AuthProvider";
-
-const ALL_HABITS = HABIT_DEFINITIONS;
-const ALL_DAMAGE = DAMAGE_DEFINITIONS;
 
 export default function SettingsPage() {
   return (
@@ -28,18 +25,35 @@ export default function SettingsPage() {
 function SettingsPageContent() {
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [overrides, setOverrides] = useState<Partial<Record<StatKey, CustomStatOverride>>>({});
-  const [enabledHabits, setEnabledHabits] = useState<HabitKey[]>([]);
-  const [enabledDamage, setEnabledDamage] = useState<DamageKey[]>([]);
+  const [enabledHabits, setEnabledHabits] = useState<string[]>([]);
+  const [enabledDamage, setEnabledDamage] = useState<string[]>([]);
   const [editingStat, setEditingStat] = useState<StatKey | null>(null);
   const [saved, setSaved] = useState(false);
   const [showResetDataConfirm, setShowResetDataConfirm] = useState(false);
-  const [pendingDamageKey, setPendingDamageKey] = useState<DamageKey | null>(null);
+  const [pendingDamageKey, setPendingDamageKey] = useState<string | null>(null);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [mascotNameValue, setMascotNameValue] = useState("Skipper");
   const [overallLevel, setOverallLevel] = useState(1);
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // Custom habit creation form state
+  const [showCreateHabit, setShowCreateHabit] = useState(false);
+  const [newHabitLabel, setNewHabitLabel] = useState("");
+  const [newHabitPastTense, setNewHabitPastTense] = useState("");
+  const [newHabitIconKey, setNewHabitIconKey] = useState("star");
+  const [newHabitColor, setNewHabitColor] = useState(COLOR_PRESETS[0].color);
+  const [deleteHabitKey, setDeleteHabitKey] = useState<string | null>(null);
+
+  // Custom damage creation form state
+  const [showCreateDamage, setShowCreateDamage] = useState(false);
+  const [newDamageLabel, setNewDamageLabel] = useState("");
+  const [newDamagePastTense, setNewDamagePastTense] = useState("");
+  const [newDamageIconKey, setNewDamageIconKey] = useState("star");
+  const [newDamageColor, setNewDamageColor] = useState("#ef4444");
+  const [deleteDamageKey, setDeleteDamageKey] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const savedOverridesRef = useRef<string>("{}");
   const savedMascotNameRef = useRef<string>("Skipper");
@@ -76,6 +90,10 @@ function SettingsPageContent() {
       </div>
     );
   }
+
+  // Derived custom items
+  const customHabits = getCustomHabits(gameData);
+  const customDamageItems = getCustomDamage(gameData);
 
   function getEffectiveDefinition(key: StatKey): StatDefinition {
     const base = STAT_DEFINITIONS[key];
@@ -135,7 +153,7 @@ function SettingsPageContent() {
     setSaved(false);
   }
 
-  function toggleHabit(habitKey: HabitKey) {
+  function toggleHabit(habitKey: string) {
     if (!gameData) return;
     const updated = enabledHabits.includes(habitKey)
       ? enabledHabits.filter((k) => k !== habitKey)
@@ -145,7 +163,7 @@ function SettingsPageContent() {
     setGameData(newData);
   }
 
-  function toggleDamageItem(damageKey: DamageKey) {
+  function toggleDamageItem(damageKey: string) {
     if (!gameData) return;
     const isEnabling = !enabledDamage.includes(damageKey);
     // Show confirmation when enabling the first damage type
@@ -168,6 +186,84 @@ function SettingsPageContent() {
     const newData = saveEnabledDamage(gameData, updated);
     setGameData(newData);
     setPendingDamageKey(null);
+  }
+
+  // --- Custom Habit handlers ---
+
+  function resetHabitForm() {
+    setShowCreateHabit(false);
+    setNewHabitLabel("");
+    setNewHabitPastTense("");
+    setNewHabitIconKey("star");
+    setNewHabitColor(COLOR_PRESETS[0].color);
+  }
+
+  function handleCreateHabit() {
+    if (!gameData || !newHabitLabel.trim()) return;
+    const key = generateCustomKey("habit", newHabitLabel);
+    const preset = COLOR_PRESETS.find((p) => p.color === newHabitColor);
+    const result = addCustomHabit(gameData, {
+      key,
+      label: newHabitLabel.trim(),
+      pastTenseLabel: newHabitPastTense.trim() || newHabitLabel.trim(),
+      completedLabel: `${newHabitLabel.trim()} done!`,
+      description: "Custom habit",
+      iconKey: newHabitIconKey,
+      color: newHabitColor,
+      enabledBackground: preset?.backgroundColor ?? "#f5f5f4",
+      createdAt: new Date().toISOString(),
+    });
+    if (result) {
+      setGameData(result);
+      setEnabledHabits(getEnabledHabits(result));
+      resetHabitForm();
+    }
+  }
+
+  function handleDeleteHabit(key: string) {
+    if (!gameData) return;
+    const result = deleteCustomHabit(gameData, key);
+    setGameData(result);
+    setEnabledHabits(getEnabledHabits(result));
+    setDeleteHabitKey(null);
+  }
+
+  // --- Custom Damage handlers ---
+
+  function resetDamageForm() {
+    setShowCreateDamage(false);
+    setNewDamageLabel("");
+    setNewDamagePastTense("");
+    setNewDamageIconKey("star");
+    setNewDamageColor("#ef4444");
+  }
+
+  function handleCreateDamage() {
+    if (!gameData || !newDamageLabel.trim()) return;
+    const key = generateCustomKey("damage", newDamageLabel);
+    const result = addCustomDamage(gameData, {
+      key,
+      label: newDamageLabel.trim(),
+      pastTenseLabel: newDamagePastTense.trim() || newDamageLabel.trim(),
+      description: "Custom vice",
+      iconKey: newDamageIconKey,
+      color: newDamageColor,
+      enabledBackground: "#fef2f2",
+      createdAt: new Date().toISOString(),
+    });
+    if (result) {
+      setGameData(result);
+      setEnabledDamage(getEnabledDamage(result));
+      resetDamageForm();
+    }
+  }
+
+  function handleDeleteDamage(key: string) {
+    if (!gameData) return;
+    const result = deleteCustomDamage(gameData, key);
+    setGameData(result);
+    setEnabledDamage(getEnabledDamage(result));
+    setDeleteDamageKey(null);
   }
 
   function handleProfilePictureUpload(event: React.ChangeEvent<HTMLInputElement>) {
@@ -502,7 +598,8 @@ function SettingsPageContent() {
       <h2 className="text-lg font-bold text-stone-500 mt-12 mb-2">Daily Habits</h2>
       <p className="text-xs text-stone-400 mb-4">Choose which habits appear on your dashboard and calendar.</p>
       <div className="space-y-2">
-        {ALL_HABITS.map((habit) => {
+        {/* Built-in habits */}
+        {HABIT_DEFINITIONS.map((habit) => {
           const isEnabled = enabledHabits.includes(habit.key);
           return (
             <button
@@ -543,13 +640,178 @@ function SettingsPageContent() {
             </button>
           );
         })}
+
+        {/* Custom habits */}
+        {customHabits.map((habit) => {
+          const isEnabled = enabledHabits.includes(habit.key);
+          return (
+            <div
+              key={habit.key}
+              className="flex items-center gap-2"
+            >
+              <button
+                onClick={() => toggleHabit(habit.key)}
+                className="flex-1 flex items-center gap-3 p-4 rounded-2xl transition-all duration-200"
+                style={{
+                  backgroundColor: isEnabled ? habit.enabledBackground : "#fafaf9",
+                  border: isEnabled ? `2px solid ${habit.color}30` : "2px solid #e7e5e4",
+                }}
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{
+                    backgroundColor: isEnabled ? `${habit.color}20` : "#f5f5f4",
+                    color: isEnabled ? habit.color : "#a8a29e",
+                  }}
+                >
+                  <StatIcon iconKey={habit.iconKey} className="w-5 h-5" />
+                </div>
+                <div className="flex-1 text-left">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm" style={{ color: isEnabled ? habit.color : "#a8a29e" }}>
+                      {habit.label}
+                    </span>
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-stone-200 text-stone-400">
+                      custom
+                    </span>
+                  </div>
+                  <div className="text-xs" style={{ color: isEnabled ? `${habit.color}99` : "#d6d3d1" }}>
+                    {habit.description}
+                  </div>
+                </div>
+                {/* Toggle switch */}
+                <div
+                  className="w-11 h-6 rounded-full relative transition-colors duration-200 shrink-0"
+                  style={{ backgroundColor: isEnabled ? habit.color : "#d6d3d1" }}
+                >
+                  <div
+                    className="w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all duration-200 shadow-sm"
+                    style={{ left: isEnabled ? "22px" : "2px" }}
+                  />
+                </div>
+              </button>
+              <button
+                onClick={() => setDeleteHabitKey(habit.key)}
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-stone-300 hover:text-red-400 hover:bg-red-50 transition-colors shrink-0"
+                aria-label={`Delete ${habit.label}`}
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          );
+        })}
+
+        {/* Create custom habit form */}
+        {showCreateHabit ? (
+          <div className="rounded-2xl border-2 border-dashed border-stone-300 bg-stone-50 p-5 space-y-4 animate-fadeIn">
+            <h4 className="text-sm font-bold text-stone-600">New Custom Habit</h4>
+
+            {/* Label */}
+            <div>
+              <label className="text-xs font-semibold text-stone-500 mb-1 block">Label</label>
+              <input
+                type="text"
+                value={newHabitLabel}
+                onChange={(e) => setNewHabitLabel(e.target.value)}
+                placeholder="Meditation"
+                maxLength={30}
+                className="w-full px-3 py-2 rounded-xl border-2 border-stone-200 text-sm bg-white text-stone-700 outline-none focus:border-amber-400 transition-colors"
+              />
+            </div>
+
+            {/* Past tense */}
+            <div>
+              <label className="text-xs font-semibold text-stone-500 mb-1 block">Past tense</label>
+              <input
+                type="text"
+                value={newHabitPastTense}
+                onChange={(e) => setNewHabitPastTense(e.target.value)}
+                placeholder="Meditated"
+                maxLength={30}
+                className="w-full px-3 py-2 rounded-xl border-2 border-stone-200 text-sm bg-white text-stone-700 outline-none focus:border-amber-400 transition-colors"
+              />
+            </div>
+
+            {/* Icon picker */}
+            <div>
+              <label className="text-xs font-semibold text-stone-500 mb-2 block">Icon</label>
+              <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+                {ICON_OPTIONS.map((option) => (
+                  <button
+                    key={option.key}
+                    onClick={() => setNewHabitIconKey(option.key)}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-110"
+                    style={{
+                      backgroundColor: newHabitIconKey === option.key ? `${newHabitColor}20` : "rgba(255,255,255,0.8)",
+                      color: newHabitIconKey === option.key ? newHabitColor : "#9CA3AF",
+                      boxShadow: newHabitIconKey === option.key ? `0 0 0 2px ${newHabitColor}` : "none",
+                    }}
+                    title={option.label}
+                  >
+                    <StatIcon iconKey={option.key} className="w-6 h-6" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Color picker */}
+            <div>
+              <label className="text-xs font-semibold text-stone-500 mb-2 block">Color</label>
+              <div className="flex flex-wrap gap-2">
+                {COLOR_PRESETS.map((preset) => (
+                  <button
+                    key={preset.color}
+                    onClick={() => setNewHabitColor(preset.color)}
+                    className="w-8 h-8 rounded-full transition-all duration-200 hover:scale-110"
+                    style={{
+                      backgroundColor: preset.color,
+                      boxShadow: newHabitColor === preset.color
+                        ? `0 0 0 3px #fafaf9, 0 0 0 5px ${preset.color}`
+                        : "none",
+                    }}
+                    title={preset.label}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-3 pt-1">
+              <button
+                onClick={handleCreateHabit}
+                disabled={!newHabitLabel.trim()}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:hover:scale-100"
+                style={{ background: newHabitLabel.trim() ? "linear-gradient(135deg, #d97706, #f59e0b)" : "#d6d3d1" }}
+              >
+                Add Habit
+              </button>
+              <button
+                onClick={resetHabitForm}
+                className="text-sm font-medium text-stone-400 hover:text-stone-500 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          customHabits.length < MAX_CUSTOM_HABITS && (
+            <button
+              onClick={() => setShowCreateHabit(true)}
+              className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl border-2 border-dashed border-stone-300 text-stone-400 hover:border-stone-400 hover:text-stone-500 hover:bg-stone-50 transition-all"
+            >
+              <Plus size={18} />
+              <span className="text-sm font-bold">Add Custom Habit</span>
+            </button>
+          )
+        )}
       </div>
 
       {/* Section: Daily Damage */}
       <h2 className="text-lg font-bold text-stone-500 mt-12 mb-2">Daily Damage</h2>
       <p className="text-xs text-stone-400 mb-4">Choose which damage items appear on your dashboard.</p>
       <div className="space-y-2">
-        {ALL_DAMAGE.map((damage) => {
+        {/* Built-in damage */}
+        {DAMAGE_DEFINITIONS.map((damage) => {
           const isEnabled = enabledDamage.includes(damage.key);
           return (
             <button
@@ -590,6 +852,170 @@ function SettingsPageContent() {
             </button>
           );
         })}
+
+        {/* Custom damage */}
+        {customDamageItems.map((damage) => {
+          const isEnabled = enabledDamage.includes(damage.key);
+          return (
+            <div
+              key={damage.key}
+              className="flex items-center gap-2"
+            >
+              <button
+                onClick={() => toggleDamageItem(damage.key)}
+                className="flex-1 flex items-center gap-3 p-4 rounded-2xl transition-all duration-200"
+                style={{
+                  backgroundColor: isEnabled ? damage.enabledBackground : "#fafaf9",
+                  border: isEnabled ? `2px solid ${damage.color}30` : "2px solid #e7e5e4",
+                }}
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{
+                    backgroundColor: isEnabled ? `${damage.color}20` : "#f5f5f4",
+                    color: isEnabled ? damage.color : "#a8a29e",
+                  }}
+                >
+                  <StatIcon iconKey={damage.iconKey} className="w-5 h-5" />
+                </div>
+                <div className="flex-1 text-left">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm" style={{ color: isEnabled ? damage.color : "#a8a29e" }}>
+                      {damage.label}
+                    </span>
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-stone-200 text-stone-400">
+                      custom
+                    </span>
+                  </div>
+                  <div className="text-xs" style={{ color: isEnabled ? `${damage.color}99` : "#d6d3d1" }}>
+                    {damage.description}
+                  </div>
+                </div>
+                {/* Toggle switch */}
+                <div
+                  className="w-11 h-6 rounded-full relative transition-colors duration-200 shrink-0"
+                  style={{ backgroundColor: isEnabled ? damage.color : "#d6d3d1" }}
+                >
+                  <div
+                    className="w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all duration-200 shadow-sm"
+                    style={{ left: isEnabled ? "22px" : "2px" }}
+                  />
+                </div>
+              </button>
+              <button
+                onClick={() => setDeleteDamageKey(damage.key)}
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-stone-300 hover:text-red-400 hover:bg-red-50 transition-colors shrink-0"
+                aria-label={`Delete ${damage.label}`}
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          );
+        })}
+
+        {/* Create custom damage form */}
+        {showCreateDamage ? (
+          <div className="rounded-2xl border-2 border-dashed border-red-200 bg-red-50/30 p-5 space-y-4 animate-fadeIn">
+            <h4 className="text-sm font-bold text-stone-600">New Custom Vice</h4>
+
+            {/* Label */}
+            <div>
+              <label className="text-xs font-semibold text-stone-500 mb-1 block">Label</label>
+              <input
+                type="text"
+                value={newDamageLabel}
+                onChange={(e) => setNewDamageLabel(e.target.value)}
+                placeholder="Nail biting"
+                maxLength={30}
+                className="w-full px-3 py-2 rounded-xl border-2 border-stone-200 text-sm bg-white text-stone-700 outline-none focus:border-red-400 transition-colors"
+              />
+            </div>
+
+            {/* Past tense */}
+            <div>
+              <label className="text-xs font-semibold text-stone-500 mb-1 block">Past tense</label>
+              <input
+                type="text"
+                value={newDamagePastTense}
+                onChange={(e) => setNewDamagePastTense(e.target.value)}
+                placeholder="Bit nails"
+                maxLength={30}
+                className="w-full px-3 py-2 rounded-xl border-2 border-stone-200 text-sm bg-white text-stone-700 outline-none focus:border-red-400 transition-colors"
+              />
+            </div>
+
+            {/* Icon picker */}
+            <div>
+              <label className="text-xs font-semibold text-stone-500 mb-2 block">Icon</label>
+              <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+                {ICON_OPTIONS.map((option) => (
+                  <button
+                    key={option.key}
+                    onClick={() => setNewDamageIconKey(option.key)}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-110"
+                    style={{
+                      backgroundColor: newDamageIconKey === option.key ? `${newDamageColor}20` : "rgba(255,255,255,0.8)",
+                      color: newDamageIconKey === option.key ? newDamageColor : "#9CA3AF",
+                      boxShadow: newDamageIconKey === option.key ? `0 0 0 2px ${newDamageColor}` : "none",
+                    }}
+                    title={option.label}
+                  >
+                    <StatIcon iconKey={option.key} className="w-6 h-6" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Color picker */}
+            <div>
+              <label className="text-xs font-semibold text-stone-500 mb-2 block">Color</label>
+              <div className="flex flex-wrap gap-2">
+                {COLOR_PRESETS.map((preset) => (
+                  <button
+                    key={preset.color}
+                    onClick={() => setNewDamageColor(preset.color)}
+                    className="w-8 h-8 rounded-full transition-all duration-200 hover:scale-110"
+                    style={{
+                      backgroundColor: preset.color,
+                      boxShadow: newDamageColor === preset.color
+                        ? `0 0 0 3px #fef2f2, 0 0 0 5px ${preset.color}`
+                        : "none",
+                    }}
+                    title={preset.label}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-3 pt-1">
+              <button
+                onClick={handleCreateDamage}
+                disabled={!newDamageLabel.trim()}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:hover:scale-100"
+                style={{ background: newDamageLabel.trim() ? "linear-gradient(135deg, #dc2626, #ef4444)" : "#d6d3d1" }}
+              >
+                Add Vice
+              </button>
+              <button
+                onClick={resetDamageForm}
+                className="text-sm font-medium text-stone-400 hover:text-stone-500 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          customDamageItems.length < MAX_CUSTOM_DAMAGE && (
+            <button
+              onClick={() => setShowCreateDamage(true)}
+              className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl border-2 border-dashed border-stone-300 text-stone-400 hover:border-stone-400 hover:text-stone-500 hover:bg-stone-50 transition-all"
+            >
+              <Plus size={18} />
+              <span className="text-sm font-bold">Add Custom Vice</span>
+            </button>
+          )
+        )}
       </div>
 
       {/* Section: Sound & Vibration */}
@@ -702,6 +1128,72 @@ function SettingsPageContent() {
                   style={{ background: 'linear-gradient(135deg, #d97706, #f59e0b)' }}
                 >
                   Enable it
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalBackdrop>
+      )}
+
+      {/* Delete Custom Habit Confirmation Modal */}
+      {deleteHabitKey && (
+        <ModalBackdrop onClose={() => setDeleteHabitKey(null)} backdropStyle="dark" ariaLabel="Delete custom habit">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-modalSlideUp">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                <Trash2 size={28} className="text-red-500" />
+              </div>
+              <h3 className="text-lg font-extrabold text-stone-700 mb-2">
+                Delete custom habit?
+              </h3>
+              <p className="text-sm text-stone-500 mb-6">
+                This removes the habit from your list. Historical data is preserved for Power Point accuracy.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setDeleteHabitKey(null)}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-stone-500 bg-stone-100 hover:bg-stone-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeleteHabit(deleteHabitKey)}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-all"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalBackdrop>
+      )}
+
+      {/* Delete Custom Damage Confirmation Modal */}
+      {deleteDamageKey && (
+        <ModalBackdrop onClose={() => setDeleteDamageKey(null)} backdropStyle="dark" ariaLabel="Delete custom vice">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-modalSlideUp">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                <Trash2 size={28} className="text-red-500" />
+              </div>
+              <h3 className="text-lg font-extrabold text-stone-700 mb-2">
+                Delete custom vice?
+              </h3>
+              <p className="text-sm text-stone-500 mb-6">
+                This removes the vice from your list. Historical data is preserved for Power Point accuracy.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setDeleteDamageKey(null)}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-stone-500 bg-stone-100 hover:bg-stone-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeleteDamage(deleteDamageKey)}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-all"
+                >
+                  Delete
                 </button>
               </div>
             </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { GameData, HabitKey, DamageKey } from "@/lib/types";
+import { GameData } from "@/lib/types";
 import {
   isHabitCompletedForDate,
   isDamageMarkedForDate,
@@ -9,14 +9,15 @@ import {
   getEnabledDamage,
   getPointsBalance,
 } from "@/lib/storage";
-import { HABIT_DEFINITIONS } from "@/lib/habits";
-import { DAMAGE_DEFINITIONS } from "@/lib/damage";
+import { findHabitDefinition } from "@/lib/habits";
+import { findDamageDefinition } from "@/lib/damage";
+import { StatIcon } from "@/components/StatIcons";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface YesterdayReviewProps {
   gameData: GameData;
-  onToggleHabit: (habitKey: HabitKey, dateString: string) => void;
-  onToggleDamage: (damageKey: DamageKey, dateString: string) => void;
+  onToggleHabit: (habitKey: string, dateString: string) => void;
+  onToggleDamage: (damageKey: string, dateString: string) => void;
   ppToast?: { text: string; color: string } | null;
 }
 
@@ -107,7 +108,7 @@ export function YesterdayReview({ gameData, onToggleHabit, onToggleDamage, ppToa
             <div className="grid grid-cols-2 gap-x-3 gap-y-1">
               {enabledHabits.map((habitKey) => {
                 const completed = isHabitCompletedForDate(gameData, habitKey, reviewDateString);
-                const definition = HABIT_DEFINITIONS.find((h) => h.key === habitKey);
+                const definition = findHabitDefinition(gameData, habitKey);
                 if (!definition) return null;
 
                 return (
@@ -130,12 +131,14 @@ export function YesterdayReview({ gameData, onToggleHabit, onToggleDamage, ppToa
                         </svg>
                       )}
                     </div>
-                    {/* Emoji + label */}
+                    {/* Emoji/Icon + label */}
                     <span
-                      className="text-sm transition-colors"
+                      className="text-sm transition-colors flex items-center gap-1"
                       style={{ color: completed ? definition.color : "#a8a29e" }}
                     >
-                      {definition.emoji} {definition.label}
+                      {definition.emoji ? definition.emoji : (
+                        <StatIcon iconKey={definition.iconKey!} className="w-3.5 h-3.5" />
+                      )} {definition.label}
                     </span>
                   </button>
                 );
@@ -153,7 +156,7 @@ export function YesterdayReview({ gameData, onToggleHabit, onToggleDamage, ppToa
             <div className="grid grid-cols-2 gap-x-3 gap-y-1">
               {enabledDamage.map((damageKey) => {
                 const marked = isDamageMarkedForDate(gameData, damageKey, reviewDateString);
-                const definition = DAMAGE_DEFINITIONS.find((d) => d.key === damageKey);
+                const definition = findDamageDefinition(gameData, damageKey);
                 if (!definition) return null;
 
                 return (
@@ -176,12 +179,14 @@ export function YesterdayReview({ gameData, onToggleHabit, onToggleDamage, ppToa
                         </svg>
                       )}
                     </div>
-                    {/* Emoji + label */}
+                    {/* Emoji/Icon + label */}
                     <span
-                      className="text-sm transition-colors"
+                      className="text-sm transition-colors flex items-center gap-1"
                       style={{ color: marked ? "#dc2626" : "#a8a29e" }}
                     >
-                      {definition.emoji} {definition.label}
+                      {definition.emoji ? definition.emoji : (
+                        <StatIcon iconKey={definition.iconKey!} className="w-3.5 h-3.5" />
+                      )} {definition.label}
                     </span>
                   </button>
                 );
