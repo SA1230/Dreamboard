@@ -115,7 +115,7 @@ export function StatCard({
 
   const gradientId = `statRing-${definition.key}`;
 
-  // Inactive cards render as a compact single-line row
+  // Inactive cards render as a compact stacked card
   if (!isActiveThisMonth) {
     return (
       <div
@@ -123,27 +123,26 @@ export function StatCard({
         className="relative rounded-xl px-3 py-2.5 transition-all duration-300 opacity-50 saturate-[0.3] hover:opacity-70"
         style={{ backgroundColor: definition.backgroundColor }}
       >
-        <div className="flex items-center gap-2.5">
-          <div className="flex-shrink-0 w-5 h-5" style={{ color: `${definition.color}60` }}>
-            <StatIcon iconKey={definition.iconKey} className="w-5 h-5" />
-          </div>
-          <span className="font-semibold text-sm flex-1 min-w-0" style={{ color: definition.color }}>
+        <div className="flex items-center gap-1.5">
+          <span className="font-semibold text-sm" style={{ color: definition.color }}>
             {definition.name}
           </span>
-          <span
-            className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-            style={{
-              backgroundColor: `${definition.color}10`,
-              color: `${definition.color}90`,
-              border: `1px solid ${definition.color}20`,
-            }}
-          >
-            Lv.{displayedLevel}
-          </span>
-          <span className="text-[10px] text-stone-300 italic ml-1 truncate">
-            {isFirstRun ? definition.description : "No activity this month"}
-          </span>
+          {!isFirstRun && (
+            <span
+              className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+              style={{
+                backgroundColor: `${definition.color}10`,
+                color: `${definition.color}90`,
+                border: `1px solid ${definition.color}20`,
+              }}
+            >
+              Lv.{displayedLevel}
+            </span>
+          )}
         </div>
+        <p className="text-[11px] text-stone-400 italic mt-0.5 leading-tight">
+          {isFirstRun ? definition.description : "No activity this month"}
+        </p>
       </div>
     );
   }
