@@ -13,7 +13,7 @@ import { MonthlyXPSummary } from "@/components/MonthlyXPSummary";
 import { YesterdayReview } from "@/components/YesterdayReview";
 import { LevelDisplay } from "@/components/LevelDisplay";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
-import { Download, Settings, CalendarDays, ShoppingBag, Trophy, Sparkles } from "lucide-react";
+import { Download, Settings, CalendarDays, ShoppingBag, Trophy, Sparkles, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { getRankTitle } from "@/lib/ranks";
 import { UserMenu } from "@/components/UserMenu";
@@ -140,6 +140,7 @@ function AuthenticatedHome() {
   const [isActivityExpanded, setIsActivityExpanded] = useState(true);
   const [showJudge, setShowJudge] = useState(false);
   const [showCompanion, setShowCompanion] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
 
   // Post-verdict XP toasts
   const [xpToasts, setXpToasts] = useState<{ id: string; statKey: StatKey; amount: number; color: string; iconKey: string; name: string }[]>([]);
@@ -446,11 +447,10 @@ function AuthenticatedHome() {
     >
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#FDF8F4]/80 backdrop-blur-md -mx-4 px-3 py-2.5 border-b border-stone-200/50 mb-10">
-        <div className="flex items-center justify-between gap-1">
-          <div className="flex-shrink-0">
-            <UserMenu />
-          </div>
-          <Link href="/" className="flex items-center gap-1 flex-shrink-0" aria-label="Home">
+        <div className="flex items-center justify-between relative">
+          {/* Invisible spacer to balance the hamburger when centered */}
+          {!navOpen && <div className="w-9 h-9" />}
+          <Link href="/" className={`flex items-center gap-1 flex-shrink-0 ${navOpen ? '' : 'absolute left-1/2 -translate-x-1/2'}`} aria-label="Home">
             <img
               src="/logos/dreamboard-icon-blue.svg"
               alt=""
@@ -462,49 +462,62 @@ function AuthenticatedHome() {
               className="h-6 inline-block"
             />
           </Link>
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <button
+            onClick={() => setNavOpen(!navOpen)}
+            className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-stone-200 transition-colors text-stone-500 ml-auto"
+            aria-label={navOpen ? "Close menu" : "Open menu"}
+            aria-expanded={navOpen}
+          >
+            {navOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+        {navOpen && (
+          <nav className="mt-2 pt-2 border-t border-stone-200/50 flex flex-col gap-1">
             <Link
               href="/calendar"
-              className="w-8 h-8 rounded-lg flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
-              title="Monthly calendar"
-              aria-label="Monthly calendar"
+              onClick={() => setNavOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-600 hover:bg-stone-100 transition-colors"
             >
-              <CalendarDays size={16} />
+              <CalendarDays size={18} className="text-stone-400" />
+              <span className="text-sm font-medium">Calendar</span>
             </Link>
             <Link
               href="/shop"
-              className="w-8 h-8 rounded-lg flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
-              title="Power-Up Store"
-              aria-label="Shop"
+              onClick={() => setNavOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-600 hover:bg-stone-100 transition-colors"
             >
-              <ShoppingBag size={16} />
+              <ShoppingBag size={18} className="text-stone-400" />
+              <span className="text-sm font-medium">Power-Up Store</span>
             </Link>
             <Link
               href="/prizes"
-              className="w-8 h-8 rounded-lg flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
-              title="Prize Track"
-              aria-label="Prize Track"
+              onClick={() => setNavOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-600 hover:bg-stone-100 transition-colors"
             >
-              <Trophy size={16} />
+              <Trophy size={18} className="text-stone-400" />
+              <span className="text-sm font-medium">Prize Track</span>
             </Link>
             <Link
               href="/vision"
-              className="w-8 h-8 rounded-lg flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
-              title="Vision Board"
-              aria-label="Vision Board"
+              onClick={() => setNavOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-600 hover:bg-stone-100 transition-colors"
             >
-              <Sparkles size={16} />
+              <Sparkles size={18} className="text-stone-400" />
+              <span className="text-sm font-medium">Vision Board</span>
             </Link>
             <Link
               href="/settings"
-              className="w-8 h-8 rounded-lg flex items-center justify-center bg-stone-100 hover:bg-stone-200 transition-colors text-stone-400 hover:text-stone-500"
-              title="Customize stats"
-              aria-label="Settings"
+              onClick={() => setNavOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-600 hover:bg-stone-100 transition-colors"
             >
-              <Settings size={16} />
+              <Settings size={18} className="text-stone-400" />
+              <span className="text-sm font-medium">Settings</span>
             </Link>
-          </div>
-        </div>
+            <div className="flex items-center gap-3 px-3 py-2.5">
+              <UserMenu />
+            </div>
+          </nav>
+        )}
       </header>
 
       {/* Level Display — Skipper character with progress ring (hero position) */}
