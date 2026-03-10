@@ -652,6 +652,27 @@
   50% { box-shadow: 0 0 60px 24px rgba(168, 85, 247, 0.3); }
 }
 
+/* Legendary item golden shimmer — pulses the filter group opacity */
+@keyframes legendaryGlow {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
+
+.legendary-glow-group {
+  animation: legendaryGlow 3s ease-in-out infinite;
+}
+
+/* Power aura pulse — subtle scale + opacity when 3+ epic/legendary items */
+@keyframes powerAuraPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.06); opacity: 0.7; }
+}
+
+.power-aura {
+  animation: powerAuraPulse 4s ease-in-out infinite;
+  transform-origin: center;
+}
+
 body {
   background: #FDF8F4;
 }

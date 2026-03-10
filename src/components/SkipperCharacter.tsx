@@ -1,8 +1,13 @@
 "use client";
 
-import { PlayerInventory, VisibleSlot } from "@/lib/types";
+import { PlayerInventory, VisibleSlot, ItemRarity } from "@/lib/types";
 import { getItemById } from "@/lib/items";
 import { ITEM_SVG_REGISTRY } from "@/lib/itemSvgs";
+
+interface SlotRenderData {
+  svg: string;
+  rarity: ItemRarity;
+}
 
 interface SkipperCharacterProps {
   /** Equipped items from player inventory — determines which SVG overlays render */
@@ -13,6 +18,17 @@ interface SkipperCharacterProps {
   size?: number;
 }
 
+/** Maps rarity to its SVG filter ID — common returns null (no filter) */
+function getRarityFilterId(rarity: ItemRarity): string | null {
+  switch (rarity) {
+    case "uncommon": return "rarity-uncommon";
+    case "rare": return "rarity-rare";
+    case "epic": return "rarity-epic";
+    case "legendary": return "rarity-legendary";
+    default: return null;
+  }
+}
+
 /**
  * Inline SVG paper-doll component for Skipper the penguin.
  *
@@ -20,8 +36,18 @@ interface SkipperCharacterProps {
  * Items are additional <g> groups inserted at specific z-order positions
  * so they visually appear on the correct body part.
  *
+ * Rarity effects (SVG filters):
+ *   common    → no filter (as-is)
+ *   uncommon  → subtle brightness boost
+ *   rare      → soft blue-white outer glow
+ *   epic      → purple glow, more intense
+ *   legendary → animated golden shimmer (CSS keyframe pulse)
+ *
+ * Aggregate power aura: when 3+ epic/legendary items are equipped,
+ * a radial gradient circle renders behind Skipper.
+ *
  * Rendering order (back to front):
- *   feet → boots → arms → weapons → body → chest/legs/robe → head → headgear → face
+ *   [power aura] → feet → boots → arms → weapons → body → chest/legs/robe → head → headgear → face
  */
 export function SkipperCharacter({
   equippedItems = {},
@@ -38,24 +64,47 @@ export function SkipperCharacter({
     }
   }
 
-  // Get SVG content string for a slot (returns null if empty or overridden)
-  function getSlotSvg(slot: VisibleSlot): string | null {
+  // Get SVG content + rarity for a slot (returns null if empty or overridden)
+  function getSlotData(slot: VisibleSlot): SlotRenderData | null {
     if (overriddenSlots.has(slot)) return null;
     const itemId = equippedItems[slot];
     if (!itemId) return null;
     const item = getItemById(itemId);
     if (!item?.svgAssetKey) return null;
-    return ITEM_SVG_REGISTRY[item.svgAssetKey] ?? null;
+    const svg = ITEM_SVG_REGISTRY[item.svgAssetKey];
+    if (!svg) return null;
+    return { svg, rarity: item.rarity };
   }
 
-  const bootsSvg = getSlotSvg("feet");
-  const primarySvg = getSlotSvg("primary");
-  const secondarySvg = getSlotSvg("secondary");
-  const chestSvg = getSlotSvg("chest");
-  const legsSvg = getSlotSvg("legs");
-  const robeSvg = getSlotSvg("robe");
-  const headSvg = getSlotSvg("head");
-  const handsSvg = getSlotSvg("hands");
+  // Render a slot's SVG wrapped in a rarity filter group
+  function renderSlot(data: SlotRenderData | null) {
+    if (!data) return null;
+    const filterId = getRarityFilterId(data.rarity);
+    const isLegendary = data.rarity === "legendary";
+    return (
+      <g
+        filter={filterId ? `url(#${filterId})` : undefined}
+        className={isLegendary ? "legendary-glow-group" : undefined}
+        dangerouslySetInnerHTML={{ __html: data.svg }}
+      />
+    );
+  }
+
+  const bootsData = getSlotData("feet");
+  const primaryData = getSlotData("primary");
+  const secondaryData = getSlotData("secondary");
+  const chestData = getSlotData("chest");
+  const legsData = getSlotData("legs");
+  const robeData = getSlotData("robe");
+  const headData = getSlotData("head");
+  const handsData = getSlotData("hands");
+
+  // Count epic/legendary items for aggregate power aura
+  const allSlotData = [bootsData, primaryData, secondaryData, chestData, legsData, robeData, headData, handsData];
+  const highRarityCount = allSlotData.filter(
+    (d) => d && (d.rarity === "epic" || d.rarity === "legendary")
+  ).length;
+  const showPowerAura = highRarityCount >= 3;
 
   return (
     <svg
@@ -67,12 +116,75 @@ export function SkipperCharacter({
       aria-label="Skipper character"
       role="img"
     >
+      {/* === Rarity filter definitions === */}
+      <defs>
+        {/* Uncommon: subtle brightness boost — items look slightly more vivid */}
+        <filter id="rarity-uncommon" x="-10%" y="-10%" width="120%" height="120%">
+          <feComponentTransfer>
+            <feFuncR type="linear" slope="1.15" intercept="0.03" />
+            <feFuncG type="linear" slope="1.15" intercept="0.03" />
+            <feFuncB type="linear" slope="1.15" intercept="0.03" />
+          </feComponentTransfer>
+        </filter>
+
+        {/* Rare: soft blue-white outer glow */}
+        <filter id="rarity-rare" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur" />
+          <feFlood floodColor="#5B7AA5" floodOpacity="0.45" result="glowColor" />
+          <feComposite in="glowColor" in2="blur" operator="in" result="softGlow" />
+          <feMerge>
+            <feMergeNode in="softGlow" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+
+        {/* Epic: purple glow, more intense */}
+        <filter id="rarity-epic" x="-25%" y="-25%" width="150%" height="150%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="blur" />
+          <feFlood floodColor="#8B6BA5" floodOpacity="0.55" result="glowColor" />
+          <feComposite in="glowColor" in2="blur" operator="in" result="softGlow" />
+          <feMerge>
+            <feMergeNode in="softGlow" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+
+        {/* Legendary: golden shimmer — CSS animation pulses opacity */}
+        <filter id="rarity-legendary" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="blur" />
+          <feFlood floodColor="#C9943E" floodOpacity="0.6" result="glowColor" />
+          <feComposite in="glowColor" in2="blur" operator="in" result="softGlow" />
+          <feMerge>
+            <feMergeNode in="softGlow" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+
+        {/* Power aura gradient — shown when 3+ epic/legendary items equipped */}
+        <radialGradient id="power-aura-gradient" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#C9943E" stopOpacity="0.18" />
+          <stop offset="60%" stopColor="#8B6BA5" stopOpacity="0.08" />
+          <stop offset="100%" stopColor="#8B6BA5" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      {/* === Layer 0: Aggregate power aura (behind everything) === */}
+      {showPowerAura && (
+        <circle
+          cx="555"
+          cy="577"
+          r="280"
+          fill="url(#power-aura-gradient)"
+          className="power-aura"
+        />
+      )}
+
       {/* === Layer 1: Feet (base) + boots overlay === */}
       <g id="sk-feet">
         <path fill="#f2a96d" d="M479.56,837.14c-2.47,8.47-37.64,56.95-51.54,57.19-10.34,.19-6.02-9.59-6.44-13.53-.41-3.93-3.08-7.59-12.86-5.52-9.78,2.06-21.89,8.3-30.54,7.81-8.66-.5-6.2-9.41,2.72-18.56,.94-.97,2-2,3.15-3.07-.67-1.22-1.77-1.95-3.15-2.36l-.01-.01c-6.44-1.94-18.95,3.07-22.62-2.04-2.9-4.03,9.01-14.44,21.6-20.88,12.59-6.45,28.68-12.05,28.68-12.05,1.33-.69,25.16-10.18,48.83-3.58,8.96,1.85,24.65,8.13,22.18,16.6Z"/>
         <path fill="#f2a96d" d="M669.92,852c7.483,.772,15.45,2.62,17.52-1.53,2.07-4.14-10.76-12.14-22.83-19.65-12.07-7.5-37.1-17.16-45.57-18.38-8.47-1.23-16.71-.58-30.36,4.87-18.01,6.8-20.29,10.43-21.3,15.65-1,5.22,9.59,27.56,25.65,41.94,16.05,14.38,31.15,23.55,34.99,18.84,3.83-4.7-7.19-12.85,3.35-20.28,10.55-7.43,37.15,8.15,43.38,1.44,2.73-2.94-7.685-14.576-17.215-22.826,.608-.123,4.902-.846,12.385-.074Z"/>
       </g>
-      {bootsSvg && <g dangerouslySetInnerHTML={{ __html: bootsSvg }} />}
+      {renderSlot(bootsData)}
 
       {/* === Layer 2: Right arm (behind body) === */}
       <g id="sk-a-arm">
@@ -85,8 +197,8 @@ export function SkipperCharacter({
       </g>
 
       {/* === Layer 4: Weapons (on top of arms, behind body) === */}
-      {primarySvg && <g dangerouslySetInnerHTML={{ __html: primarySvg }} />}
-      {secondarySvg && <g dangerouslySetInnerHTML={{ __html: secondarySvg }} />}
+      {renderSlot(primaryData)}
+      {renderSlot(secondaryData)}
 
       {/* === Layer 5: Body (main torso — covers arm bases) === */}
       <g id="sk-body">
@@ -95,10 +207,10 @@ export function SkipperCharacter({
       </g>
 
       {/* === Layer 6: Body equipment overlays (chest, legs, or robe) === */}
-      {legsSvg && <g dangerouslySetInnerHTML={{ __html: legsSvg }} />}
-      {chestSvg && <g dangerouslySetInnerHTML={{ __html: chestSvg }} />}
-      {robeSvg && <g dangerouslySetInnerHTML={{ __html: robeSvg }} />}
-      {handsSvg && <g dangerouslySetInnerHTML={{ __html: handsSvg }} />}
+      {renderSlot(legsData)}
+      {renderSlot(chestData)}
+      {renderSlot(robeData)}
+      {renderSlot(handsData)}
 
       {/* === Layer 7: Head (base) === */}
       <g id="sk-head">
@@ -107,7 +219,7 @@ export function SkipperCharacter({
       </g>
 
       {/* === Layer 8: Head equipment overlay === */}
-      {headSvg && <g dangerouslySetInnerHTML={{ __html: headSvg }} />}
+      {renderSlot(headData)}
 
       {/* === Layer 9: Face — always on top, never covered by equipment === */}
       <g id="sk-peck">
@@ -125,7 +237,7 @@ export function SkipperCharacter({
         <path fill="#fff" d="M620.375,415.7c1.02,1.45,.84,3.32-.4,4.19-1.23,.87-3.06,.4-4.08-1.05-1.01-1.44-.84-3.32,.4-4.19,1.23-.87,3.06-.4,4.08,1.05Z"/>
         <path fill="#fff" d="M607.125,419.78c.52,.73,.41,1.71-.25,2.17s-1.62,.24-2.13-.5c-.52-.73-.41-1.71,.25-2.17s1.61-.24,2.13,.5Z"/>
         <path fill="#fff" d="M599.905,413.26c.52,.74,.43,1.7-.2,2.14-.63,.45-1.56,.21-2.08-.53s-.43-1.7,.2-2.14c.63-.45,1.56-.2,2.08,.53Z"/>
-        <path fill="#fff" d="M593.905,395.52c1.9,2.7,1.7,6.12-.46,7.64-2.15,1.51-5.44,.55-7.34-2.15-1.9-2.71-1.69-6.13,.46-7.64,2.16-1.52,5.44-.55,7.34,2.15Z"/>
+        <path fill="#fff" d="M593.905,395.52c1.9,2.7,1.7,6.12-.46,7.64-2.15,1.51-5.44,.55-7.34-2.15-1.9-2.71-1.69-6.13,.46-7.64s4.54-.11,5.9,2.22Z"/>
         {/* Left eye */}
         <path fill="#3c324c" d="M463.385,365.27c12.6,0,22.81,11.36,22.81,25.37s-10.21,25.37-22.81,25.37-22.82-11.36-22.82-25.37,10.22-25.37,22.82-25.37Zm15.51,25.53c3.2-1.87,3.63-7.11,.95-11.7s-7.46-6.79-10.66-4.92c-3.21,1.87-3.63,7.11-.95,11.7s7.45,6.8,10.66,4.92Zm-20.39,15.11c.5-.3,.59-1.07,.21-1.72-.38-.66-1.1-.96-1.6-.66-.51,.29-.6,1.06-.22,1.72,.39,.65,1.11,.95,1.61,.66Zm-5.49-4.54c.51-.29,.6-1.06,.22-1.72-.39-.65-1.11-.95-1.61-.66-.5,.3-.59,1.07-.21,1.72,.38,.66,1.1,.96,1.6,.66Zm-2.7-10.42c1.89-1.11,2.32-3.9,.96-6.24-1.36-2.33-4-3.33-5.9-2.22s-2.33,3.9-.96,6.23c1.36,2.34,4,3.33,5.9,2.23Z"/>
         <path fill="#fff" d="M479.845,379.1c2.68,4.59,2.25,9.83-.95,11.7-3.21,1.88-7.98-.33-10.66-4.92s-2.26-9.83,.95-11.7c3.2-1.87,7.98,.33,10.66,4.92Z"/>

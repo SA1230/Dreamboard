@@ -1,5 +1,6 @@
 import NextAuth, { type DefaultSession } from "next-auth";
 import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
 import { createServiceClient } from "./supabase";
 
 // Re-export the DefaultSession type so the module augmentation can reference it
@@ -11,13 +12,34 @@ declare module "next-auth" {
   }
 }
 
+// Dev-only credentials provider — bypasses Google OAuth in development
+const devProvider = Credentials({
+  name: "Dev Login",
+  credentials: {
+    email: { label: "Email", type: "text" },
+  },
+  async authorize(credentials) {
+    if (process.env.NODE_ENV !== "development") return null;
+    const email = (credentials?.email as string) || "dev@dreamboard.test";
+    return {
+      id: "dev-user-1",
+      email,
+      name: "Dev User",
+      image: null,
+    };
+  },
+});
+
+const providers = [
+  Google({
+    clientId: process.env.GOOGLE_CLIENT_ID!,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+  }),
+  ...(process.env.NODE_ENV === "development" ? [devProvider] : []),
+];
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-  ],
+  providers,
   session: {
     strategy: "jwt",
   },

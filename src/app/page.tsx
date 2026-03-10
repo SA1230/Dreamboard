@@ -112,6 +112,16 @@ function LandingPage() {
           Get Started with Google
         </button>
 
+        {/* Dev Login — development only */}
+        {process.env.NODE_ENV === "development" && (
+          <button
+            onClick={() => signIn("credentials", { email: "dev@dreamboard.test", redirect: true, callbackUrl: "/" })}
+            className="mt-3 px-5 py-2 rounded-lg text-xs font-semibold text-stone-500 bg-stone-100 border border-stone-200 hover:bg-stone-200 transition-colors"
+          >
+            Dev Login (skip OAuth)
+          </button>
+        )}
+
         {/* Legal links */}
         <p className="text-xs text-stone-400 mt-6">
           By signing up, you agree to our{" "}
