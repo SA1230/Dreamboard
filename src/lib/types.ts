@@ -36,6 +36,36 @@ export type HabitKey = "water" | "nails" | "brush" | "nosugar" | "floss" | "step
 
 export type DamageKey = "substance" | "screentime" | "junkfood" | "badsleep";
 
+// --- Custom Habits & Damage ---
+
+export const MAX_CUSTOM_HABITS = 6;
+export const MAX_CUSTOM_DAMAGE = 4;
+
+/** User-created habit definition — stored in GameData.customHabitDefinitions */
+export interface CustomHabitDefinition {
+  key: string;
+  label: string;
+  pastTenseLabel: string;
+  completedLabel: string;
+  description: string;
+  iconKey: string;
+  color: string;
+  enabledBackground: string;
+  createdAt: string;
+}
+
+/** User-created damage/vice definition — stored in GameData.customDamageDefinitions */
+export interface CustomDamageDefinition {
+  key: string;
+  label: string;
+  pastTenseLabel: string;
+  description: string;
+  iconKey: string;
+  color: string;
+  enabledBackground: string;
+  createdAt: string;
+}
+
 export interface PointsWallet {
   lifetimeEarned: number;
   lifetimeSpent: number;
@@ -287,10 +317,10 @@ export interface Prize {
 // Discriminated union for all events that appear in the activity feed
 export type FeedEvent =
   | { type: "xp_gain"; id: string; timestamp: string; stat: StatKey; note: string; amount?: number; verdictMessage?: string }
-  | { type: "habit_completed"; id: string; timestamp: string; habitKey: HabitKey }
-  | { type: "habit_removed"; id: string; timestamp: string; habitKey: HabitKey }
-  | { type: "damage_marked"; id: string; timestamp: string; damageKey: DamageKey }
-  | { type: "damage_removed"; id: string; timestamp: string; damageKey: DamageKey }
+  | { type: "habit_completed"; id: string; timestamp: string; habitKey: string }
+  | { type: "habit_removed"; id: string; timestamp: string; habitKey: string }
+  | { type: "damage_marked"; id: string; timestamp: string; damageKey: string }
+  | { type: "damage_removed"; id: string; timestamp: string; damageKey: string }
   | { type: "level_up"; id: string; timestamp: string; stat: StatKey; newLevel: number }
   | { type: "overall_level_up"; id: string; timestamp: string; newLevel: number; previousLevel: number }
   | { type: "rank_up"; id: string; timestamp: string; newRank: string; newLevel: number }
@@ -305,14 +335,18 @@ export interface GameData {
   stats: Record<StatKey, StatProgress>;
   activities: Activity[];
   customDefinitions?: Partial<Record<StatKey, CustomStatOverride>>;
-  healthyHabits?: Partial<Record<HabitKey, string[]>>;
-  enabledHabits?: HabitKey[];
+  healthyHabits?: Partial<Record<string, string[]>>;
+  enabledHabits?: string[];
+  /** User-created custom habit definitions */
+  customHabitDefinitions?: CustomHabitDefinition[];
   /** Maps level thresholds to mascot image filenames in /mascots/ (e.g. { 1: "skipper-default.svg", 10: "skipper-cool.svg" }) */
   mascotOverrides?: Record<number, string>;
   /** Daily damage tracking — same structure as healthyHabits (date strings per damage type) */
-  dailyDamage?: Partial<Record<DamageKey, string[]>>;
+  dailyDamage?: Partial<Record<string, string[]>>;
   /** Which damage items are visible on the dashboard */
-  enabledDamage?: DamageKey[];
+  enabledDamage?: string[];
+  /** User-created custom damage/vice definitions */
+  customDamageDefinitions?: CustomDamageDefinition[];
   /** Points wallet for the AA system — tracks lifetime earned and spent */
   pointsWallet?: PointsWallet;
   /** Timestamped feed of all actions (XP gains, habits, damage, level-ups, rank changes) — newest first */

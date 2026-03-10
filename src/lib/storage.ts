@@ -1,4 +1,4 @@
-import { GameData, StatKey, HabitKey, DamageKey, Activity, StatProgress, CustomStatOverride, FeedEvent, PlayerInventory, EquipmentSlot, Prize, Challenge, ChainStep, VisionCard, BoardReading, SecondaryStats, ItemResistances } from "./types";
+import { GameData, StatKey, DamageKey, Activity, StatProgress, CustomStatOverride, FeedEvent, PlayerInventory, EquipmentSlot, Prize, Challenge, ChainStep, VisionCard, BoardReading, SecondaryStats, ItemResistances, CustomHabitDefinition, CustomDamageDefinition, MAX_CUSTOM_HABITS, MAX_CUSTOM_DAMAGE } from "./types";
 import { getItemById, getLevelRewardItems } from "./items";
 import { STAT_KEYS, STAT_DEFINITIONS, StatDefinition, COLOR_PRESETS } from "./stats";
 import { getRankTitle } from "./ranks";
@@ -28,7 +28,7 @@ const SCHEMA_MIGRATIONS: SchemaMigration[] = [
       const todayStr = getTodayString();
       let changed = false;
       const cleanedHabits = { ...data.healthyHabits };
-      for (const habitKey of Object.keys(cleanedHabits) as HabitKey[]) {
+      for (const habitKey of Object.keys(cleanedHabits)) {
         const dates = cleanedHabits[habitKey];
         if (!dates) continue;
         const filtered = dates.filter((d) => d <= todayStr);
@@ -484,11 +484,11 @@ function toggleDateEntry<K extends string>(
 
 // --- Date-parameterized habit functions ---
 
-export function isHabitCompletedForDate(data: GameData, habitKey: HabitKey, dateString: string): boolean {
+export function isHabitCompletedForDate(data: GameData, habitKey: string, dateString: string): boolean {
   return isDateEntryPresent(data.healthyHabits, habitKey, dateString);
 }
 
-export function toggleHabitForDate(data: GameData, habitKey: HabitKey, dateString: string): GameData {
+export function toggleHabitForDate(data: GameData, habitKey: string, dateString: string): GameData {
   const { updatedMap, wasPresent } = toggleDateEntry(data.healthyHabits, habitKey, dateString);
 
   let newData: GameData = { ...data, healthyHabits: updatedMap };
@@ -505,11 +505,11 @@ export function toggleHabitForDate(data: GameData, habitKey: HabitKey, dateStrin
 }
 
 // Convenience wrappers for today
-export function isHabitCompletedToday(data: GameData, habitKey: HabitKey): boolean {
+export function isHabitCompletedToday(data: GameData, habitKey: string): boolean {
   return isHabitCompletedForDate(data, habitKey, getTodayString());
 }
 
-export function toggleHabitForToday(data: GameData, habitKey: HabitKey): GameData {
+export function toggleHabitForToday(data: GameData, habitKey: string): GameData {
   return toggleHabitForDate(data, habitKey, getTodayString());
 }
 
@@ -541,26 +541,26 @@ function groupDateEntriesByDay<K extends string>(
   return result;
 }
 
-// Group healthy habits by day for a given month
-// Returns: { dayNumber: ["water", "nails"] } for days where habits were completed
+// Group healthy habits by day for a given month (includes custom habits)
+// Returns: { dayNumber: ["water", "nails", "custom_habit_meditation_..."] }
 export function getHabitsByDay(
   data: GameData,
   year: number,
   month: number
-): Record<number, HabitKey[]> {
-  const habitKeys: HabitKey[] = ["water", "nails", "brush", "nosugar", "floss", "steps"];
-  return groupDateEntriesByDay(data.healthyHabits, habitKeys, year, month);
+): Record<number, string[]> {
+  const allKeys = Object.keys(data.healthyHabits ?? {});
+  return groupDateEntriesByDay(data.healthyHabits, allKeys, year, month);
 }
 
 // --- Enabled Habits (which habits appear on the dashboard) ---
 
-const DEFAULT_ENABLED_HABITS: HabitKey[] = ["water", "nails", "brush", "nosugar"];
+const DEFAULT_ENABLED_HABITS: string[] = ["water", "nails", "brush", "nosugar"];
 
-export function getEnabledHabits(data: GameData): HabitKey[] {
+export function getEnabledHabits(data: GameData): string[] {
   return data.enabledHabits ?? DEFAULT_ENABLED_HABITS;
 }
 
-export function saveEnabledHabits(data: GameData, enabledHabits: HabitKey[]): GameData {
+export function saveEnabledHabits(data: GameData, enabledHabits: string[]): GameData {
   const newData: GameData = {
     ...data,
     enabledHabits,
@@ -664,15 +664,15 @@ export function exportGameData(data: GameData): void {
 
 export const DAMAGE_KEYS: DamageKey[] = ["substance", "screentime", "junkfood", "badsleep"];
 
-const DEFAULT_ENABLED_DAMAGE: DamageKey[] = [];
+const DEFAULT_ENABLED_DAMAGE: string[] = [];
 
 // --- Date-parameterized damage functions ---
 
-export function isDamageMarkedForDate(data: GameData, damageKey: DamageKey, dateString: string): boolean {
+export function isDamageMarkedForDate(data: GameData, damageKey: string, dateString: string): boolean {
   return isDateEntryPresent(data.dailyDamage, damageKey, dateString);
 }
 
-export function toggleDamageForDate(data: GameData, damageKey: DamageKey, dateString: string): GameData {
+export function toggleDamageForDate(data: GameData, damageKey: string, dateString: string): GameData {
   const { updatedMap, wasPresent } = toggleDateEntry(data.dailyDamage, damageKey, dateString);
 
   let newData: GameData = { ...data, dailyDamage: updatedMap };
@@ -689,11 +689,11 @@ export function toggleDamageForDate(data: GameData, damageKey: DamageKey, dateSt
 }
 
 // Convenience wrappers for today
-export function isDamageMarkedToday(data: GameData, damageKey: DamageKey): boolean {
+export function isDamageMarkedToday(data: GameData, damageKey: string): boolean {
   return isDamageMarkedForDate(data, damageKey, getTodayString());
 }
 
-export function toggleDamageForToday(data: GameData, damageKey: DamageKey): GameData {
+export function toggleDamageForToday(data: GameData, damageKey: string): GameData {
   return toggleDamageForDate(data, damageKey, getTodayString());
 }
 
@@ -701,18 +701,87 @@ export function getDamageByDay(
   data: GameData,
   year: number,
   month: number
-): Record<number, DamageKey[]> {
-  return groupDateEntriesByDay(data.dailyDamage, DAMAGE_KEYS, year, month);
+): Record<number, string[]> {
+  const allKeys = Object.keys(data.dailyDamage ?? {});
+  return groupDateEntriesByDay(data.dailyDamage, allKeys, year, month);
 }
 
-export function getEnabledDamage(data: GameData): DamageKey[] {
+export function getEnabledDamage(data: GameData): string[] {
   return data.enabledDamage ?? DEFAULT_ENABLED_DAMAGE;
 }
 
-export function saveEnabledDamage(data: GameData, enabledDamage: DamageKey[]): GameData {
+export function saveEnabledDamage(data: GameData, enabledDamage: string[]): GameData {
   const newData: GameData = {
     ...data,
     enabledDamage,
+  };
+  saveGameData(newData);
+  return newData;
+}
+
+// --- Custom Habits & Damage CRUD ---
+
+/** Generate a unique key for a custom habit or damage type */
+export function generateCustomKey(prefix: string, label: string): string {
+  const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+  return `custom_${prefix}_${slug}_${Date.now()}`;
+}
+
+/** Get all custom habit definitions */
+export function getCustomHabits(data: GameData): CustomHabitDefinition[] {
+  return data.customHabitDefinitions ?? [];
+}
+
+/** Add a custom habit definition. Returns null if at cap. */
+export function addCustomHabit(data: GameData, def: CustomHabitDefinition): GameData | null {
+  const current = getCustomHabits(data);
+  if (current.length >= MAX_CUSTOM_HABITS) return null;
+  const newData: GameData = {
+    ...data,
+    customHabitDefinitions: [...current, def],
+    enabledHabits: [...getEnabledHabits(data), def.key],
+  };
+  saveGameData(newData);
+  return newData;
+}
+
+/** Delete a custom habit definition. Historical date data is preserved for PP integrity. */
+export function deleteCustomHabit(data: GameData, key: string): GameData {
+  const current = getCustomHabits(data);
+  const newData: GameData = {
+    ...data,
+    customHabitDefinitions: current.filter((h) => h.key !== key),
+    enabledHabits: getEnabledHabits(data).filter((k) => k !== key),
+  };
+  saveGameData(newData);
+  return newData;
+}
+
+/** Get all custom damage definitions */
+export function getCustomDamage(data: GameData): CustomDamageDefinition[] {
+  return data.customDamageDefinitions ?? [];
+}
+
+/** Add a custom damage definition. Returns null if at cap. */
+export function addCustomDamage(data: GameData, def: CustomDamageDefinition): GameData | null {
+  const current = getCustomDamage(data);
+  if (current.length >= MAX_CUSTOM_DAMAGE) return null;
+  const newData: GameData = {
+    ...data,
+    customDamageDefinitions: [...current, def],
+    enabledDamage: [...getEnabledDamage(data), def.key],
+  };
+  saveGameData(newData);
+  return newData;
+}
+
+/** Delete a custom damage definition. Historical date data is preserved for PP integrity. */
+export function deleteCustomDamage(data: GameData, key: string): GameData {
+  const current = getCustomDamage(data);
+  const newData: GameData = {
+    ...data,
+    customDamageDefinitions: current.filter((d) => d.key !== key),
+    enabledDamage: getEnabledDamage(data).filter((k) => k !== key),
   };
   saveGameData(newData);
   return newData;

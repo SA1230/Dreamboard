@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
-import { FeedEvent, StatKey } from "@/lib/types";
+import { FeedEvent, StatKey, GameData } from "@/lib/types";
 import { StatDefinition } from "@/lib/stats";
-import { HABIT_DEFINITIONS, HABIT_PAST_LABELS } from "@/lib/habits";
-import { DAMAGE_DEFINITIONS, DAMAGE_PAST_LABELS } from "@/lib/damage";
+import { HABIT_DEFINITIONS, HABIT_PAST_LABELS, findHabitDefinition } from "@/lib/habits";
+import { DAMAGE_DEFINITIONS, DAMAGE_PAST_LABELS, findDamageDefinition } from "@/lib/damage";
 import { StatIcon } from "./StatIcons";
 import { Trophy, Sword } from "lucide-react";
 import { getItemById, RARITY_COLORS } from "@/lib/items";
@@ -13,11 +13,12 @@ import { getItemById, RARITY_COLORS } from "@/lib/items";
 interface ActivityLogProps {
   feedEvents: FeedEvent[];
   definitions: Record<StatKey, StatDefinition>;
+  gameData?: GameData;
 }
 
-// Build emoji lookup maps from shared definitions
-const HABIT_EMOJI = Object.fromEntries(HABIT_DEFINITIONS.map((h) => [h.key, h.emoji]));
-const DAMAGE_EMOJI = Object.fromEntries(DAMAGE_DEFINITIONS.map((d) => [d.key, d.emoji]));
+// Build emoji lookup maps from shared definitions (built-in items only)
+const HABIT_EMOJI: Record<string, string> = Object.fromEntries(HABIT_DEFINITIONS.map((h) => [h.key, h.emoji]));
+const DAMAGE_EMOJI: Record<string, string> = Object.fromEntries(DAMAGE_DEFINITIONS.map((d) => [d.key, d.emoji]));
 
 const VERDICT_TRUNCATE_LENGTH = 100;
 
@@ -184,10 +185,14 @@ function XPGainRow({ event, definitions }: { event: Extract<FeedEvent, { type: "
   );
 }
 
-function HabitRow({ event }: { event: Extract<FeedEvent, { type: "habit_completed" | "habit_removed" }> }) {
+function HabitRow({ event, gameData }: { event: Extract<FeedEvent, { type: "habit_completed" | "habit_removed" }>; gameData?: GameData }) {
   const isCompleted = event.type === "habit_completed";
-  const label = HABIT_PAST_LABELS[event.habitKey];
-  const emoji = HABIT_EMOJI[event.habitKey];
+  const builtInLabel = HABIT_PAST_LABELS[event.habitKey];
+  const builtInEmoji = HABIT_EMOJI[event.habitKey];
+  // Fall back to custom definition lookup if not a built-in habit
+  const customDef = !builtInLabel && gameData ? findHabitDefinition(gameData, event.habitKey) : null;
+  const label = builtInLabel ?? customDef?.pastTenseLabel ?? event.habitKey;
+  const emoji = builtInEmoji;
 
   return (
     <div
@@ -197,7 +202,15 @@ function HabitRow({ event }: { event: Extract<FeedEvent, { type: "habit_complete
         borderColor: isCompleted ? "#86efac" : "#e7e5e4",
       }}
     >
-      <span className="flex-shrink-0 text-base">{emoji}</span>
+      {emoji ? (
+        <span className="flex-shrink-0 text-base">{emoji}</span>
+      ) : customDef?.iconKey ? (
+        <span className="flex-shrink-0" style={{ color: customDef.color }}>
+          <StatIcon iconKey={customDef.iconKey} className="w-5 h-5" />
+        </span>
+      ) : (
+        <span className="flex-shrink-0 text-base">✅</span>
+      )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className={`text-xs font-semibold ${isCompleted ? "text-emerald-600" : "text-stone-400"}`}>
@@ -219,10 +232,14 @@ function HabitRow({ event }: { event: Extract<FeedEvent, { type: "habit_complete
   );
 }
 
-function DamageRow({ event }: { event: Extract<FeedEvent, { type: "damage_marked" | "damage_removed" }> }) {
+function DamageRow({ event, gameData }: { event: Extract<FeedEvent, { type: "damage_marked" | "damage_removed" }>; gameData?: GameData }) {
   const isMarked = event.type === "damage_marked";
-  const label = DAMAGE_PAST_LABELS[event.damageKey];
-  const emoji = DAMAGE_EMOJI[event.damageKey];
+  const builtInLabel = DAMAGE_PAST_LABELS[event.damageKey];
+  const builtInEmoji = DAMAGE_EMOJI[event.damageKey];
+  // Fall back to custom definition lookup if not a built-in damage type
+  const customDef = !builtInLabel && gameData ? findDamageDefinition(gameData, event.damageKey) : null;
+  const label = builtInLabel ?? customDef?.pastTenseLabel ?? event.damageKey;
+  const emoji = builtInEmoji;
 
   return (
     <div
@@ -232,7 +249,15 @@ function DamageRow({ event }: { event: Extract<FeedEvent, { type: "damage_marked
         borderColor: isMarked ? "#fca5a5" : "#e7e5e4",
       }}
     >
-      <span className="flex-shrink-0 text-base">{emoji}</span>
+      {emoji ? (
+        <span className="flex-shrink-0 text-base">{emoji}</span>
+      ) : customDef?.iconKey ? (
+        <span className="flex-shrink-0" style={{ color: customDef.color ?? "#ef4444" }}>
+          <StatIcon iconKey={customDef.iconKey} className="w-5 h-5" />
+        </span>
+      ) : (
+        <span className="flex-shrink-0 text-base">💥</span>
+      )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className={`text-xs font-semibold ${isMarked ? "text-red-500" : "text-stone-400"}`}>
@@ -554,7 +579,7 @@ function ActivityGroupCard({ group, definitions }: { group: ActivityGroup; defin
   );
 }
 
-export function ActivityLog({ feedEvents, definitions }: ActivityLogProps) {
+export function ActivityLog({ feedEvents, definitions, gameData }: ActivityLogProps) {
   const [visibleCount, setVisibleCount] = useState(30);
   const [animatedParent] = useAutoAnimate();
   const recentEvents = feedEvents.slice(0, visibleCount);
@@ -589,10 +614,10 @@ export function ActivityLog({ feedEvents, definitions }: ActivityLogProps) {
             return <XPGainRow key={event.id} event={event} definitions={definitions} />;
           case "habit_completed":
           case "habit_removed":
-            return <HabitRow key={event.id} event={event} />;
+            return <HabitRow key={event.id} event={event} gameData={gameData} />;
           case "damage_marked":
           case "damage_removed":
-            return <DamageRow key={event.id} event={event} />;
+            return <DamageRow key={event.id} event={event} gameData={gameData} />;
           case "level_up":
             return <LevelUpRow key={event.id} event={event} definitions={definitions} />;
           case "overall_level_up":

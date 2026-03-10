@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSession, signIn } from "next-auth/react";
-import { GameData, StatKey, HabitKey, DamageKey } from "@/lib/types";
+import { GameData, StatKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
 import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForDate, toggleDamageForDate, isHabitCompletedForDate, isDamageMarkedForDate, formatRelativeTime, getInventory, getMascotName, checkPrizeUnlocks, checkItemRewardUnlocks, issueChallenge, issueChallengeChain, completeChallenge, dismissChallenge } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
@@ -258,7 +258,7 @@ function AuthenticatedHome() {
 
   // Per-day completed habits for the monthly chart icons
   const habitsByDayForMonth = useMemo(() => {
-    if (!gameData) return {} as Record<number, import("@/lib/types").HabitKey[]>;
+    if (!gameData) return {} as Record<number, string[]>;
     const now = new Date();
     return getHabitsByDay(gameData, now.getFullYear(), now.getMonth());
   }, [gameData]);
@@ -400,7 +400,7 @@ function AuthenticatedHome() {
   }, []);
 
   const handleToggleHabit = useCallback(
-    (habitKey: HabitKey, dateString: string) => {
+    (habitKey: string, dateString: string) => {
       if (!gameData) return;
       const wasCompleted = isHabitCompletedForDate(gameData, habitKey, dateString);
       const newData = toggleHabitForDate(gameData, habitKey, dateString);
@@ -413,7 +413,7 @@ function AuthenticatedHome() {
   );
 
   const handleToggleDamage = useCallback(
-    (damageKey: DamageKey, dateString: string) => {
+    (damageKey: string, dateString: string) => {
       if (!gameData) return;
       const wasMarked = isDamageMarkedForDate(gameData, damageKey, dateString);
       const newData = toggleDamageForDate(gameData, damageKey, dateString);
@@ -857,7 +857,7 @@ function AuthenticatedHome() {
             )}
           </div>
           {isActivityExpanded && (
-            <ActivityLog feedEvents={gameData.feedEvents ?? []} definitions={definitions} />
+            <ActivityLog feedEvents={gameData.feedEvents ?? []} definitions={definitions} gameData={gameData} />
           )}
         </section>
       )}

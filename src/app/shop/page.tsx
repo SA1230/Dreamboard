@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { GameData, EquipmentSlot, VisibleSlot, ShopItem, StatKey } from "@/lib/types";
 import { loadGameData, getPointsBalance, getInventory, purchaseItem, equipItem, unequipSlot, getOverallLevel, getTotalLifetimeXP, getMascotName, getEffectiveDefinitions, getEquippedBonuses } from "@/lib/storage";
-import { ITEM_CATALOG, RARITY_COLORS, VISIBLE_SLOTS, SECONDARY_STAT_LABELS, RESIST_LABELS, getItemById } from "@/lib/items";
+import { ITEM_CATALOG, LEVEL_REWARD_ITEMS, RARITY_COLORS, VISIBLE_SLOTS, SECONDARY_STAT_LABELS, RESIST_LABELS, getItemById } from "@/lib/items";
 import { ITEM_THUMBNAIL_REGISTRY } from "@/lib/itemSvgs";
 import { track } from "@/lib/tracker";
 import { playSoundWithHaptic } from "@/lib/sound";
@@ -236,7 +236,8 @@ function ShopPageContent() {
   const handlePreviewEquipAll = useCallback(() => {
     const allEquipped: Partial<Record<EquipmentSlot, string>> = {};
     const rarityRank = { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4 };
-    for (const item of ITEM_CATALOG) {
+    const allItems = [...ITEM_CATALOG, ...LEVEL_REWARD_ITEMS];
+    for (const item of allItems) {
       const existing = allEquipped[item.slot];
       if (!existing) {
         allEquipped[item.slot] = item.id;
@@ -274,9 +275,15 @@ function ShopPageContent() {
   // In preview mode, use preview equipped items instead of real inventory
   const displayEquipped = previewMode ? previewEquipped : inventory.equippedItems;
 
+  // Include owned reward items alongside shop items so they appear in inventory
+  const ownedRewardItems = LEVEL_REWARD_ITEMS.filter(
+    (item) => inventory.ownedItemIds.includes(item.id)
+  );
+  const allDisplayItems = [...ITEM_CATALOG, ...ownedRewardItems];
+
   const filteredItems = selectedSlot === "all"
-    ? ITEM_CATALOG
-    : ITEM_CATALOG.filter((item) => item.slot === selectedSlot);
+    ? allDisplayItems
+    : allDisplayItems.filter((item) => item.slot === selectedSlot);
 
   return (
     <main className="min-h-screen p-4 pb-24 max-w-lg mx-auto">
@@ -509,6 +516,13 @@ function ShopPageContent() {
               {item.levelRequirement && (
                 <span className={`text-[9px] font-medium mt-0.5 block ${meetsLevel ? "text-stone-300" : "text-red-400"}`}>
                   Requires Lv. {item.levelRequirement}
+                </span>
+              )}
+
+              {/* Level reward badge — distinguish from shop-purchasable items */}
+              {item.levelReward && (
+                <span className="text-[9px] font-semibold mt-0.5 block text-amber-500">
+                  Lv. {item.levelReward} Reward
                 </span>
               )}
 

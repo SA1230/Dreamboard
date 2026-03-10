@@ -1,10 +1,10 @@
 "use client";
 
-import { StatKey, HabitKey, DamageKey, GameData } from "@/lib/types";
+import { StatKey, GameData } from "@/lib/types";
 import { StatDefinition } from "@/lib/stats";
 import { getEnabledHabits, getEnabledDamage } from "@/lib/storage";
-import { HABIT_LABELS } from "@/lib/habits";
-import { DAMAGE_LABELS } from "@/lib/damage";
+import { HABIT_LABELS, findHabitDefinition } from "@/lib/habits";
+import { DAMAGE_LABELS, findDamageDefinition } from "@/lib/damage";
 import { StatIcon } from "./StatIcons";
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -96,7 +96,7 @@ function TinyStepsIcon() {
   );
 }
 
-const TINY_HABIT_ICONS: Record<HabitKey, { component: React.ComponentType; title: string }> = {
+const TINY_HABIT_ICONS: Record<string, { component: React.ComponentType; title: string }> = {
   water: { component: TinyWaterIcon, title: HABIT_LABELS.water },
   nails: { component: TinyNailsIcon, title: HABIT_LABELS.nails },
   brush: { component: TinyBrushIcon, title: HABIT_LABELS.brush },
@@ -145,7 +145,7 @@ function TinyBadSleepIcon() {
   );
 }
 
-const TINY_DAMAGE_ICONS: Record<DamageKey, { component: React.ComponentType; title: string }> = {
+const TINY_DAMAGE_ICONS: Record<string, { component: React.ComponentType; title: string }> = {
   substance: { component: TinySubstanceIcon, title: DAMAGE_LABELS.substance },
   screentime: { component: TinyScreenTimeIcon, title: DAMAGE_LABELS.screentime },
   junkfood: { component: TinyJunkFoodIcon, title: DAMAGE_LABELS.junkfood },
@@ -156,8 +156,8 @@ interface MonthCalendarProps {
   year: number;
   month: number; // 0-indexed (0 = January)
   activitiesByDay: Record<number, Partial<Record<StatKey, number>>>;
-  habitsByDay: Record<number, HabitKey[]>;
-  damageByDay: Record<number, DamageKey[]>;
+  habitsByDay: Record<number, string[]>;
+  damageByDay: Record<number, string[]>;
   definitions: Record<StatKey, StatDefinition>;
   gameData: GameData;
   /** Called when a day cell with content is tapped. Passes the day number (1-31). */
@@ -308,10 +308,20 @@ export function MonthCalendar({
                   <div className="flex flex-wrap gap-1 mt-auto pt-1">
                     {visibleHabits.map((habitKey) => {
                       const habit = TINY_HABIT_ICONS[habitKey];
-                      const IconComponent = habit.component;
+                      if (habit) {
+                        const IconComponent = habit.component;
+                        return (
+                          <div key={habitKey} title={habit.title}>
+                            <IconComponent />
+                          </div>
+                        );
+                      }
+                      // Custom habit — render StatIcon from definition
+                      const def = findHabitDefinition(gameData, habitKey);
+                      if (!def || !def.iconKey) return null;
                       return (
-                        <div key={habitKey} title={habit.title}>
-                          <IconComponent />
+                        <div key={habitKey} title={def.label} style={{ color: def.color }}>
+                          <StatIcon iconKey={def.iconKey} className="w-5 h-5" />
                         </div>
                       );
                     })}
@@ -327,10 +337,20 @@ export function MonthCalendar({
                   <div className="flex flex-wrap gap-1 mt-auto pt-0.5" style={{ opacity: 0.85 }}>
                     {visibleDamage.map((damageKey) => {
                       const damage = TINY_DAMAGE_ICONS[damageKey];
-                      const IconComponent = damage.component;
+                      if (damage) {
+                        const IconComponent = damage.component;
+                        return (
+                          <div key={damageKey} title={damage.title}>
+                            <IconComponent />
+                          </div>
+                        );
+                      }
+                      // Custom damage — render StatIcon from definition
+                      const def = findDamageDefinition(gameData, damageKey);
+                      if (!def || !def.iconKey) return null;
                       return (
-                        <div key={damageKey} title={damage.title}>
-                          <IconComponent />
+                        <div key={damageKey} title={def.label} style={{ color: def.color }}>
+                          <StatIcon iconKey={def.iconKey} className="w-5 h-5" />
                         </div>
                       );
                     })}

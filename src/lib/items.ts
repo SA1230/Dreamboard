@@ -294,6 +294,7 @@ export const LEVEL_REWARD_ITEMS: ShopItem[] = [
     rarity: "common",
     cost: 0,
     levelReward: 2,
+    svgAssetKey: "adventurer-band",
     weight: 0.2,
     material: "Leather",
     secondaryStats: { ac: 1, hp: 5 },
@@ -306,6 +307,7 @@ export const LEVEL_REWARD_ITEMS: ShopItem[] = [
     rarity: "common",
     cost: 0,
     levelReward: 5,
+    svgAssetKey: "pathfinder-blade",
     weight: 1.2,
     material: "Iron",
     statModifiers: [
@@ -322,6 +324,7 @@ export const LEVEL_REWARD_ITEMS: ShopItem[] = [
     rarity: "uncommon",
     cost: 0,
     levelReward: 8,
+    svgAssetKey: "seeker-hood",
     weight: 0.4,
     material: "Woven Cloth",
     statModifiers: [
@@ -338,6 +341,7 @@ export const LEVEL_REWARD_ITEMS: ShopItem[] = [
     rarity: "uncommon",
     cost: 0,
     levelReward: 12,
+    svgAssetKey: "guardian-greaves",
     weight: 2.5,
     material: "Steel",
     statModifiers: [
@@ -354,6 +358,7 @@ export const LEVEL_REWARD_ITEMS: ShopItem[] = [
     rarity: "rare",
     cost: 0,
     levelReward: 16,
+    svgAssetKey: "mentor-shield",
     weight: 3.0,
     material: "Reinforced Oak",
     statModifiers: [
@@ -371,6 +376,7 @@ export const LEVEL_REWARD_ITEMS: ShopItem[] = [
     rarity: "rare",
     cost: 0,
     levelReward: 20,
+    svgAssetKey: "wayfarer-vestment",
     weight: 1.8,
     material: "Enchanted Linen",
     statModifiers: [
@@ -395,6 +401,7 @@ export const LEVEL_REWARD_ITEMS: ShopItem[] = [
     rarity: "epic",
     cost: 0,
     levelReward: 25,
+    svgAssetKey: "dreamer-cloak",
     overridesSlots: ["chest", "legs"],
     weight: 1.0,
     material: "Dreamweave Silk",

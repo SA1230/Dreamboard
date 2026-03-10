@@ -264,6 +264,165 @@ export const ITEM_SVG_REGISTRY: Record<string, string> = {
     </g>
   `,
 
+  // --- REWARD: HANDS SLOT (Lv 2) ---
+  "adventurer-band": `
+    <g id="item-adventurer-band">
+      <!-- Right wrist band (a_arm tip ~348,655) -->
+      <path d="M336,638 Q348,630 360,628 Q372,630 384,638 L386,652 Q374,658 360,660 Q346,658 334,652 Z" fill="#A0896B" opacity="0.75"/>
+      <!-- Right band stitching -->
+      <path d="M340,644 Q350,640 360,639 Q370,640 380,644" fill="none" stroke="#7A6548" stroke-width="1.5" opacity="0.45"/>
+      <!-- Right band buckle -->
+      <rect x="356" y="632" width="8" height="5" rx="1" fill="#8B7355" opacity="0.7"/>
+
+      <!-- Left wrist band (b_arm tip ~759,652) -->
+      <path d="M726,631 Q740,623 750,621 Q760,623 774,631 L776,645 Q764,651 750,653 Q736,651 724,645 Z" fill="#A0896B" opacity="0.75"/>
+      <!-- Left band stitching -->
+      <path d="M730,637 Q740,633 750,632 Q760,633 770,637" fill="none" stroke="#7A6548" stroke-width="1.5" opacity="0.45"/>
+      <!-- Left band buckle -->
+      <rect x="746" y="625" width="8" height="5" rx="1" fill="#8B7355" opacity="0.7"/>
+    </g>
+  `,
+
+  // --- REWARD: PRIMARY SLOT (Lv 5) ---
+  "pathfinder-blade": `
+    <g id="item-pathfinder-blade" transform="rotate(-22, 370, 570)">
+      <!-- Blade — iron short sword -->
+      <path d="M362,468 L358,530 L362,538 Q366,540 370,540 Q374,540 378,538 L382,530 L378,468 Q370,462 362,468 Z" fill="#8B9DAF" opacity="0.88"/>
+      <!-- Blade edge highlight -->
+      <path d="M364,474 L360,528" fill="none" stroke="#A8B8C8" stroke-width="1.5" opacity="0.5"/>
+      <!-- Blade center fuller -->
+      <path d="M370,472 L370,530" fill="none" stroke="#6B7B8D" stroke-width="1.5" opacity="0.35"/>
+      <!-- Cross-guard — iron -->
+      <path d="M350,538 Q356,532 370,530 Q384,532 390,538 Q384,544 370,545 Q356,544 350,538 Z" fill="#5B6B7D" opacity="0.9"/>
+      <!-- Handle -->
+      <rect x="365" y="544" width="10" height="34" rx="2" fill="#6B5538" opacity="0.9"/>
+      <!-- Handle wrap -->
+      <line x1="365" y1="552" x2="375" y2="552" stroke="#8B7355" stroke-width="1.5" opacity="0.5"/>
+      <line x1="365" y1="560" x2="375" y2="560" stroke="#8B7355" stroke-width="1.5" opacity="0.5"/>
+      <line x1="365" y1="568" x2="375" y2="568" stroke="#8B7355" stroke-width="1.5" opacity="0.5"/>
+      <!-- Pommel -->
+      <circle cx="370" cy="582" r="6" fill="#5B6B7D" opacity="0.85"/>
+    </g>
+  `,
+
+  // --- REWARD: HEAD SLOT (Lv 8) ---
+  "seeker-hood": `
+    <g id="item-seeker-hood">
+      <!-- Hood body — cloth draping over head -->
+      <path d="M470,318 Q475,260 540,248 Q605,260 610,318 Q605,332 540,338 Q475,332 470,318 Z" fill="#5B6B5B" opacity="0.85"/>
+      <!-- Hood lighter inner panel -->
+      <path d="M488,310 Q492,272 540,264 Q588,272 592,310 Q588,318 540,322 Q492,318 488,310 Z" fill="#7B8B7B" opacity="0.65"/>
+      <!-- Hood peak -->
+      <path d="M530,252 Q535,238 540,234 Q545,238 550,252" fill="#5B6B5B" stroke="#4A5A4A" stroke-width="1.5" opacity="0.85"/>
+      <!-- Cloth folds -->
+      <path d="M480,306 Q500,300 520,302" fill="none" stroke="#4A5A4A" stroke-width="1.5" opacity="0.3"/>
+      <path d="M560,302 Q580,300 600,306" fill="none" stroke="#4A5A4A" stroke-width="1.5" opacity="0.3"/>
+      <!-- Chin drape -->
+      <path d="M494,330 Q510,336 540,338 Q570,336 586,330" fill="none" stroke="#4A5A4A" stroke-width="2" opacity="0.35"/>
+    </g>
+  `,
+
+  // --- REWARD: LEGS SLOT (Lv 12) ---
+  "guardian-greaves": `
+    <g id="item-guardian-greaves">
+      <!-- Greave body — steel plated leg armor -->
+      <path d="M478,695 Q500,686 540,684 Q580,686 602,695 L610,818 Q588,836 540,840 Q492,836 470,818 Z" fill="#6B7B8D" opacity="0.74"/>
+      <!-- Inner highlight -->
+      <path d="M486,700 Q506,692 540,690 Q574,692 594,700 L590,810 Q572,825 540,830 Q508,825 490,810 Z" fill="#8B9DAF" opacity="0.42"/>
+      <!-- Plate segment lines -->
+      <path d="M484,720 Q510,714 540,712 Q570,714 596,720" fill="none" stroke="#5B6B7D" stroke-width="2" opacity="0.5"/>
+      <path d="M480,748 Q508,742 540,740 Q572,742 600,748" fill="none" stroke="#5B6B7D" stroke-width="2" opacity="0.42"/>
+      <path d="M476,776 Q506,770 540,768 Q574,770 604,776" fill="none" stroke="#5B6B7D" stroke-width="2" opacity="0.38"/>
+      <!-- Knee guards — larger, more ornate -->
+      <ellipse cx="506" cy="758" rx="18" ry="14" fill="#5B6B7D" opacity="0.55"/>
+      <ellipse cx="574" cy="758" rx="18" ry="14" fill="#5B6B7D" opacity="0.55"/>
+      <!-- Knee rivets with highlights -->
+      <circle cx="506" cy="758" r="4" fill="#8B9DAF" opacity="0.65"/>
+      <circle cx="574" cy="758" r="4" fill="#8B9DAF" opacity="0.65"/>
+      <circle cx="504" cy="756" r="1.5" fill="#fff" opacity="0.2"/>
+      <circle cx="572" cy="756" r="1.5" fill="#fff" opacity="0.2"/>
+      <!-- Metallic shine -->
+      <ellipse cx="520" cy="710" rx="14" ry="5" fill="#fff" opacity="0.12" transform="rotate(-8,520,710)"/>
+    </g>
+  `,
+
+  // --- REWARD: SECONDARY SLOT (Lv 16) ---
+  "mentor-shield": `
+    <g id="item-mentor-shield">
+      <!-- Shield body — larger kite shield shape -->
+      <path d="M680,555 Q690,540 710,535 Q730,540 740,555 L735,615 Q722,630 710,635 Q698,630 685,615 Z" fill="#6B5538" opacity="0.84"/>
+      <!-- Shield face — lighter oak inner -->
+      <path d="M685,558 Q694,545 710,540 Q726,545 735,558 L731,610 Q720,624 710,628 Q700,624 689,610 Z" fill="#A0896B" opacity="0.72"/>
+      <!-- Rim detail -->
+      <path d="M682,556 Q692,542 710,537 Q728,542 738,556 L733,614 Q721,628 710,633 Q699,628 687,614 Z" fill="none" stroke="#5B4530" stroke-width="2" opacity="0.5"/>
+      <!-- Cross emblem -->
+      <line x1="710" y1="555" x2="710" y2="600" stroke="#5B4530" stroke-width="3" opacity="0.45"/>
+      <line x1="694" y1="575" x2="726" y2="575" stroke="#5B4530" stroke-width="3" opacity="0.45"/>
+      <!-- Boss center -->
+      <circle cx="710" cy="575" r="6" fill="#5B4530" opacity="0.7"/>
+      <circle cx="710" cy="574" r="3.5" fill="#8B7355" opacity="0.6"/>
+      <!-- Corner rivets -->
+      <circle cx="710" cy="548" r="2" fill="#5B4530" opacity="0.5"/>
+      <circle cx="695" cy="565" r="2" fill="#5B4530" opacity="0.5"/>
+      <circle cx="725" cy="565" r="2" fill="#5B4530" opacity="0.5"/>
+      <!-- Wood grain hint -->
+      <path d="M698,560 Q704,558 710,560 Q716,562 722,560" fill="none" stroke="#7A6548" stroke-width="0.8" opacity="0.25"/>
+      <path d="M696,590 Q703,588 710,590 Q717,592 724,590" fill="none" stroke="#7A6548" stroke-width="0.8" opacity="0.25"/>
+    </g>
+  `,
+
+  // --- REWARD: CHEST SLOT (Lv 20) ---
+  "wayfarer-vestment": `
+    <g id="item-wayfarer-vestment">
+      <!-- Vestment body — enchanted linen tunic -->
+      <path d="M462,536 Q476,522 540,518 Q604,522 618,536 L614,665 Q588,678 540,682 Q492,678 466,665 Z" fill="#6B6B4B" opacity="0.72"/>
+      <!-- Inner lighter panel -->
+      <path d="M506,524 Q520,518 540,516 Q560,518 574,524 L568,560 Q554,552 540,550 Q526,552 512,560 Z" fill="#E8DEC8" opacity="0.4"/>
+      <!-- Enchanted thread lines — golden shimmer hints -->
+      <path d="M470,560 Q505,554 540,552 Q575,554 610,560" fill="none" stroke="#C4A060" stroke-width="1.5" opacity="0.3"/>
+      <path d="M468,590 Q503,584 540,582 Q577,584 612,590" fill="none" stroke="#C4A060" stroke-width="1" opacity="0.25"/>
+      <path d="M466,620 Q501,614 540,612 Q579,614 614,620" fill="none" stroke="#C4A060" stroke-width="1" opacity="0.2"/>
+      <!-- Belt / sash -->
+      <path d="M466,598 Q498,590 540,588 Q582,590 614,598" fill="none" stroke="#8B7B4B" stroke-width="3.5" opacity="0.55"/>
+      <!-- Belt clasp -->
+      <circle cx="540" cy="593" r="4" fill="#C4A060" opacity="0.6"/>
+      <!-- Hem -->
+      <path d="M468,662 Q492,676 540,680 Q588,676 612,662" fill="none" stroke="#8B7B4B" stroke-width="2.5" opacity="0.45"/>
+      <!-- Center stitch -->
+      <line x1="540" y1="560" x2="540" y2="660" stroke="#8B7B4B" stroke-width="1" opacity="0.22"/>
+    </g>
+  `,
+
+  // --- REWARD: ROBE SLOT (Lv 25) ---
+  "dreamer-cloak": `
+    <g id="item-dreamer-cloak">
+      <!-- Cloak body — full flowing robe, dreamweave silk -->
+      <path d="M456,526 Q476,514 540,510 Q604,514 624,526 L632,808 Q600,830 540,836 Q480,830 448,808 Z" fill="#3B4B6B" opacity="0.78"/>
+      <!-- Inner panel — starlit shimmer -->
+      <path d="M496,520 Q516,514 540,512 Q564,514 584,520 L580,798 Q562,810 540,814 Q518,810 500,798 Z" fill="#5B6B8B" opacity="0.45"/>
+      <!-- Collar -->
+      <path d="M486,530 Q512,520 540,518 Q568,520 594,530" fill="none" stroke="#2B3B5B" stroke-width="3.5" opacity="0.6"/>
+      <!-- Dream silk sash at waist -->
+      <path d="M454,596 Q492,586 540,584 Q588,586 626,596" fill="none" stroke="#8BA0C4" stroke-width="4" opacity="0.55"/>
+      <!-- Sash clasp — dreamy amethyst -->
+      <circle cx="540" cy="590" r="5" fill="#A888C8" opacity="0.75"/>
+      <circle cx="540" cy="589" r="2.5" fill="#D0C0E8" opacity="0.6"/>
+      <!-- Center front opening -->
+      <line x1="540" y1="536" x2="540" y2="818" stroke="#2B3B5B" stroke-width="1.5" opacity="0.28"/>
+      <!-- Hem embroidery — ethereal shimmer -->
+      <path d="M452,804 Q480,826 540,832 Q600,826 628,804" fill="none" stroke="#8BA0C4" stroke-width="2.5" opacity="0.5"/>
+      <path d="M458,794 Q484,814 540,820 Q596,814 622,794" fill="none" stroke="#A888C8" stroke-width="1.2" opacity="0.3"/>
+      <!-- Starlight sparkle accents -->
+      <circle cx="480" cy="650" r="1.5" fill="#D0C0E8" opacity="0.5"/>
+      <circle cx="600" cy="700" r="1.5" fill="#D0C0E8" opacity="0.45"/>
+      <circle cx="500" cy="750" r="1" fill="#A888C8" opacity="0.4"/>
+      <circle cx="580" cy="640" r="1" fill="#D0C0E8" opacity="0.4"/>
+      <!-- Side draping -->
+      <path d="M462,542 Q456,646 450,804" fill="none" stroke="#2B3B5B" stroke-width="1.2" opacity="0.22"/>
+      <path d="M618,542 Q624,646 630,804" fill="none" stroke="#2B3B5B" stroke-width="1.2" opacity="0.22"/>
+    </g>
+  `,
+
   // --- FEET SLOT ---
   "wanderer-boots": `
     <g id="item-wanderer-boots">
@@ -424,5 +583,82 @@ export const ITEM_THUMBNAIL_REGISTRY: Record<string, string> = {
     <circle cx="32" cy="28" r="2.5" fill="#C4A8D8" opacity="0.7"/>
     <line x1="32" y1="14" x2="32" y2="56" stroke="#4A3C4E" stroke-width="1" opacity="0.3"/>
     <path d="M14,54 Q22,60 32,62 Q42,60 50,54" fill="none" stroke="#8B6BA5" stroke-width="1.5" opacity="0.4"/>
+  `,
+
+  // --- REWARD ITEM THUMBNAILS ---
+  "adventurer-band": `
+    <!-- Adventurer's band — leather wrist wrap -->
+    <path d="M12,28 Q16,20 32,17 Q48,20 52,28 L53,38 Q48,44 32,46 Q16,44 11,38 Z" fill="#A0896B"/>
+    <path d="M16,30 Q22,24 32,22 Q42,24 48,30" fill="none" stroke="#7A6548" stroke-width="2" opacity="0.5"/>
+    <path d="M14,36 Q22,32 32,31 Q42,32 50,36" fill="none" stroke="#7A6548" stroke-width="1.2" opacity="0.4"/>
+    <rect x="29" y="19" width="6" height="4" rx="1" fill="#8B7355" opacity="0.7"/>
+  `,
+  "pathfinder-blade": `
+    <!-- Pathfinder's blade — iron short sword -->
+    <path d="M29,6 L27,30 L29,33 Q31,34 33,34 Q35,34 35,33 L37,30 L35,6 Q32,3 29,6 Z" fill="#8B9DAF"/>
+    <path d="M30,8 L28,28" fill="none" stroke="#A8B8C8" stroke-width="1" opacity="0.5"/>
+    <path d="M32,8 L32,30" fill="none" stroke="#6B7B8D" stroke-width="0.8" opacity="0.35"/>
+    <path d="M22,34 Q26,31 32,30 Q38,31 42,34 Q38,37 32,37 Q26,37 22,34 Z" fill="#5B6B7D"/>
+    <rect x="30" y="37" width="4" height="14" rx="1" fill="#6B5538"/>
+    <line x1="30" y1="41" x2="34" y2="41" stroke="#8B7355" stroke-width="0.8" opacity="0.5"/>
+    <line x1="30" y1="46" x2="34" y2="46" stroke="#8B7355" stroke-width="0.8" opacity="0.5"/>
+    <circle cx="32" cy="54" r="3" fill="#5B6B7D"/>
+  `,
+  "seeker-hood": `
+    <!-- Seeker's hood — cloth hood with peak -->
+    <path d="M12,40 Q15,18 32,10 Q49,18 52,40 Q49,46 32,48 Q15,46 12,40 Z" fill="#5B6B5B"/>
+    <path d="M18,38 Q20,22 32,16 Q44,22 46,38 Q44,42 32,44 Q20,42 18,38 Z" fill="#7B8B7B" opacity="0.6"/>
+    <path d="M28,12 Q30,6 32,4 Q34,6 36,12" fill="#5B6B5B" stroke="#4A5A4A" stroke-width="1.2"/>
+    <path d="M18,34 Q25,30 32,30 Q39,30 46,34" fill="none" stroke="#4A5A4A" stroke-width="1.2" opacity="0.35"/>
+    <path d="M22,44 Q27,47 32,48 Q37,47 42,44" fill="none" stroke="#4A5A4A" stroke-width="1.5" opacity="0.35"/>
+  `,
+  "guardian-greaves": `
+    <!-- Guardian's greaves — steel leg armor -->
+    <path d="M14,14 Q22,10 32,8 Q42,10 50,14 L52,48 Q44,56 32,58 Q20,56 12,48 Z" fill="#6B7B8D"/>
+    <path d="M18,16 Q25,12 32,11 Q39,12 46,16 L47,46 Q41,52 32,54 Q23,52 17,46 Z" fill="#8B9DAF" opacity="0.45"/>
+    <path d="M18,24 Q25,21 32,20 Q39,21 46,24" fill="none" stroke="#5B6B7D" stroke-width="1.5" opacity="0.5"/>
+    <path d="M16,34 Q25,31 32,30 Q39,31 48,34" fill="none" stroke="#5B6B7D" stroke-width="1.5" opacity="0.42"/>
+    <path d="M15,44 Q24,41 32,40 Q40,41 49,44" fill="none" stroke="#5B6B7D" stroke-width="1.5" opacity="0.38"/>
+    <ellipse cx="24" cy="34" rx="7" ry="5" fill="#5B6B7D" opacity="0.55"/>
+    <ellipse cx="40" cy="34" rx="7" ry="5" fill="#5B6B7D" opacity="0.55"/>
+    <circle cx="24" cy="34" r="2.5" fill="#8B9DAF" opacity="0.65"/>
+    <circle cx="40" cy="34" r="2.5" fill="#8B9DAF" opacity="0.65"/>
+  `,
+  "mentor-shield": `
+    <!-- Mentor's shield — kite shield with cross -->
+    <path d="M16,18 Q22,10 32,6 Q42,10 48,18 L46,48 Q40,56 32,60 Q24,56 18,48 Z" fill="#6B5538"/>
+    <path d="M19,20 Q24,13 32,10 Q40,13 45,20 L43,46 Q38,53 32,56 Q26,53 21,46 Z" fill="#A0896B" opacity="0.7"/>
+    <path d="M17,19 Q23,11 32,8 Q41,11 47,19 L45,47 Q39,55 32,58 Q25,55 19,47 Z" fill="none" stroke="#5B4530" stroke-width="1.5" opacity="0.5"/>
+    <line x1="32" y1="18" x2="32" y2="48" stroke="#5B4530" stroke-width="2" opacity="0.45"/>
+    <line x1="22" y1="32" x2="42" y2="32" stroke="#5B4530" stroke-width="2" opacity="0.45"/>
+    <circle cx="32" cy="32" r="4" fill="#5B4530" opacity="0.6"/>
+    <circle cx="32" cy="31" r="2" fill="#8B7355" opacity="0.5"/>
+  `,
+  "wayfarer-vestment": `
+    <!-- Wayfarer's vestment — enchanted linen tunic -->
+    <path d="M18,18 Q22,14 32,12 Q42,14 46,18 L44,52 Q38,56 32,56 Q26,56 20,52 Z" fill="#6B6B4B"/>
+    <path d="M26,14 Q29,12 32,12 Q35,12 38,14 L36,26 Q34,24 32,24 Q30,24 28,26 Z" fill="#E8DEC8" opacity="0.4"/>
+    <path d="M20,28 Q26,26 32,25 Q38,26 44,28" fill="none" stroke="#C4A060" stroke-width="1" opacity="0.35"/>
+    <path d="M20,36 Q26,34 32,33 Q38,34 44,36" fill="none" stroke="#C4A060" stroke-width="0.8" opacity="0.28"/>
+    <path d="M20,44 Q26,42 32,41 Q38,42 44,44" fill="none" stroke="#C4A060" stroke-width="0.8" opacity="0.22"/>
+    <path d="M21,34 Q26,32 32,31 Q38,32 43,34" fill="none" stroke="#8B7B4B" stroke-width="2" opacity="0.5"/>
+    <circle cx="32" cy="32" r="2" fill="#C4A060" opacity="0.55"/>
+    <path d="M20,50 Q26,54 32,55 Q38,54 44,50" fill="none" stroke="#8B7B4B" stroke-width="1.2" opacity="0.45"/>
+  `,
+  "dreamer-cloak": `
+    <!-- Dreamer's cloak — flowing dreamweave silk -->
+    <path d="M12,10 Q20,4 32,2 Q44,4 52,10 L54,58 Q46,64 32,64 Q18,64 10,58 Z" fill="#3B4B6B"/>
+    <path d="M20,8 Q26,5 32,4 Q38,5 44,8 L42,56 Q38,60 32,62 Q26,60 22,56 Z" fill="#5B6B8B" opacity="0.45"/>
+    <path d="M16,12 Q24,7 32,6 Q40,7 48,12" fill="none" stroke="#2B3B5B" stroke-width="2" opacity="0.55"/>
+    <path d="M12,28 Q22,25 32,24 Q42,25 52,28" fill="none" stroke="#8BA0C4" stroke-width="2" opacity="0.5"/>
+    <circle cx="32" cy="26" r="2.5" fill="#A888C8" opacity="0.7"/>
+    <circle cx="32" cy="25.5" r="1.2" fill="#D0C0E8" opacity="0.55"/>
+    <line x1="32" y1="14" x2="32" y2="58" stroke="#2B3B5B" stroke-width="1" opacity="0.28"/>
+    <path d="M12,56 Q20,62 32,64 Q44,62 52,56" fill="none" stroke="#8BA0C4" stroke-width="1.5" opacity="0.45"/>
+    <path d="M14,52 Q22,58 32,60 Q42,58 50,52" fill="none" stroke="#A888C8" stroke-width="0.8" opacity="0.3"/>
+    <!-- Starlight sparkles -->
+    <circle cx="20" cy="36" r="1" fill="#D0C0E8" opacity="0.5"/>
+    <circle cx="44" cy="42" r="1" fill="#D0C0E8" opacity="0.45"/>
+    <circle cx="26" cy="50" r="0.8" fill="#A888C8" opacity="0.4"/>
   `,
 };
