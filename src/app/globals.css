@@ -607,6 +607,7 @@
   animation: boardBob 4s ease-in-out infinite;
   position: relative;
   border-radius: 18px;
+  min-height: 70vh;
   /* Warm-ish surface — slightly lighter than background so it reads as a physical thing */
   background: linear-gradient(170deg, #352d58 0%, #2a2348 50%, #231d3e 100%);
   /* Thick visible border — the "rim" of the board */
