@@ -44,10 +44,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     strategy: "jwt",
   },
   callbacks: {
-    async jwt({ token, profile, trigger }) {
+    async jwt({ token, profile, trigger, user }) {
       // On sign-in, store the Google 'sub' in the JWT token
       if (trigger === "signIn" && profile?.sub) {
         token.googleSub = profile.sub;
+      }
+      // Dev login: Credentials provider has no profile.sub, use user.id as fallback
+      if (trigger === "signIn" && !token.googleSub && user?.id) {
+        token.googleSub = user.id;
       }
       return token;
     },
@@ -66,9 +70,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       try {
         const supabase = createServiceClient();
 
-        const googleSub = (profile as Record<string, unknown>)?.sub as
-          | string
-          | undefined;
+        // Google OAuth has profile.sub; dev Credentials provider falls back to user.id
+        const googleSub =
+          ((profile as Record<string, unknown>)?.sub as string | undefined) ||
+          (process.env.NODE_ENV === "development" ? user.id : undefined);
         if (!googleSub) {
           console.warn("No Google sub in profile, skipping profile upsert");
           return;
