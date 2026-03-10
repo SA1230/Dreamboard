@@ -4,6 +4,7 @@ import { STAT_KEYS, STAT_DEFINITIONS, StatDefinition, COLOR_PRESETS } from "./st
 import { getRankTitle } from "./ranks";
 import { MAX_USER_PRIZES } from "./prizes";
 import { MAX_VISION_CARDS, VISION_COLORS } from "./visionColors";
+import { queueRemoteSync } from "./sync";
 
 const STORAGE_KEY = "dreamboard-data";
 
@@ -120,6 +121,14 @@ export function loadGameData(): GameData {
 }
 
 export function saveGameData(data: GameData): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  queueRemoteSync(data);
+}
+
+/** Write directly to localStorage without triggering remote sync.
+ *  Used by the hydration path when server data overwrites local cache. */
+export function saveGameDataLocal(data: GameData): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }

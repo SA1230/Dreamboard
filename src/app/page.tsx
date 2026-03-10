@@ -180,6 +180,20 @@ function AuthenticatedHome() {
     setGameData(updated);
   }, []);
 
+  // Re-hydrate if Supabase data arrived after initial localStorage load
+  useEffect(() => {
+    const handleHydration = () => {
+      const data = loadGameData();
+      const totalXP = getTotalLifetimeXP(data);
+      const { level } = getOverallLevel(totalXP);
+      const afterPrizes = checkPrizeUnlocks(data, level);
+      const updated = checkItemRewardUnlocks(afterPrizes, level);
+      setGameData(updated);
+    };
+    window.addEventListener("dreamboard-data-hydrated", handleHydration);
+    return () => window.removeEventListener("dreamboard-data-hydrated", handleHydration);
+  }, []);
+
   // Auto-open Judge for first-time users after a brief delay (once per session)
   const hasAutoOpenedJudge = useRef(false);
   useEffect(() => {
