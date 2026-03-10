@@ -1,5 +1,5 @@
 import { GameData, StatKey, HabitKey, DamageKey, Activity, StatProgress, CustomStatOverride, FeedEvent, PlayerInventory, EquipmentSlot, Prize, Challenge, ChainStep, VisionCard, BoardReading, SecondaryStats, ItemResistances } from "./types";
-import { getItemById } from "./items";
+import { getItemById, getLevelRewardItems } from "./items";
 import { STAT_KEYS, STAT_DEFINITIONS, StatDefinition, COLOR_PRESETS } from "./stats";
 import { getRankTitle } from "./ranks";
 import { MAX_USER_PRIZES } from "./prizes";
@@ -1092,6 +1092,59 @@ export function checkPrizeUnlocks(data: GameData, currentLevel: number): GameDat
       unlockLevel: prize.unlockLevel,
     });
   }
+
+  saveGameData(updatedData);
+  return updatedData;
+}
+
+/** Check for newly unlocked level-reward items and grant them + generate feed events. */
+export function checkItemRewardUnlocks(data: GameData, currentLevel: number): GameData {
+  const rewardItems = getLevelRewardItems();
+  const feedEvents = data.feedEvents ?? [];
+  const inventory = getInventory(data);
+
+  // Find item IDs that already have unlock feed events
+  const alreadyUnlockedIds = new Set(
+    feedEvents
+      .filter((e): e is Extract<FeedEvent, { type: "item_reward_unlocked" }> => e.type === "item_reward_unlocked")
+      .map((e) => e.itemId)
+  );
+
+  // Find items that should be unlocked but haven't generated events yet
+  const newlyUnlocked = rewardItems.filter(
+    (item) => item.levelReward! <= currentLevel && !alreadyUnlockedIds.has(item.id)
+  );
+
+  if (newlyUnlocked.length === 0) return data;
+
+  const now = new Date().toISOString();
+  let updatedData = data;
+  const updatedOwnedIds = [...inventory.ownedItemIds];
+
+  for (const item of newlyUnlocked) {
+    // Add to inventory if not already owned
+    if (!updatedOwnedIds.includes(item.id)) {
+      updatedOwnedIds.push(item.id);
+    }
+
+    updatedData = pushFeedEvent(updatedData, {
+      type: "item_reward_unlocked",
+      id: crypto.randomUUID(),
+      timestamp: now,
+      itemId: item.id,
+      itemName: item.name,
+      unlockLevel: item.levelReward!,
+    });
+  }
+
+  // Update inventory with any newly granted items
+  updatedData = {
+    ...updatedData,
+    inventory: {
+      ...getInventory(updatedData),
+      ownedItemIds: updatedOwnedIds,
+    },
+  };
 
   saveGameData(updatedData);
   return updatedData;

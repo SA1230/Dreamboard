@@ -280,13 +280,155 @@ export const ITEM_CATALOG: ShopItem[] = [
   },
 ];
 
+/**
+ * Level reward items — unique items auto-granted when the player reaches specific overall levels.
+ * These are NOT purchasable in the shop. Power scales with level. Slots alternate for diversity:
+ * hands → weapon → head → legs → shield → chest → robe
+ */
+export const LEVEL_REWARD_ITEMS: ShopItem[] = [
+  {
+    id: "adventurer-band",
+    name: "Adventurer's Band",
+    description: "A simple leather wrap. Every journey starts with a single step.",
+    slot: "hands",
+    rarity: "common",
+    cost: 0,
+    levelReward: 2,
+    weight: 0.2,
+    material: "Leather",
+    secondaryStats: { ac: 1, hp: 5 },
+  },
+  {
+    id: "pathfinder-blade",
+    name: "Pathfinder's Blade",
+    description: "A trusty short sword for those who've found their path.",
+    slot: "primary",
+    rarity: "common",
+    cost: 0,
+    levelReward: 5,
+    weight: 1.2,
+    material: "Iron",
+    statModifiers: [
+      { stat: "strength", flatBonus: 1 },
+    ],
+    weaponStats: { damage: 3, delay: 28, weaponType: "1HS" },
+    secondaryStats: { attack: 2 },
+  },
+  {
+    id: "seeker-hood",
+    name: "Seeker's Hood",
+    description: "Worn by those who question everything — and learn from the answers.",
+    slot: "head",
+    rarity: "uncommon",
+    cost: 0,
+    levelReward: 8,
+    weight: 0.4,
+    material: "Woven Cloth",
+    statModifiers: [
+      { stat: "wisdom", flatBonus: 1 },
+    ],
+    secondaryStats: { ac: 3, hp: 10 },
+    resistances: { screentime: 5 },
+  },
+  {
+    id: "guardian-greaves",
+    name: "Guardian's Greaves",
+    description: "Steel-plated protection for those who show up every day.",
+    slot: "legs",
+    rarity: "uncommon",
+    cost: 0,
+    levelReward: 12,
+    weight: 2.5,
+    material: "Steel",
+    statModifiers: [
+      { stat: "discipline", flatBonus: 1 },
+      { stat: "vitality", flatBonus: 1 },
+    ],
+    secondaryStats: { ac: 4, hp: 15 },
+  },
+  {
+    id: "mentor-shield",
+    name: "Mentor's Shield",
+    description: "Carried by those who lift others while standing firm themselves.",
+    slot: "secondary",
+    rarity: "rare",
+    cost: 0,
+    levelReward: 16,
+    weight: 3.0,
+    material: "Reinforced Oak",
+    statModifiers: [
+      { stat: "charisma", flatBonus: 1 },
+      { stat: "spirit", flatBonus: 1 },
+    ],
+    secondaryStats: { ac: 6, hp: 20, mana: 10 },
+    resistances: { substance: 3, screentime: 3, junkfood: 3, badsleep: 3 },
+  },
+  {
+    id: "wayfarer-vestment",
+    name: "Wayfarer's Vestment",
+    description: "Woven by hands that never stopped creating.",
+    slot: "chest",
+    rarity: "rare",
+    cost: 0,
+    levelReward: 20,
+    weight: 1.8,
+    material: "Enchanted Linen",
+    statModifiers: [
+      { stat: "craft", flatBonus: 2 },
+      { stat: "wealth", flatBonus: 1 },
+    ],
+    secondaryStats: { ac: 7, hp: 25, mana: 10 },
+    focusEffect: {
+      name: "Maker's Touch",
+      description: "Sharpens creative instincts and craftsmanship.",
+      tier: 1,
+      modifiers: [
+        { stat: "craft", flatBonus: 1 },
+      ],
+    },
+  },
+  {
+    id: "dreamer-cloak",
+    name: "Dreamer's Cloak",
+    description: "A flowing cloak that shimmers with every dream you've chased.",
+    slot: "robe",
+    rarity: "epic",
+    cost: 0,
+    levelReward: 25,
+    overridesSlots: ["chest", "legs"],
+    weight: 1.0,
+    material: "Dreamweave Silk",
+    statModifiers: [
+      { stat: "spirit", flatBonus: 2 },
+      { stat: "wisdom", flatBonus: 1 },
+      { stat: "charisma", flatBonus: 1 },
+    ],
+    secondaryStats: { ac: 8, hp: 25, mana: 15 },
+    resistances: { substance: 8, screentime: 8, junkfood: 8, badsleep: 8 },
+    focusEffect: {
+      name: "Dreamer's Vision",
+      description: "Deepens spiritual awareness and inner clarity.",
+      tier: 2,
+      modifiers: [
+        { stat: "spirit", flatBonus: 1 },
+      ],
+    },
+  },
+];
+
 /** Item sets — wearing multiple pieces grants escalating bonuses */
 export const ITEM_SETS: ItemSet[] = [
   // No sets in v1 — sets come with catalog expansion in follow-up PRs
 ];
 
 export function getItemById(id: string): ShopItem | undefined {
-  return ITEM_CATALOG.find((item) => item.id === id);
+  return ITEM_CATALOG.find((item) => item.id === id)
+    ?? LEVEL_REWARD_ITEMS.find((item) => item.id === id);
+}
+
+/** Get all items that are auto-granted as level-up rewards */
+export function getLevelRewardItems(): ShopItem[] {
+  return LEVEL_REWARD_ITEMS;
 }
 
 export function getItemsBySlot(slot: EquipmentSlot): ShopItem[] {

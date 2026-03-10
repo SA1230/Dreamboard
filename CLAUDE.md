@@ -190,7 +190,7 @@ src/types/
 - **ChainStep** — `{ description, stat, bonusXP }` — a pending step in a challenge chain, waiting to be issued
 - **VisionCard** — `{ id, rawText, weavedText, colorIndex, createdAt, pinned? }` — a dream, goal, or vibe on the Vision Board. `rawText` preserves the user's original words; `weavedText` is the Oracle-enhanced version (or same as `rawText` if AI was skipped). `colorIndex` maps to the 6-color pastel palette in `visionColors.ts`
 - **BoardReading** — `{ id, text, createdAt }` — the Oracle's interpretation of the user's whole vision board
-- **FeedEvent** — discriminated union (`type` field) for the activity feed. Types: `xp_gain`, `habit_completed`, `habit_removed`, `damage_marked`, `damage_removed`, `level_up`, `overall_level_up`, `rank_up`, `prize_unlocked`, `challenge_issued`, `challenge_completed`. Each has `id` + `timestamp` + type-specific fields. `xp_gain` events include optional `verdictMessage` with the Judge's verdict text
+- **FeedEvent** — discriminated union (`type` field) for the activity feed. Types: `xp_gain`, `habit_completed`, `habit_removed`, `damage_marked`, `damage_removed`, `level_up`, `overall_level_up`, `rank_up`, `prize_unlocked`, `item_reward_unlocked`, `challenge_issued`, `challenge_completed`. Each has `id` + `timestamp` + type-specific fields. `xp_gain` events include optional `verdictMessage` with the Judge's verdict text. `item_reward_unlocked` includes `itemId`, `itemName`, and `unlockLevel`
 - **VisibleSlot** — one of 8 strings: `"head"`, `"chest"`, `"legs"`, `"robe"`, `"hands"`, `"feet"`, `"primary"`, `"secondary"` — SVG layers rendered on Skipper
 - **HiddenSlot** — inventory-only slots (rings, ears, neck, shoulders, back, bracers, ranged) — no visual on character, for future stat items
 - **EquipmentSlot** — `VisibleSlot | HiddenSlot`
@@ -201,7 +201,7 @@ src/types/
 - **WeaponStats** — `{ damage, delay, weaponType?, proc? }` — weapon damage/delay (primary + secondary slots only)
 - **FocusEffect** — `{ name, description, tier?, modifiers: ItemStatModifier[] }` — named passive bonus on epic+ items. Modifiers stack with primary stat modifiers
 - **EquipmentBonuses** — `{ statModifiers, secondaryStats, resistances }` — aggregated bonuses from all equipped items. `statModifiers` maps `StatKey` → `{ flatBonus }`. Computed by `getEquippedBonuses()`
-- **ShopItem** — `{ id, name, description, slot, rarity, cost, levelRequirement?, svgAssetKey?, overridesSlots?, statModifiers?, secondaryStats?, resistances?, weaponStats?, weight?, material?, focusEffect? }` — item definition with EQ-style stat bundles. `overridesSlots` lets robes hide chest+legs visuals. All stat fields are optional (common items may have none)
+- **ShopItem** — `{ id, name, description, slot, rarity, cost, levelRequirement?, svgAssetKey?, overridesSlots?, statModifiers?, secondaryStats?, resistances?, weaponStats?, weight?, material?, focusEffect?, levelReward? }` — item definition with EQ-style stat bundles. `overridesSlots` lets robes hide chest+legs visuals. All stat fields are optional (common items may have none). `levelReward` marks level-up reward items (overall level at which the item is auto-granted)
 - **PlayerInventory** — `{ ownedItemIds: string[], equippedItems: Partial<Record<EquipmentSlot, string>> }` — owned items + slot-to-itemId mapping
 - **GameData** — the root object stored in localStorage: `{ stats, activities, customDefinitions?, healthyHabits?, enabledHabits?, dailyDamage?, enabledDamage?, pointsWallet?, mascotOverrides?, feedEvents?, inventory?, prizes?, activeChallenge?, pendingChainSteps? }`
   - `healthyHabits` maps each `HabitKey` to an array of `"YYYY-MM-DD"` date strings (days the habit was completed)
@@ -210,7 +210,7 @@ src/types/
   - `enabledDamage` is an array of `DamageKey` values visible on dashboard (defaults to all 4 if not set)
   - `pointsWallet` stores `lifetimeSpent` only — `lifetimeEarned` is always recalculated from habit/damage history to prevent sync issues
   - `mascotOverrides` maps level thresholds to mascot image filenames in `public/mascots/` (e.g. `{ 1: "skipper-default.svg", 10: "skipper-cool.svg" }`). Uses threshold logic — picks highest key ≤ current level. Defaults to `skipper-default.svg`
-  - `feedEvents` is an array of `FeedEvent` objects (newest first) — the unified activity feed that captures XP gains, habit toggles, damage toggles, level-ups, rank transitions, and prize unlocks. Pushed automatically by `addXP`, `toggleHabitForToday`, `toggleDamageForToday`, and `checkPrizeUnlocks`
+  - `feedEvents` is an array of `FeedEvent` objects (newest first) — the unified activity feed that captures XP gains, habit toggles, damage toggles, level-ups, rank transitions, prize unlocks, and item reward unlocks. Pushed automatically by `addXP`, `toggleHabitForToday`, `toggleDamageForToday`, `checkPrizeUnlocks`, and `checkItemRewardUnlocks`
   - `prizes` is an array of `Prize` objects — user-created IRL rewards that unlock at specific overall levels. Managed via the Prize Track page (`/prizes`)
   - `activeChallenge` is a `Challenge` object — one active side quest issued by the Judge. Only one at a time. Cleared on completion (awards bonus XP) or dismissal. Can be standalone or part of a chain (has `chainId`, `chainIndex`, `chainTotal`). Managed by `issueChallenge`, `issueChallengeChain`, `completeChallenge`, `dismissChallenge` in `storage.ts`
   - `pendingChainSteps` is an array of `ChainStep` objects — remaining steps in a challenge chain. When the current chain step is completed, the next pending step auto-issues as the new `activeChallenge`. Cleared when the chain completes or is dismissed
@@ -238,7 +238,7 @@ src/types/
 - **Data export:** `exportGameData()` in `storage.ts` downloads a full JSON backup. Button lives in the Activity Log section
 - **Mascot system:** Skipper the penguin base SVG paths are inlined in `SkipperCharacter.tsx`. `getMascotForLevel()` in `storage.ts` still exists for future per-level base variants via `mascotOverrides` in GameData
 - **XP Judge:** The sole way to earn XP. A conversational AI (via `/api/judge`) evaluates user-described activities, asks up to 3 follow-up questions, then awards 1-10 XP per stat. Triggered from a centered CTA card on the homepage (hero penguin avatar from `public/mascots/judge-hero.svg`). The hero avatar also appears in the JudgeModal header and next to each judge message
-- **Prize Track:** Separate from the Shop (level-based rewards vs currency-based purchases). Dual-track horizontal timeline: system rewards (rank titles) on top, user-created IRL prizes on bottom, level progression line in the center. Fog of war hides future brackets — current rank bracket is fully visible, next bracket is teased/dimmed, beyond is hidden. Auto-unlock when level is reached (no claim step), generates `prize_unlocked` feed event. `checkPrizeUnlocks` is called on homepage mount and prizes page mount
+- **Prize Track:** Separate from the Shop (level-based rewards vs currency-based purchases). Dual-track horizontal timeline: system rewards (rank titles) + item rewards on top, user-created IRL prizes on bottom, level progression line in the center. Fog of war hides future brackets — current rank bracket is fully visible, next bracket is teased/dimmed, beyond is hidden. Auto-unlock when level is reached (no claim step), generates `prize_unlocked` and `item_reward_unlocked` feed events. `checkPrizeUnlocks` and `checkItemRewardUnlocks` are called on homepage mount and prizes page mount. Item rewards use rarity-colored cards (from `RARITY_COLORS`) with green checkmark when owned
 - **Challenge system (Side Quests):** The Judge occasionally issues challenges alongside verdicts — one at a time, ~1 in 4-5 verdicts, only when contextually clever. Two formats: standalone (single challenge) and chains (2-3 progressive steps that build on each other). Chains store the first step as `activeChallenge` (with `chainId`, `chainIndex`, `chainTotal`) and remaining steps in `pendingChainSteps`. When a chain step completes, the next step auto-issues. The Judge detects completion during normal activity evaluation. Challenge card is rendered inline in `page.tsx` between the Captain CTA and LevelDisplay — shows "Step X of Y" with progress dots for chains. Challenges generate `challenge_issued` and `challenge_completed` feed events in the ActivityLog
 - **Vision Board:** A cozy, non-gamified mood/inspiration board at `/vision`. Users add vision cards (dreams, goals, vibes) — either as plain text or AI-enhanced by the Oracle. Cards display in a CSS masonry grid (2 columns, `break-inside: avoid`) with 6 soft pastel tints from `visionColors.ts`. The Oracle is a separate AI personality from the Judge — warm, dreamy, poetic instead of sassy. Two AI actions: "weave" (enhance a rough wish into a vivid vision) and "read" (interpret the whole board, find patterns, paint a future-self portrait). 20-card cap encourages curation. Cards can be pinned (float to top). No XP, no stats — the Vision Board is the "why" behind the grind
 - **Error handling:** Errors in `JudgeModal` are caught and displayed as a red system message inline in the chat thread, with a "Dismiss" button. Loading state always resets. Follow this pattern (in-place error display, no retry logic, user-dismissable) for any new API-dependent features
@@ -276,10 +276,12 @@ src/types/
 - `SECONDARY_STAT_LABELS: Record<string, { label, suffix? }>` — display labels for secondary stats (AC, HP, Mana, Haste%, etc.)
 - `RESIST_LABELS: Record<string, { label, color }>` — display labels + colors for resistance types (Substance, Screentime, Junkfood, Badsleep)
 - `ITEM_CATALOG: ShopItem[]` — full item catalog (13 items across all 8 visible slots)
+- `LEVEL_REWARD_ITEMS: ShopItem[]` — 7 unique reward-only items auto-granted on level-up (cost: 0, not in shop). Progressive power: common (Lv 2,5) → uncommon (Lv 8,12) → rare (Lv 16,20) → epic (Lv 25). Slot diversity: hands → weapon → head → legs → shield → chest → robe
 - `ITEM_SETS: ItemSet[]` — item set definitions (empty in v1, populated in follow-up PRs)
-- `getItemById(id)` — lookup a single item by ID
-- `getItemsBySlot(slot)` — filter items by equipment slot
-- `getAffordableItems(balance, level)` — items the player can buy right now
+- `getItemById(id)` — lookup a single item by ID (searches both `ITEM_CATALOG` and `LEVEL_REWARD_ITEMS`)
+- `getLevelRewardItems()` — returns all level-up reward items
+- `getItemsBySlot(slot)` — filter shop items by equipment slot (does NOT include reward items)
+- `getAffordableItems(balance, level)` — items the player can buy right now (does NOT include reward items)
 - `getItemSets()` — returns all item set definitions
 - `getActiveSetBonuses(equippedItemIds)` — returns which sets the player has pieces of, with active counts
 
@@ -325,6 +327,7 @@ src/types/
 - `updatePrize(data, prizeId, updates)` — partial update, returns updated GameData or null
 - `deletePrize(data, prizeId)` — removes prize, returns updated GameData
 - `checkPrizeUnlocks(data, currentLevel)` — generates `prize_unlocked` feed events for newly unlocked prizes (deduplicates against existing events)
+- `checkItemRewardUnlocks(data, currentLevel)` — grants level-up reward items + generates `item_reward_unlocked` feed events (deduplicates by itemId against existing events). Adds items to `inventory.ownedItemIds`
 - `getActiveChallenge(data)` — returns `data.activeChallenge ?? null`
 - `issueChallenge(data, description, stat, bonusXP)` — creates standalone Challenge, stores in `activeChallenge`, pushes `challenge_issued` feed event
 - `issueChallengeChain(data, steps)` — creates a chain: first step becomes `activeChallenge` (with `chainId`, `chainIndex`, `chainTotal`), remaining steps stored in `pendingChainSteps`

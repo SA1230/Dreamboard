@@ -7,6 +7,8 @@ import {
   updatePrize,
   deletePrize,
   checkPrizeUnlocks,
+  checkItemRewardUnlocks,
+  getInventory,
 } from "../storage";
 import type { GameData, Activity, StatKey, Prize, FeedEvent } from "../types";
 import { STAT_KEYS } from "../stats";
@@ -646,5 +648,123 @@ describe("checkPrizeUnlocks", () => {
     const result = checkPrizeUnlocks(data, 10);
     const xpEvents = (result.feedEvents ?? []).filter((e) => e.type === "xp_gain");
     expect(xpEvents.length).toBe(1);
+  });
+});
+
+// ─── checkItemRewardUnlocks ───
+
+describe("checkItemRewardUnlocks", () => {
+  it("returns unchanged data when level is below all reward thresholds", () => {
+    const data = makeGameData();
+    const result = checkItemRewardUnlocks(data, 1);
+    const itemEvents = (result.feedEvents ?? []).filter(
+      (e) => e.type === "item_reward_unlocked"
+    );
+    expect(itemEvents.length).toBe(0);
+  });
+
+  it("grants item and creates feed event at exact level threshold", () => {
+    const data = makeGameData();
+    const result = checkItemRewardUnlocks(data, 2);
+    const itemEvents = (result.feedEvents ?? []).filter(
+      (e) => e.type === "item_reward_unlocked"
+    );
+    expect(itemEvents.length).toBe(1);
+    const event = itemEvents[0] as Extract<FeedEvent, { type: "item_reward_unlocked" }>;
+    expect(event.itemId).toBe("adventurer-band");
+    expect(event.itemName).toBe("Adventurer's Band");
+    expect(event.unlockLevel).toBe(2);
+  });
+
+  it("adds item to inventory when not already owned", () => {
+    const data = makeGameData();
+    const result = checkItemRewardUnlocks(data, 2);
+    const inventory = getInventory(result);
+    expect(inventory.ownedItemIds).toContain("adventurer-band");
+  });
+
+  it("does not create duplicate feed events on re-check", () => {
+    const existingEvent: FeedEvent = {
+      type: "item_reward_unlocked",
+      id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      itemId: "adventurer-band",
+      itemName: "Adventurer's Band",
+      unlockLevel: 2,
+    };
+    const data = makeGameData({
+      feedEvents: [existingEvent],
+      inventory: { ownedItemIds: ["adventurer-band"], equippedItems: {} },
+    });
+    const result = checkItemRewardUnlocks(data, 5);
+    const bandEvents = (result.feedEvents ?? []).filter(
+      (e) => e.type === "item_reward_unlocked" &&
+        (e as Extract<FeedEvent, { type: "item_reward_unlocked" }>).itemId === "adventurer-band"
+    );
+    // Should still be just the original one (no duplicate)
+    expect(bandEvents.length).toBe(1);
+  });
+
+  it("does not unlock item one level below threshold", () => {
+    const data = makeGameData();
+    const result = checkItemRewardUnlocks(data, 7);
+    const itemEvents = (result.feedEvents ?? []).filter(
+      (e) => e.type === "item_reward_unlocked"
+    );
+    // Level 7 unlocks: adventurer-band (2), pathfinder-blade (5) — NOT seeker-hood (8)
+    const itemIds = itemEvents.map(
+      (e) => (e as Extract<FeedEvent, { type: "item_reward_unlocked" }>).itemId
+    );
+    expect(itemIds).toContain("adventurer-band");
+    expect(itemIds).toContain("pathfinder-blade");
+    expect(itemIds).not.toContain("seeker-hood");
+  });
+
+  it("unlocks all 7 items at level 25", () => {
+    const data = makeGameData();
+    const result = checkItemRewardUnlocks(data, 25);
+    const itemEvents = (result.feedEvents ?? []).filter(
+      (e) => e.type === "item_reward_unlocked"
+    );
+    expect(itemEvents.length).toBe(7);
+    const inventory = getInventory(result);
+    expect(inventory.ownedItemIds).toContain("adventurer-band");
+    expect(inventory.ownedItemIds).toContain("pathfinder-blade");
+    expect(inventory.ownedItemIds).toContain("seeker-hood");
+    expect(inventory.ownedItemIds).toContain("guardian-greaves");
+    expect(inventory.ownedItemIds).toContain("mentor-shield");
+    expect(inventory.ownedItemIds).toContain("wayfarer-vestment");
+    expect(inventory.ownedItemIds).toContain("dreamer-cloak");
+  });
+
+  it("preserves existing feed events", () => {
+    const existingEvent: FeedEvent = {
+      type: "xp_gain",
+      id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      stat: "strength",
+      note: "test",
+      amount: 3,
+    };
+    const data = makeGameData({ feedEvents: [existingEvent] });
+    const result = checkItemRewardUnlocks(data, 5);
+    const xpEvents = (result.feedEvents ?? []).filter((e) => e.type === "xp_gain");
+    expect(xpEvents.length).toBe(1);
+  });
+
+  it("fires feed event but does not duplicate inventory for already-owned item", () => {
+    // Player bought an item from the shop that also happens to be a reward-ID match
+    const data = makeGameData({
+      inventory: { ownedItemIds: ["adventurer-band"], equippedItems: {} },
+    });
+    const result = checkItemRewardUnlocks(data, 2);
+    const inventory = getInventory(result);
+    // Should NOT have two entries — just one
+    expect(inventory.ownedItemIds.filter((id) => id === "adventurer-band").length).toBe(1);
+    // But the feed event should still fire
+    const itemEvents = (result.feedEvents ?? []).filter(
+      (e) => e.type === "item_reward_unlocked"
+    );
+    expect(itemEvents.length).toBe(1);
   });
 });
