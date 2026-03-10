@@ -50,10 +50,10 @@ The shared state file lives at `~/.claude/projects/-Users-shiroy-Dreamboard-clon
 - **Icons:** lucide-react + 20 hand-drawn SVG icons in `StatIcons.tsx` (no other UI library)
 - **Font:** Nunito (Google Font) loaded via `next/font/google` in `layout.tsx`
 - **Auth:** NextAuth v5 (next-auth@5.0.0-beta.30) with Google OAuth — JWT sessions, profile upsert to Supabase on sign-in
-- **Database:** Supabase (Postgres) — `profiles` table for user data, `events` table for analytics. Game data still in localStorage
+- **Database:** Supabase (Postgres) — `profiles` table for user data, `events` table for analytics, `game_data` table for persistent game state (JSONB, keyed by `google_sub`)
 - **Analytics:** Lightweight event tracking via `src/lib/tracker.ts` → `POST /api/events` → Supabase `events` table. Tracks session_start, page_view, xp_earned, habit/damage toggles, vision cards, shop purchases. Query via `/metrics` skill
 - **Admin Dashboard:** `/admin` route — founder-only analytics dashboard gated by `ADMIN_EMAILS` env var. Queries Supabase `events` + `profiles` tables via 3 API routes. Auto-refreshes every 30s. CSS/SVG charts (no charting library). Uses `max-w-4xl` layout (wider than main app)
-- **Storage:** Browser localStorage for game data — no server-side game state yet. `/api/judge`, `/api/companion`, `/api/auth`, `/api/profile`, `/api/events`, and `/api/admin/*` are the backend routes
+- **Storage:** Write-through cache — localStorage for instant reads, Supabase `game_data` table as source of truth for authenticated users. Debounced sync (2s) via `src/lib/sync.ts`. On login, server data overwrites local cache. Unauthenticated users get localStorage-only. `/api/judge`, `/api/companion`, `/api/auth`, `/api/profile`, `/api/events`, `/api/game-data`, and `/api/admin/*` are the backend routes
 - **AI Judge:** Anthropic Claude Sonnet 4 (fallback: OpenAI GPT-4o) via `/api/judge` route — evaluates activities and awards variable XP
 - **AI Companion:** Anthropic Claude Haiku 4.5 (fallback: OpenAI GPT-4o-mini) via `/api/companion` route — whimsical chat with Skipper, no XP or evaluation. 10-message daily cap
 - **AI Image Gen:** OpenAI DALL-E 3 — generates vision board images from Oracle prompts. Requires `OPENAI_API_KEY` in `.env.local`
@@ -84,6 +84,7 @@ src/
 │   ├── api/auth/[...nextauth]/route.ts  # NextAuth catch-all route — handles Google OAuth login/callback/session
 │   ├── api/events/route.ts  # POST endpoint — receives batched analytics events, writes to Supabase events table
 │   ├── api/profile/route.ts # GET/PATCH user profile from Supabase (auth-gated)
+│   ├── api/game-data/route.ts # GET/PUT game data JSONB from Supabase (auth-gated, upsert by google_sub)
 │   ├── api/vision/route.ts  # POST endpoint — Oracle AI for Dream Weaver (enhance visions) and Board Reading (interpret the whole board)
 │   ├── api/admin/overview/route.ts  # GET endpoint — KPI snapshot (DAU, WAU, totals, trends). Admin-gated
 │   ├── api/admin/metrics/route.ts   # GET endpoint — time-series data (sessions/day, XP/day, heatmap, retention). Admin-gated
@@ -113,6 +114,7 @@ src/
 │   ├── SkipperCharacter.tsx # Inline SVG paper-doll — renders Skipper with layered equipment overlays
 │   ├── StatIcons.tsx        # 20 SVG icons (8 stat defaults + 12 extras for customization)
 │   ├── TrackerProvider.tsx   # Client wrapper for analytics — auto-tracks session_start, page_view, user identification
+│   ├── GameDataProvider.tsx  # Client wrapper for Supabase game data hydration — fetches server data on auth mount, dispatches dreamboard-data-hydrated event
 │   ├── AuthProvider.tsx     # Client wrapper for NextAuth SessionProvider (used in layout.tsx)
 │   ├── UserMenu.tsx         # Login/logout button — icon + text label ("Sign in" / "Sign out"), matches hamburger nav links
 │   ├── VisionCardGrid.tsx   # Masonry grid of vision cards — CSS columns layout, pastel card tints, AutoAnimate transitions
@@ -135,6 +137,7 @@ src/
     ├── captainQuips.ts      # Daily Captain quip text data — deterministic rotation, 6 priority tiers
     ├── storage.ts           # All data logic: load/save, addXP, leveling, habits, streaks, inventory, vision board, export, etc.
     ├── tracker.ts           # Client-side analytics — track() queues events, batches to /api/events, identifyUser() links anon→auth
+    ├── sync.ts              # Debounced remote sync — queueRemoteSync() debounces PUT to /api/game-data (2s), fetchRemoteGameData() for hydration, flush on visibilitychange/beforeunload
     ├── auth.ts              # NextAuth v5 config — Google OAuth provider, JWT session strategy, Supabase profile upsert on sign-in
     ├── supabase.ts          # Supabase client factories — createServiceClient (server, bypasses RLS) + createBrowserClient (client, subject to RLS)
     ├── adminQueries.ts      # Admin dashboard server-side queries — isAdmin(), getOverviewMetrics(), getMetrics(), getUserSummaries(), getRecentEvents()
@@ -225,7 +228,8 @@ src/types/
 
 ## Key patterns
 
-- All state flows through `GameData` loaded from localStorage on mount in `page.tsx`
+- All state flows through `GameData` loaded from localStorage on mount in `page.tsx`. For authenticated users, `GameDataProvider` fetches from Supabase in the background and overwrites localStorage if server has data (server wins). Pages listen for the `"dreamboard-data-hydrated"` custom DOM event to re-render
+- Every mutation goes through `saveGameData()` → localStorage write + debounced Supabase PUT (2s). `saveGameDataLocal()` exists for the hydration path (writes localStorage without triggering sync, avoiding infinite loops)
 - Helper functions in `storage.ts` derive computed data (monthly totals, streaks, daily breakdowns, habit history)
 - Components receive data as props — no global state library, no context
 - Stat definitions (names, colors, icons) have defaults in `stats.ts` but can be overridden via `customDefinitions` in settings
@@ -301,7 +305,8 @@ src/types/
 
 ## Key exports in `storage.ts`
 
-- `loadGameData()` / `saveGameData(data)` — localStorage read/write
+- `loadGameData()` / `saveGameData(data)` — localStorage read/write + queues debounced Supabase sync for authenticated users
+- `saveGameDataLocal(data)` — localStorage-only write (no remote sync) — used by hydration path to avoid infinite loops
 - `addXP(data, statKey, note, amount?, verdictMessage?)` — log XP (default 1, Judge passes variable amounts), handle level-up, save. `verdictMessage` stores the Judge's sassy verdict text on the Activity and feed event
 - `getXPForNextLevel(level)` — per-stat Fibonacci thresholds
 - `getOverallLevel(totalXP)` — overall player level (EQ curve, max 60)
