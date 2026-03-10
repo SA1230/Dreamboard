@@ -257,6 +257,24 @@ export interface PlayerInventory {
   abilityCooldowns?: Record<string, string>;
 }
 
+// --- Achievements ---
+
+export type AchievementTier = ItemRarity; // common | uncommon | rare | epic | legendary
+
+export type AchievementCategory = "journey" | "rites" | "vigil" | "lore" | "hoard" | "dreamer";
+
+export interface AchievementDefinition {
+  id: string;
+  name: string;
+  description: string;
+  category: AchievementCategory;
+  tier: AchievementTier;
+  /** Hidden until earned — shows "???" in the achievements page */
+  secret: boolean;
+  /** Lucide icon name or StatIcons key */
+  iconKey: string;
+}
+
 // --- Challenges (Judge-issued) ---
 
 /** A challenge issued by the Judge — one active at a time */
@@ -327,7 +345,8 @@ export type FeedEvent =
   | { type: "prize_unlocked"; id: string; timestamp: string; prizeId: string; prizeName: string; unlockLevel: number }
   | { type: "item_reward_unlocked"; id: string; timestamp: string; itemId: string; itemName: string; unlockLevel: number }
   | { type: "challenge_issued"; id: string; timestamp: string; challengeId: string; description: string; stat: StatKey; bonusXP: number }
-  | { type: "challenge_completed"; id: string; timestamp: string; challengeId: string; description: string; stat: StatKey; bonusXP: number };
+  | { type: "challenge_completed"; id: string; timestamp: string; challengeId: string; description: string; stat: StatKey; bonusXP: number; chainId?: string; chainIndex?: number; chainTotal?: number }
+  | { type: "achievement_unlocked"; id: string; timestamp: string; achievementId: string; achievementName: string; tier: AchievementTier };
 
 export interface GameData {
   /** Schema version for data migrations — auto-upgraded on load */
@@ -367,4 +386,6 @@ export interface GameData {
   visionCards?: VisionCard[];
   /** Most recent Board Reading from the Oracle */
   lastBoardReading?: BoardReading;
+  /** IDs of achievements the player has earned — fast dedup lookup */
+  unlockedAchievements?: string[];
 }

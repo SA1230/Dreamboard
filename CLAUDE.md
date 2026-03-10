@@ -94,6 +94,7 @@ src/
 │   ├── calendar/           # Month-at-a-glance view — daily XP totals with habit/damage icons, tap a day to see detail modal
 │   ├── settings/           # Customize stat names, descriptions, colors, icons + enable/disable habits & damage + create custom habits/vices + sound toggle
 │   ├── shop/               # Power-Up Store — buy and equip cosmetic items on Skipper
+│   ├── achievements/       # Achievement gallery — 38 achievements across 6 RPG categories, progress bars, secret achievements
 │   ├── prizes/             # Prize Track — dual-track timeline with system rewards (rank milestones) + user-created IRL prizes
 │   ├── terms/              # Terms of Service — static legal page (company-favorable, binding arbitration, class action waiver)
 │   ├── privacy/            # Privacy Policy — static legal page (local storage model, third-party disclosures, CCPA rights)
@@ -134,6 +135,7 @@ src/
     ├── visionColors.ts      # Vision Board pastel palette (6 colors), MAX_VISION_CARDS constant
     ├── habits.ts            # Habit label definitions, shared emoji mappings, findHabitDefinition (built-in + custom unified lookup)
     ├── damage.ts            # Damage label definitions, shared emoji mappings, findDamageDefinition (built-in + custom unified lookup)
+    ├── achievements.ts     # Achievement definitions (38), categories (6), detection engine, progress helpers
     ├── captainQuips.ts      # Daily Captain quip text data — deterministic rotation, 6 priority tiers
     ├── storage.ts           # All data logic: load/save, addXP, leveling, habits, streaks, inventory, vision board, export, etc.
     ├── tracker.ts           # Client-side analytics — track() queues events, batches to /api/events, identifyUser() links anon→auth
@@ -195,7 +197,10 @@ src/types/
 - **ChainStep** — `{ description, stat, bonusXP }` — a pending step in a challenge chain, waiting to be issued
 - **VisionCard** — `{ id, rawText, weavedText, colorIndex, createdAt, pinned? }` — a dream, goal, or vibe on the Vision Board. `rawText` preserves the user's original words; `weavedText` is the Oracle-enhanced version (or same as `rawText` if AI was skipped). `colorIndex` maps to the 6-color pastel palette in `visionColors.ts`
 - **BoardReading** — `{ id, text, createdAt }` — the Oracle's interpretation of the user's whole vision board
-- **FeedEvent** — discriminated union (`type` field) for the activity feed. Types: `xp_gain`, `habit_completed`, `habit_removed`, `damage_marked`, `damage_removed`, `level_up`, `overall_level_up`, `rank_up`, `prize_unlocked`, `item_reward_unlocked`, `challenge_issued`, `challenge_completed`. Each has `id` + `timestamp` + type-specific fields. `xp_gain` events include optional `verdictMessage` with the Judge's verdict text. `item_reward_unlocked` includes `itemId`, `itemName`, and `unlockLevel`
+- **AchievementTier** — reuses `ItemRarity` (`"common" | "uncommon" | "rare" | "epic" | "legendary"`) — same 5 tiers with same rarity colors
+- **AchievementCategory** — `"journey" | "rites" | "vigil" | "lore" | "hoard" | "dreamer"` — 6 RPG-flavored categories
+- **AchievementDefinition** — `{ id, name, description, category, tier, secret, iconKey }` — static definition of one achievement. `secret` means hidden ("???") until earned. `iconKey` is a lucide icon name (kebab-case)
+- **FeedEvent** — discriminated union (`type` field) for the activity feed. Types: `xp_gain`, `habit_completed`, `habit_removed`, `damage_marked`, `damage_removed`, `level_up`, `overall_level_up`, `rank_up`, `prize_unlocked`, `item_reward_unlocked`, `challenge_issued`, `challenge_completed`, `achievement_unlocked`. Each has `id` + `timestamp` + type-specific fields. `xp_gain` events include optional `verdictMessage` with the Judge's verdict text. `item_reward_unlocked` includes `itemId`, `itemName`, and `unlockLevel`. `achievement_unlocked` includes `achievementId`, `achievementName`, and `tier`
 - **VisibleSlot** — one of 8 strings: `"head"`, `"chest"`, `"legs"`, `"robe"`, `"hands"`, `"feet"`, `"primary"`, `"secondary"` — SVG layers rendered on Skipper
 - **HiddenSlot** — inventory-only slots (rings, ears, neck, shoulders, back, bracers, ranged) — no visual on character, for future stat items
 - **EquipmentSlot** — `VisibleSlot | HiddenSlot`
@@ -217,12 +222,13 @@ src/types/
   - `customDamageDefinitions` is an array of `CustomDamageDefinition` objects — user-created vices with icon, color, and labels. Max 4
   - `pointsWallet` stores `lifetimeSpent` only — `lifetimeEarned` is always recalculated from habit/damage history to prevent sync issues
   - `mascotOverrides` maps level thresholds to mascot image filenames in `public/mascots/` (e.g. `{ 1: "skipper-default.svg", 10: "skipper-cool.svg" }`). Uses threshold logic — picks highest key ≤ current level. Defaults to `skipper-default.svg`
-  - `feedEvents` is an array of `FeedEvent` objects (newest first) — the unified activity feed that captures XP gains, habit toggles, damage toggles, level-ups, rank transitions, prize unlocks, and item reward unlocks. Pushed automatically by `addXP`, `toggleHabitForToday`, `toggleDamageForToday`, `checkPrizeUnlocks`, and `checkItemRewardUnlocks`
+  - `feedEvents` is an array of `FeedEvent` objects (newest first) — the unified activity feed that captures XP gains, habit toggles, damage toggles, level-ups, rank transitions, prize unlocks, item reward unlocks, and achievement unlocks. Pushed automatically by `addXP`, `toggleHabitForToday`, `toggleDamageForToday`, `checkPrizeUnlocks`, `checkItemRewardUnlocks`, and `checkAchievementUnlocks`
   - `prizes` is an array of `Prize` objects — user-created IRL rewards that unlock at specific overall levels. Managed via the Prize Track page (`/prizes`)
   - `activeChallenge` is a `Challenge` object — one active side quest issued by the Judge. Only one at a time. Cleared on completion (awards bonus XP) or dismissal. Can be standalone or part of a chain (has `chainId`, `chainIndex`, `chainTotal`). Managed by `issueChallenge`, `issueChallengeChain`, `completeChallenge`, `dismissChallenge` in `storage.ts`
   - `pendingChainSteps` is an array of `ChainStep` objects — remaining steps in a challenge chain. When the current chain step is completed, the next pending step auto-issues as the new `activeChallenge`. Cleared when the chain completes or is dismissed
   - `visionCards` is an array of `VisionCard` objects — dreams, goals, and vibes on the user's Vision Board. Max 20 cards (enforced by `addVisionCard`). Cards can be pinned (float to top) and have AI-enhanced text from the Oracle
   - `lastBoardReading` is a `BoardReading` object — the Oracle's most recent interpretation of the user's vision board (patterns, themes, future self portrait)
+  - `unlockedAchievements` is an array of achievement ID strings — fast Set-based dedup for the detection engine. Populated by `checkAchievementUnlocks()`, mirrors the `ownedItemIds` pattern
 - **Per-stat leveling:** Fibonacci-ish XP thresholds per stat. Logic in `storage.ts` (`addXP`, `getXPForNextLevel`)
 - **Overall player level:** EQ-inspired curve (max level 60) with "hell levels" at 30/35/40/45/50/55/59. Logic in `storage.ts` (`getOverallLevel`). Rank titles and colors now live in `ranks.ts` as the single source of truth — do not add rank definitions elsewhere
 
@@ -249,6 +255,7 @@ src/types/
 - **Prize Track:** Separate from the Shop (level-based rewards vs currency-based purchases). Dual-track horizontal timeline: system rewards (rank titles) + item rewards on top, user-created IRL prizes on bottom, level progression line in the center. Fog of war hides future brackets — current rank bracket is fully visible, next bracket is teased/dimmed, beyond is hidden. Auto-unlock when level is reached (no claim step), generates `prize_unlocked` and `item_reward_unlocked` feed events. `checkPrizeUnlocks` and `checkItemRewardUnlocks` are called on homepage mount and prizes page mount. Item rewards use rarity-colored cards (from `RARITY_COLORS`) with green checkmark when owned
 - **Challenge system (Side Quests):** The Judge occasionally issues challenges alongside verdicts — one at a time, ~1 in 4-5 verdicts, only when contextually clever. Two formats: standalone (single challenge) and chains (2-3 progressive steps that build on each other). Chains store the first step as `activeChallenge` (with `chainId`, `chainIndex`, `chainTotal`) and remaining steps in `pendingChainSteps`. When a chain step completes, the next step auto-issues. The Judge detects completion during normal activity evaluation. Challenge card is rendered inline in `page.tsx` between the Captain CTA and LevelDisplay — shows "Step X of Y" with progress dots for chains. Challenges generate `challenge_issued` and `challenge_completed` feed events in the ActivityLog
 - **Vision Board:** A cozy, non-gamified mood/inspiration board at `/vision`. Users add vision cards (dreams, goals, vibes) — either as plain text or AI-enhanced by the Oracle. Cards display in a CSS masonry grid (2 columns, `break-inside: avoid`) with 6 soft pastel tints from `visionColors.ts`. The Oracle is a separate AI personality from the Judge — warm, dreamy, poetic instead of sassy. Two AI actions: "weave" (enhance a rough wish into a vivid vision) and "read" (interpret the whole board, find patterns, paint a future-self portrait). 20-card cap encourages curation. Cards can be pinned (float to top). No XP, no stats — the Vision Board is the "why" behind the grind
+- **Achievements:** 38 achievements across 6 RPG-flavored categories (Journey, Rites, Vigil, Lore, Hoard, Dreamer) — purely celebratory trophy case, no PP/item rewards. Tiers reuse `ItemRarity` + `RARITY_COLORS`. Detection follows the `checkPrizeUnlocks` idempotent pattern: pre-compute derived data once, evaluate each condition, generate `achievement_unlocked` feed events + add to `unlockedAchievements` array for dedup. Called on homepage mount (after `checkItemRewardUnlocks`), on Supabase hydration, and after Judge verdicts. Secret achievements show "???" until earned. Progressive achievements show progress bars when locked. Toast notification pill at top of homepage on new unlocks (rarity-colored, 2s auto-dismiss). Nav link in hamburger menu between Prize Track and Vision Board
 - **Error handling:** Errors in `JudgeModal` are caught and displayed as a red system message inline in the chat thread, with a "Dismiss" button. Loading state always resets. Follow this pattern (in-place error display, no retry logic, user-dismissable) for any new API-dependent features
 
 ## Key exports in `stats.ts`
@@ -276,6 +283,17 @@ src/types/
 - `MAX_USER_PRIZES = 15` — soft cap on user-created prizes
 - `getCurrentBracket(level)` — returns `{ start, end }` for the rank bracket containing the given level
 - `getVisibleRange(level)` — returns which brackets are fully visible vs teased (fog of war logic)
+
+## Key exports in `achievements.ts`
+
+- `ACHIEVEMENT_CATEGORIES` — array of 6 category objects `{ id, name, description }` (Journey, Rites of Passage, The Vigil, Lorekeeper, The Hoard, Dreamweaver)
+- `ACHIEVEMENT_DEFINITIONS` — array of 38 `AchievementDefinition` objects (10 common, 10 uncommon, 7 rare, 4 epic, 1 legendary; 5 secret)
+- `getAchievementById(id)` — lookup a single achievement definition
+- `getAchievementsByCategory(categoryId)` — filter definitions by category
+- `getUnlockedAchievements(data)` — returns definitions for all unlocked achievements
+- `isAchievementUnlocked(data, achievementId)` — fast Set-based check
+- `getAchievementProgress(data, achievementId)` — returns `{ current, target }` for progressive achievements (activity count, habit completions, levels, streaks, collections)
+- `checkAchievementUnlocks(data)` — idempotent detection engine: pre-computes derived data, evaluates conditions, generates feed events + updates `unlockedAchievements`. Follows the `checkPrizeUnlocks` pattern
 
 ## Key exports in `items.ts`
 
