@@ -735,9 +735,15 @@ function countTotalHabitCompletions(data: GameData): number {
   return countDateEntries(data.healthyHabits);
 }
 
-// Counts total damage marks across all time
+// Counts total damage marks across all time (only enabled damage types)
 function countTotalDamageMarks(data: GameData): number {
-  return countDateEntries(data.dailyDamage);
+  const enabledKeys = new Set<string>(getEnabledDamage(data));
+  const damage = data.dailyDamage ?? {};
+  let total = 0;
+  for (const [key, dates] of Object.entries(damage)) {
+    if (enabledKeys.has(key) && Array.isArray(dates)) total += dates.length;
+  }
+  return total;
 }
 
 // Calculates effective points using day-by-day floor-at-zero logic.
@@ -749,19 +755,22 @@ export function calculateLifetimePoints(data: GameData): number {
 
 // Process habits and damage chronologically, flooring at 0 each day.
 // This means damage on a bad day doesn't create debt that carries forward.
+// Only enabled damage types count — disabled damage is invisible to the user
+// and should not silently drain PP.
 function calculateEffectivePoints(data: GameData): number {
   const habits = data.healthyHabits ?? {};
   const damage = data.dailyDamage ?? {};
+  const enabledDamageKeys = new Set<string>(getEnabledDamage(data));
 
-  // Collect all unique dates from both habits and damage
+  // Collect all unique dates from habits and enabled damage
   const allDates = new Set<string>();
   for (const dates of Object.values(habits)) {
     if (Array.isArray(dates)) {
       for (const d of dates) allDates.add(d);
     }
   }
-  for (const dates of Object.values(damage)) {
-    if (Array.isArray(dates)) {
+  for (const [key, dates] of Object.entries(damage)) {
+    if (enabledDamageKeys.has(key) && Array.isArray(dates)) {
       for (const d of dates) allDates.add(d);
     }
   }
@@ -777,8 +786,8 @@ function calculateEffectivePoints(data: GameData): number {
     for (const dates of Object.values(habits)) {
       if (Array.isArray(dates) && dates.includes(date)) dayHabits++;
     }
-    for (const dates of Object.values(damage)) {
-      if (Array.isArray(dates) && dates.includes(date)) dayDamage++;
+    for (const [key, dates] of Object.entries(damage)) {
+      if (enabledDamageKeys.has(key) && Array.isArray(dates) && dates.includes(date)) dayDamage++;
     }
 
     balance = Math.max(0, balance + dayHabits - dayDamage);

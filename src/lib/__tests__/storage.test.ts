@@ -236,7 +236,7 @@ describe("calculateLifetimePoints", () => {
     expect(calculateLifetimePoints(makeGameData())).toBe(0);
   });
 
-  it("counts habit completions minus damage", () => {
+  it("counts habit completions minus enabled damage", () => {
     const data = makeGameData({
       healthyHabits: {
         water: ["2026-03-01", "2026-03-02", "2026-03-03"],
@@ -252,13 +252,30 @@ describe("calculateLifetimePoints", () => {
         junkfood: [],
         badsleep: [],
       },
+      enabledDamage: ["substance"],
     });
 
-    // 4 habit completions - 1 damage = 3
+    // 4 habit completions - 1 enabled damage = 3
     expect(calculateLifetimePoints(data)).toBe(3);
   });
 
-  it("floors at 0 when damage exceeds habits", () => {
+  it("ignores disabled damage types in PP calculation", () => {
+    const data = makeGameData({
+      healthyHabits: {
+        water: ["2026-03-01", "2026-03-02", "2026-03-03"],
+      },
+      dailyDamage: {
+        substance: ["2026-03-01"],
+        screentime: ["2026-03-01"],
+      },
+      // No enabledDamage — both damage types are disabled
+    });
+
+    // 3 habits, damage is disabled so doesn't count
+    expect(calculateLifetimePoints(data)).toBe(3);
+  });
+
+  it("floors at 0 when enabled damage exceeds habits", () => {
     const data = makeGameData({
       dailyDamage: {
         substance: ["2026-03-01", "2026-03-02"],
@@ -266,6 +283,7 @@ describe("calculateLifetimePoints", () => {
         junkfood: [],
         badsleep: [],
       },
+      enabledDamage: ["substance"],
     });
 
     expect(calculateLifetimePoints(data)).toBe(0);
@@ -273,7 +291,7 @@ describe("calculateLifetimePoints", () => {
 });
 
 describe("getPointsBalance", () => {
-  it("subtracts spent from earned minus damage", () => {
+  it("subtracts spent from earned minus enabled damage", () => {
     const data = makeGameData({
       healthyHabits: {
         water: ["2026-03-01", "2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05"],
@@ -289,6 +307,7 @@ describe("getPointsBalance", () => {
         junkfood: [],
         badsleep: [],
       },
+      enabledDamage: ["substance"],
       pointsWallet: { lifetimeEarned: 0, lifetimeSpent: 2 },
     });
 
@@ -296,7 +315,25 @@ describe("getPointsBalance", () => {
     expect(balance.lifetimeEarned).toBe(5);
     expect(balance.lifetimeDamage).toBe(1);
     expect(balance.lifetimeSpent).toBe(2);
-    expect(balance.balance).toBe(2); // 5 - 1 - 2
+    expect(balance.balance).toBe(2); // effective 4 (5-1) - spent 2 = 2
+  });
+
+  it("ignores disabled damage in balance", () => {
+    const data = makeGameData({
+      healthyHabits: {
+        water: ["2026-03-01", "2026-03-02", "2026-03-03"],
+      },
+      dailyDamage: {
+        substance: ["2026-03-01"],
+        screentime: ["2026-03-01", "2026-03-02"],
+      },
+      // No enabledDamage — all damage disabled
+    });
+
+    const balance = getPointsBalance(data);
+    expect(balance.lifetimeEarned).toBe(3);
+    expect(balance.lifetimeDamage).toBe(0); // disabled damage doesn't count
+    expect(balance.balance).toBe(3); // all habits count, no damage
   });
 });
 
@@ -465,7 +502,7 @@ describe("calculateLifetimePoints (floor-at-zero)", () => {
     expect(calculateLifetimePoints(data)).toBe(3);
   });
 
-  it("damage reduces balance but not below zero", () => {
+  it("enabled damage reduces balance but not below zero", () => {
     const data = makeGameData({
       healthyHabits: {
         water: ["2026-03-01"],
@@ -475,6 +512,7 @@ describe("calculateLifetimePoints (floor-at-zero)", () => {
         screentime: ["2026-03-01"],
         junkfood: ["2026-03-01"],
       },
+      enabledDamage: ["substance", "screentime", "junkfood"],
     });
     // Day 1: +1 habit, -3 damage = net -2, floored to 0
     expect(calculateLifetimePoints(data)).toBe(0);
@@ -490,6 +528,7 @@ describe("calculateLifetimePoints (floor-at-zero)", () => {
         screentime: ["2026-03-01"],
         junkfood: ["2026-03-01"],
       },
+      enabledDamage: ["substance", "screentime", "junkfood"],
     });
     // Day 1: +1 habit, -3 damage = floored to 0 (no debt)
     // Day 2: +1 habit, 0 damage = balance is 1 (not stuck at 0)
@@ -505,6 +544,7 @@ describe("calculateLifetimePoints (floor-at-zero)", () => {
       dailyDamage: {
         substance: ["2026-03-01"],
       },
+      enabledDamage: ["substance"],
     });
     // Day 1: +1 - 1 = 0, balance = 0
     // Day 2: +2 - 0 = +2, balance = 2
@@ -522,6 +562,7 @@ describe("getPointsBalance (floor-at-zero)", () => {
       dailyDamage: {
         substance: ["2026-03-01"],
       },
+      enabledDamage: ["substance"],
       pointsWallet: { lifetimeEarned: 0, lifetimeSpent: 1 },
     });
     // Day 1: +1 -1 = 0. Day 2: +1 = 1. Day 3: +1 = 2.
@@ -530,6 +571,130 @@ describe("getPointsBalance (floor-at-zero)", () => {
     expect(result.balance).toBe(1);
     expect(result.lifetimeEarned).toBe(3);
     expect(result.lifetimeDamage).toBe(1);
+  });
+});
+
+// ─── PP counter after habit toggle (regression test) ───
+
+describe("PP counter after toggling habits", () => {
+  it("balance increases by 1 after checking a single habit for yesterday", () => {
+    const data = makeGameData();
+    const yesterday = getYesterdayString();
+
+    // Toggle one habit on for yesterday
+    const newData = toggleHabitForDate(data, "water", yesterday);
+    const balance = getPointsBalance(newData);
+
+    expect(balance.lifetimeEarned).toBe(1);
+    expect(balance.balance).toBe(1);
+  });
+
+  it("balance increases correctly after checking multiple habits for same day", () => {
+    const data = makeGameData();
+    const yesterday = getYesterdayString();
+
+    let newData = toggleHabitForDate(data, "water", yesterday);
+    newData = toggleHabitForDate(newData, "brush", yesterday);
+    newData = toggleHabitForDate(newData, "floss", yesterday);
+    const balance = getPointsBalance(newData);
+
+    expect(balance.lifetimeEarned).toBe(3);
+    expect(balance.balance).toBe(3);
+  });
+
+  it("balance decreases by 1 after unchecking a habit", () => {
+    const yesterday = getYesterdayString();
+    const data = makeGameData({
+      healthyHabits: { water: [yesterday], brush: [yesterday] },
+    });
+
+    // Uncheck water
+    const newData = toggleHabitForDate(data, "water", yesterday);
+    const balance = getPointsBalance(newData);
+
+    expect(balance.lifetimeEarned).toBe(1);
+    expect(balance.balance).toBe(1);
+  });
+
+  it("balance goes to 0 when unchecking the only habit", () => {
+    const yesterday = getYesterdayString();
+    const data = makeGameData({
+      healthyHabits: { water: [yesterday] },
+    });
+
+    const newData = toggleHabitForDate(data, "water", yesterday);
+    const balance = getPointsBalance(newData);
+
+    expect(balance.lifetimeEarned).toBe(0);
+    expect(balance.balance).toBe(0);
+  });
+
+  it("toggle on then off returns to original balance", () => {
+    const yesterday = getYesterdayString();
+    const data = makeGameData();
+
+    const originalBalance = getPointsBalance(data).balance;
+    let newData = toggleHabitForDate(data, "water", yesterday);
+    newData = toggleHabitForDate(newData, "water", yesterday); // toggle off
+    const finalBalance = getPointsBalance(newData).balance;
+
+    expect(finalBalance).toBe(originalBalance);
+  });
+
+  it("habits on different days each add +1 PP", () => {
+    const data = makeGameData();
+    const yesterday = getYesterdayString();
+    // 2 days ago
+    const twoDaysAgo = (() => {
+      const now = new Date();
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    })();
+
+    let newData = toggleHabitForDate(data, "water", yesterday);
+    newData = toggleHabitForDate(newData, "water", twoDaysAgo);
+    const balance = getPointsBalance(newData);
+
+    expect(balance.lifetimeEarned).toBe(2);
+    expect(balance.balance).toBe(2);
+  });
+
+  it("unchecking never produces a negative balance", () => {
+    const yesterday = getYesterdayString();
+    // Start with 1 habit and 1 damage — net 0 for the day
+    const data = makeGameData({
+      healthyHabits: { water: [yesterday] },
+      dailyDamage: { substance: [yesterday] },
+      enabledDamage: ["substance"],
+    });
+    expect(getPointsBalance(data).balance).toBe(0);
+
+    // Uncheck the habit — should stay at 0, not go to -1
+    const newData = toggleHabitForDate(data, "water", yesterday);
+    expect(getPointsBalance(newData).balance).toBe(0);
+  });
+
+  it("unchecking with damage still present doesn't cause underflow across days", () => {
+    const yesterday = getYesterdayString();
+    const twoDaysAgo = (() => {
+      const now = new Date();
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    })();
+
+    // Day 1: 2 habits, 1 damage → net +1 → balance 1
+    // Day 2: 1 habit, 2 damage → net -1 → balance max(0, 1 + 1 - 2) = 0
+    const data = makeGameData({
+      healthyHabits: { water: [twoDaysAgo, yesterday], brush: [twoDaysAgo] },
+      dailyDamage: { substance: [twoDaysAgo], screentime: [yesterday], junkfood: [yesterday] },
+      enabledDamage: ["substance", "screentime", "junkfood"],
+    });
+    expect(getPointsBalance(data).balance).toBe(0);
+
+    // Uncheck yesterday's habit — day 2 becomes 0 habits, 2 damage → net -2
+    // But day 1 balance was 1, so day 2 = max(0, 1 + 0 - 2) = 0 still
+    const newData = toggleHabitForDate(data, "water", yesterday);
+    expect(getPointsBalance(newData).balance).toBe(0);
   });
 });
 
