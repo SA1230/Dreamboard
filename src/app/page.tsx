@@ -55,33 +55,33 @@ function LandingPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-6 sm:py-8">
-      <div className="w-full max-w-md sm:max-w-xl lg:max-w-2xl flex flex-col items-center bg-white/60 sm:rounded-3xl sm:border sm:border-stone-200/60 sm:py-10 lg:py-12 sm:px-10 lg:px-16 py-0 px-2">
+      <div className="w-full max-w-md sm:max-w-xl lg:max-w-2xl xl:max-w-3xl flex flex-col items-center bg-white/60 sm:rounded-3xl sm:border sm:border-stone-200/60 sm:py-10 lg:py-14 xl:py-16 sm:px-10 lg:px-16 xl:px-20 py-0 px-2">
         {/* Logo */}
-        <div className="flex items-center gap-2 sm:gap-3 mb-8 sm:mb-10">
+        <div className="flex items-center gap-2 sm:gap-3 mb-8 sm:mb-10 lg:mb-12">
           <img src="/logos/dreamboard-icon-blue.svg" alt="" className="h-10 sm:h-14 lg:h-16" />
           <img src="/brand/dreamboard-wordmark-blue.svg" alt="Dreamboard" className="h-10 sm:h-14 lg:h-16" />
         </div>
 
         {/* Skipper hero */}
-        <div className="relative mb-6 sm:mb-8">
+        <div className="relative mb-6 sm:mb-8 lg:mb-10">
           <div
-            className="w-32 h-32 sm:w-40 sm:h-40 rounded-full flex items-center justify-center border-2 border-amber-200"
+            className="w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 rounded-full flex items-center justify-center border-2 border-amber-200"
             style={{ background: "radial-gradient(circle at 50% 40%, #FFF8EB, #FFF0D4)" }}
           >
             <img
               src="/mascots/judge-hero.svg"
               alt="Skipper the Captain"
-              className="w-24 h-24 sm:w-32 sm:h-32"
+              className="w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40"
             />
           </div>
         </div>
 
         {/* Stat preview chips */}
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-8 sm:mb-10 max-w-xs sm:max-w-md">
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 lg:gap-3.5 mb-8 sm:mb-10 lg:mb-12 max-w-xs sm:max-w-md lg:max-w-lg">
           {statPreviews.map((stat) => (
             <span
               key={stat.name}
-              className="inline-flex items-center gap-1.5 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium"
+              className="inline-flex items-center gap-1.5 px-3 py-1 sm:px-4 sm:py-1.5 lg:px-5 lg:py-2 rounded-full text-xs sm:text-sm font-medium"
               style={{
                 backgroundColor: stat.color + "15",
                 color: stat.color,
@@ -96,7 +96,7 @@ function LandingPage() {
         {/* Sign up CTA */}
         <button
           onClick={() => signIn("google")}
-          className="flex items-center gap-3 px-6 py-3 sm:px-8 sm:py-4 rounded-xl text-sm sm:text-base font-bold text-white shadow-md hover:shadow-lg hover:scale-105 transition-all active:scale-[0.98]"
+          className="flex items-center gap-3 px-6 py-3 sm:px-8 sm:py-4 lg:px-10 lg:py-4 rounded-xl text-sm sm:text-base lg:text-lg font-bold text-white shadow-md hover:shadow-lg hover:scale-105 transition-all active:scale-[0.98]"
           style={{
             background: "linear-gradient(90deg, #B4722A 0%, #D4A44A 30%, #F5D680 50%, #D4A44A 70%, #B4722A 100%)",
             backgroundSize: "200% 100%",
