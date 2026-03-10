@@ -213,6 +213,11 @@ export interface ShopItem {
   augSlots?: number;
   /** Whether this item levels up with use (future) */
   evolving?: boolean;
+
+  // --- Level reward ---
+
+  /** Overall level at which this item is automatically granted as a reward (no PP cost). Only used by LEVEL_REWARD_ITEMS */
+  levelReward?: number;
 }
 
 export interface PlayerInventory {
@@ -290,6 +295,7 @@ export type FeedEvent =
   | { type: "overall_level_up"; id: string; timestamp: string; newLevel: number; previousLevel: number }
   | { type: "rank_up"; id: string; timestamp: string; newRank: string; newLevel: number }
   | { type: "prize_unlocked"; id: string; timestamp: string; prizeId: string; prizeName: string; unlockLevel: number }
+  | { type: "item_reward_unlocked"; id: string; timestamp: string; itemId: string; itemName: string; unlockLevel: number }
   | { type: "challenge_issued"; id: string; timestamp: string; challengeId: string; description: string; stat: StatKey; bonusXP: number }
   | { type: "challenge_completed"; id: string; timestamp: string; challengeId: string; description: string; stat: StatKey; bonusXP: number };
 

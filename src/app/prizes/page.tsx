@@ -12,6 +12,8 @@ import {
   updatePrize,
   deletePrize,
   checkPrizeUnlocks,
+  checkItemRewardUnlocks,
+  getInventory,
 } from "@/lib/storage";
 import { MAX_USER_PRIZES } from "@/lib/prizes";
 import { getRankTitle } from "@/lib/ranks";
@@ -49,7 +51,8 @@ function PrizesPageContent() {
     const data = loadGameData();
     const totalXP = getTotalLifetimeXP(data);
     const { level } = getOverallLevel(totalXP);
-    const updated = checkPrizeUnlocks(data, level);
+    const afterPrizes = checkPrizeUnlocks(data, level);
+    const updated = checkItemRewardUnlocks(afterPrizes, level);
     setGameData(updated);
   }, []);
 
@@ -103,9 +106,10 @@ function PrizesPageContent() {
     }
 
     if (result) {
-      // Check for newly unlocked prizes after add/edit
+      // Check for newly unlocked prizes/items after add/edit
       const level = getOverallLevel(getTotalLifetimeXP(result)).level;
-      const updated = checkPrizeUnlocks(result, level);
+      const afterPrizes = checkPrizeUnlocks(result, level);
+      const updated = checkItemRewardUnlocks(afterPrizes, level);
       setGameData(updated);
       closeForm();
     }
@@ -158,6 +162,7 @@ function PrizesPageContent() {
           currentLevel={currentLevel}
           prizes={prizes}
           onEditPrize={openEditForm}
+          ownedItemIds={gameData ? getInventory(gameData).ownedItemIds : []}
         />
 
         {/* Empty state for user prizes */}

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { GameData, StatKey, HabitKey, DamageKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForDate, toggleDamageForDate, isHabitCompletedForDate, isDamageMarkedForDate, formatRelativeTime, getInventory, getMascotName, checkPrizeUnlocks, issueChallenge, issueChallengeChain, completeChallenge, dismissChallenge } from "@/lib/storage";
+import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForDate, toggleDamageForDate, isHabitCompletedForDate, isDamageMarkedForDate, formatRelativeTime, getInventory, getMascotName, checkPrizeUnlocks, checkItemRewardUnlocks, issueChallenge, issueChallengeChain, completeChallenge, dismissChallenge } from "@/lib/storage";
 import { StatCard } from "@/components/StatCard";
 import { StatIcon } from "@/components/StatIcons";
 import { JudgeModal } from "@/components/JudgeModal";
@@ -175,7 +175,8 @@ function AuthenticatedHome() {
     const data = loadGameData();
     const totalXP = getTotalLifetimeXP(data);
     const { level } = getOverallLevel(totalXP);
-    const updated = checkPrizeUnlocks(data, level);
+    const afterPrizes = checkPrizeUnlocks(data, level);
+    const updated = checkItemRewardUnlocks(afterPrizes, level);
     setGameData(updated);
   }, []);
 

@@ -1,15 +1,25 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { Prize } from "@/lib/types";
+import { Prize, ShopItem } from "@/lib/types";
 import { SYSTEM_REWARDS, getVisibleRange, SystemReward } from "@/lib/prizes";
 import { getRankColorPair } from "@/lib/ranks";
-import { Lock, Trophy, ExternalLink, Gift, Check } from "lucide-react";
+import { getLevelRewardItems, RARITY_COLORS } from "@/lib/items";
+import { Lock, Trophy, ExternalLink, Gift, Check, Sword, Shield } from "lucide-react";
 
 interface PrizeTimelineProps {
   currentLevel: number;
   prizes: Prize[];
   onEditPrize: (prize: Prize) => void;
+  ownedItemIds?: string[];
+}
+
+const REWARD_ITEMS = getLevelRewardItems();
+
+function getItemIcon(slot: string) {
+  if (slot === "secondary") return Shield;
+  if (slot === "primary") return Sword;
+  return Sword;
 }
 
 // Merge system reward levels + user prize levels + current level into sorted unique positions
@@ -24,6 +34,13 @@ function getTimelinePositions(
   for (const reward of SYSTEM_REWARDS) {
     if (reward.level <= (visibleRange.teased?.end ?? visibleRange.fullyVisible.end)) {
       levels.add(reward.level);
+    }
+  }
+
+  // All item reward levels that are visible
+  for (const item of REWARD_ITEMS) {
+    if (item.levelReward! <= (visibleRange.teased?.end ?? visibleRange.fullyVisible.end)) {
+      levels.add(item.levelReward!);
     }
   }
 
@@ -50,7 +67,7 @@ function getNodeState(
   return "hidden";
 }
 
-export function PrizeTimeline({ currentLevel, prizes, onEditPrize }: PrizeTimelineProps) {
+export function PrizeTimeline({ currentLevel, prizes, onEditPrize, ownedItemIds = [] }: PrizeTimelineProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const currentLevelRef = useRef<HTMLDivElement>(null);
 
@@ -69,6 +86,16 @@ export function PrizeTimeline({ currentLevel, prizes, onEditPrize }: PrizeTimeli
     existing.push(prize);
     prizesByLevel.set(prize.unlockLevel, existing);
   }
+
+  const itemRewardsByLevel = new Map<number, ShopItem[]>();
+  for (const item of REWARD_ITEMS) {
+    const level = item.levelReward!;
+    const existing = itemRewardsByLevel.get(level) ?? [];
+    existing.push(item);
+    itemRewardsByLevel.set(level, existing);
+  }
+
+  const ownedSet = new Set(ownedItemIds);
 
   // Scroll to current level on mount
   useEffect(() => {
@@ -166,51 +193,107 @@ export function PrizeTimeline({ currentLevel, prizes, onEditPrize }: PrizeTimeli
               }}
               ref={isCurrent ? currentLevelRef : undefined}
             >
-              {/* Top track: System rewards */}
+              {/* Top track: System rewards + Item rewards */}
               <div className="h-[148px] flex flex-col justify-end items-center pb-0 overflow-visible">
-                {systemReward && (
-                  <>
-                    <div
-                      className={`relative rounded-xl px-3 py-2.5 text-center w-[116px] border overflow-visible ${
-                        isUnlocked
-                          ? "border-stone-300 bg-white/80"
-                          : "border-stone-200 bg-stone-50"
-                      }`}
-                    >
-                      {/* Earned badge — shows for completed AND current rank */}
-                      {isUnlocked && !isTeased && (
-                        <div className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-emerald-400 flex items-center justify-center z-10">
-                          <Check size={12} className="text-white" strokeWidth={3} />
+                {(() => {
+                  const levelItemRewards = itemRewardsByLevel.get(level) ?? [];
+                  const hasTopContent = systemReward || levelItemRewards.length > 0;
+                  if (!hasTopContent) return null;
+
+                  return (
+                    <>
+                      {/* Item reward cards */}
+                      {levelItemRewards.map((item) => {
+                        const rarityColors = RARITY_COLORS[item.rarity];
+                        const isOwned = ownedSet.has(item.id);
+                        const ItemIcon = getItemIcon(item.slot);
+
+                        return (
+                          <div
+                            key={item.id}
+                            className="relative rounded-xl px-3 py-2.5 text-center w-[116px] border overflow-visible mb-1"
+                            style={{
+                              borderColor: isUnlocked ? rarityColors.border : "#e7e5e4",
+                              backgroundColor: isUnlocked ? rarityColors.background : "#fafaf9",
+                            }}
+                          >
+                            {/* Owned badge */}
+                            {isOwned && !isTeased && (
+                              <div className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-emerald-400 flex items-center justify-center z-10">
+                                <Check size={12} className="text-white" strokeWidth={3} />
+                              </div>
+                            )}
+                            {isTeased ? (
+                              <Lock size={18} className="mx-auto text-stone-300 mb-1" />
+                            ) : (
+                              <ItemIcon
+                                size={18}
+                                className="mx-auto mb-1"
+                                style={{ color: isUnlocked ? rarityColors.text : "#a8a29e" }}
+                              />
+                            )}
+                            <p
+                              className="text-xs font-bold leading-tight line-clamp-2"
+                              style={{ color: isUnlocked ? rarityColors.text : "#a8a29e" }}
+                            >
+                              {item.name}
+                            </p>
+                            <p
+                              className="text-[10px] leading-tight mt-0.5 capitalize"
+                              style={{ color: isTeased ? "#d6d3d1" : rarityColors.text, opacity: 0.7 }}
+                            >
+                              {item.rarity}
+                            </p>
+                          </div>
+                        );
+                      })}
+
+                      {/* System reward card */}
+                      {systemReward && (
+                        <div
+                          className={`relative rounded-xl px-3 py-2.5 text-center w-[116px] border overflow-visible ${
+                            isUnlocked
+                              ? "border-stone-300 bg-white/80"
+                              : "border-stone-200 bg-stone-50"
+                          }`}
+                        >
+                          {/* Earned badge — shows for completed AND current rank */}
+                          {isUnlocked && !isTeased && (
+                            <div className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-emerald-400 flex items-center justify-center z-10">
+                              <Check size={12} className="text-white" strokeWidth={3} />
+                            </div>
+                          )}
+                          {isTeased ? (
+                            <Lock size={18} className="mx-auto text-stone-300 mb-1" />
+                          ) : (
+                            <Trophy
+                              size={18}
+                              className="mx-auto mb-1"
+                              style={{ color: isUnlocked ? rankStartColor : "#a8a29e" }}
+                            />
+                          )}
+                          <p
+                            className="text-xs font-bold leading-tight"
+                            style={{ color: isUnlocked ? rankStartColor : "#a8a29e" }}
+                          >
+                            {systemReward.title}
+                          </p>
+                          <p className="text-[10px] text-stone-400 leading-tight mt-0.5">
+                            Lv. {systemReward.level}
+                          </p>
                         </div>
                       )}
-                      {isTeased ? (
-                        <Lock size={18} className="mx-auto text-stone-300 mb-1" />
-                      ) : (
-                        <Trophy
-                          size={18}
-                          className="mx-auto mb-1"
-                          style={{ color: isUnlocked ? rankStartColor : "#a8a29e" }}
-                        />
-                      )}
-                      <p
-                        className="text-xs font-bold leading-tight"
-                        style={{ color: isUnlocked ? rankStartColor : "#a8a29e" }}
-                      >
-                        {systemReward.title}
-                      </p>
-                      <p className="text-[10px] text-stone-400 leading-tight mt-0.5">
-                        Lv. {systemReward.level}
-                      </p>
-                    </div>
-                    {/* Connector line down to dot */}
-                    <div
-                      className="w-[1px] flex-1 min-h-[8px]"
-                      style={{
-                        backgroundColor: isUnlocked ? "#d6d3d1" : "#e7e5e4",
-                      }}
-                    />
-                  </>
-                )}
+
+                      {/* Connector line down to dot */}
+                      <div
+                        className="w-[1px] flex-1 min-h-[8px]"
+                        style={{
+                          backgroundColor: isUnlocked ? "#d6d3d1" : "#e7e5e4",
+                        }}
+                      />
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Center: Level marker */}

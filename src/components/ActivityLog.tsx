@@ -7,7 +7,8 @@ import { StatDefinition } from "@/lib/stats";
 import { HABIT_DEFINITIONS, HABIT_PAST_LABELS } from "@/lib/habits";
 import { DAMAGE_DEFINITIONS, DAMAGE_PAST_LABELS } from "@/lib/damage";
 import { StatIcon } from "./StatIcons";
-import { Trophy } from "lucide-react";
+import { Trophy, Sword } from "lucide-react";
+import { getItemById, RARITY_COLORS } from "@/lib/items";
 
 interface ActivityLogProps {
   feedEvents: FeedEvent[];
@@ -386,6 +387,37 @@ function PrizeUnlockedRow({ event }: { event: Extract<FeedEvent, { type: "prize_
   );
 }
 
+function ItemRewardUnlockedRow({ event }: { event: Extract<FeedEvent, { type: "item_reward_unlocked" }> }) {
+  const item = getItemById(event.itemId);
+  const rarityColors = item ? RARITY_COLORS[item.rarity] : RARITY_COLORS.common;
+
+  return (
+    <div
+      className="flex items-center gap-3 px-4 py-3 rounded-xl border-2"
+      style={{
+        background: rarityColors.background,
+        borderColor: rarityColors.border,
+      }}
+    >
+      <div
+        className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center border"
+        style={{ backgroundColor: rarityColors.background, borderColor: rarityColors.border }}
+      >
+        <Sword size={16} style={{ color: rarityColors.text }} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <span className="text-xs font-bold" style={{ color: rarityColors.text }}>Item Reward!</span>
+        <p className="text-xs" style={{ color: rarityColors.text, opacity: 0.8 }}>
+          {event.itemName} <span className="text-stone-300">at Lv. {event.unlockLevel}</span>
+        </p>
+      </div>
+      <span className="text-xs text-stone-300 flex-shrink-0">
+        {formatTimestamp(event.timestamp)}
+      </span>
+    </div>
+  );
+}
+
 function ChallengeIssuedRow({ event, definitions }: { event: Extract<FeedEvent, { type: "challenge_issued" }>; definitions: Record<StatKey, StatDefinition> }) {
   const definition = definitions[event.stat];
   return (
@@ -569,6 +601,8 @@ export function ActivityLog({ feedEvents, definitions }: ActivityLogProps) {
             return <RankUpRow key={event.id} event={event} />;
           case "prize_unlocked":
             return <PrizeUnlockedRow key={event.id} event={event} />;
+          case "item_reward_unlocked":
+            return <ItemRewardUnlockedRow key={event.id} event={event} />;
           case "challenge_issued":
             return <ChallengeIssuedRow key={event.id} event={event} definitions={definitions} />;
           case "challenge_completed":
