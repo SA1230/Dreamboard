@@ -91,7 +91,7 @@ src/
 │   ├── global-error.tsx    # App Router error boundary — captures React rendering errors to Sentry
 │   ├── admin/              # Admin analytics dashboard — KPI cards, charts, heatmap, retention, user table, live feed
 │   ├── calendar/           # Month-at-a-glance view — daily XP totals with habit/damage icons, tap a day to see detail modal
-│   ├── settings/           # Customize stat names, descriptions, colors, icons + enable/disable habits & damage + sound toggle
+│   ├── settings/           # Customize stat names, descriptions, colors, icons + enable/disable habits & damage + create custom habits/vices + sound toggle
 │   ├── shop/               # Power-Up Store — buy and equip cosmetic items on Skipper
 │   ├── prizes/             # Prize Track — dual-track timeline with system rewards (rank milestones) + user-created IRL prizes
 │   ├── terms/              # Terms of Service — static legal page (company-favorable, binding arbitration, class action waiver)
@@ -130,8 +130,8 @@ src/
     ├── items.ts             # Item catalog (ITEM_CATALOG), rarity colors, slot definitions, helpers
     ├── itemSvgs.ts          # SVG content registry for equippable items (placeholder art)
     ├── visionColors.ts      # Vision Board pastel palette (6 colors), MAX_VISION_CARDS constant
-    ├── habits.ts            # Habit label definitions and shared emoji mappings
-    ├── damage.ts            # Damage label definitions and shared emoji mappings
+    ├── habits.ts            # Habit label definitions, shared emoji mappings, findHabitDefinition (built-in + custom unified lookup)
+    ├── damage.ts            # Damage label definitions, shared emoji mappings, findDamageDefinition (built-in + custom unified lookup)
     ├── captainQuips.ts      # Daily Captain quip text data — deterministic rotation, 6 priority tiers
     ├── storage.ts           # All data logic: load/save, addXP, leveling, habits, streaks, inventory, vision board, export, etc.
     ├── tracker.ts           # Client-side analytics — track() queues events, batches to /api/events, identifyUser() links anon→auth
@@ -181,8 +181,10 @@ src/types/
 ## Data model (defined in `src/lib/types.ts`)
 
 - **StatKey** — one of 8 strings: `"strength"`, `"wisdom"`, `"vitality"`, etc.
-- **HabitKey** — one of 6 strings: `"water"`, `"nails"`, `"brush"`, `"nosugar"`, `"floss"`, `"steps"`
-- **DamageKey** — one of 4 strings: `"substance"`, `"screentime"`, `"junkfood"`, `"badsleep"`
+- **HabitKey** — one of 6 built-in strings: `"water"`, `"nails"`, `"brush"`, `"nosugar"`, `"floss"`, `"steps"`. Custom habits use dynamic `string` keys prefixed with `"custom_habit_"`
+- **DamageKey** — one of 4 built-in strings: `"substance"`, `"screentime"`, `"junkfood"`, `"badsleep"`. Custom damage uses dynamic `string` keys prefixed with `"custom_damage_"`
+- **CustomHabitDefinition** — `{ key, label, pastTenseLabel, completedLabel, description, iconKey, color, enabledBackground, createdAt }` — user-created habit stored in `GameData.customHabitDefinitions`. Max 6 (`MAX_CUSTOM_HABITS`)
+- **CustomDamageDefinition** — `{ key, label, pastTenseLabel, description, iconKey, color, enabledBackground, createdAt }` — user-created vice stored in `GameData.customDamageDefinitions`. Max 4 (`MAX_CUSTOM_DAMAGE`)
 - **PointsWallet** — `{ lifetimeEarned, lifetimeSpent }` — tracks Power Points spending (earned is always derived from source data)
 - **Activity** — `{ id, stat, note, timestamp, amount?, verdictMessage? }` — one logged action. `amount` defaults to 1 for legacy entries; Judge awards variable amounts (1-10). `verdictMessage` stores the Judge's full sassy verdict text
 - **Prize** — `{ id, name, unlockLevel, link?, createdAt }` — a user-created IRL prize that unlocks at a specific overall level
@@ -203,11 +205,13 @@ src/types/
 - **EquipmentBonuses** — `{ statModifiers, secondaryStats, resistances }` — aggregated bonuses from all equipped items. `statModifiers` maps `StatKey` → `{ flatBonus }`. Computed by `getEquippedBonuses()`
 - **ShopItem** — `{ id, name, description, slot, rarity, cost, levelRequirement?, svgAssetKey?, overridesSlots?, statModifiers?, secondaryStats?, resistances?, weaponStats?, weight?, material?, focusEffect?, levelReward? }` — item definition with EQ-style stat bundles. `overridesSlots` lets robes hide chest+legs visuals. All stat fields are optional (common items may have none). `levelReward` marks level-up reward items (overall level at which the item is auto-granted)
 - **PlayerInventory** — `{ ownedItemIds: string[], equippedItems: Partial<Record<EquipmentSlot, string>> }` — owned items + slot-to-itemId mapping
-- **GameData** — the root object stored in localStorage: `{ stats, activities, customDefinitions?, healthyHabits?, enabledHabits?, dailyDamage?, enabledDamage?, pointsWallet?, mascotOverrides?, feedEvents?, inventory?, prizes?, activeChallenge?, pendingChainSteps? }`
+- **GameData** — the root object stored in localStorage: `{ stats, activities, customDefinitions?, healthyHabits?, enabledHabits?, customHabitDefinitions?, dailyDamage?, enabledDamage?, customDamageDefinitions?, pointsWallet?, mascotOverrides?, feedEvents?, inventory?, prizes?, activeChallenge?, pendingChainSteps? }`
   - `healthyHabits` maps each `HabitKey` to an array of `"YYYY-MM-DD"` date strings (days the habit was completed)
-  - `enabledHabits` is an array of `HabitKey` values that should be visible on the dashboard (defaults to the original 4 if not set)
+  - `enabledHabits` is an array of `string` keys (built-in `HabitKey` + custom keys) visible on the dashboard (defaults to the original 4 if not set)
+  - `customHabitDefinitions` is an array of `CustomHabitDefinition` objects — user-created habits with icon, color, and labels. Max 6
   - `dailyDamage` maps each `DamageKey` to an array of `"YYYY-MM-DD"` date strings (days the damage was marked)
-  - `enabledDamage` is an array of `DamageKey` values visible on dashboard (defaults to all 4 if not set)
+  - `enabledDamage` is an array of `string` keys (built-in `DamageKey` + custom keys) visible on dashboard (defaults to empty if not set)
+  - `customDamageDefinitions` is an array of `CustomDamageDefinition` objects — user-created vices with icon, color, and labels. Max 4
   - `pointsWallet` stores `lifetimeSpent` only — `lifetimeEarned` is always recalculated from habit/damage history to prevent sync issues
   - `mascotOverrides` maps level thresholds to mascot image filenames in `public/mascots/` (e.g. `{ 1: "skipper-default.svg", 10: "skipper-cool.svg" }`). Uses threshold logic — picks highest key ≤ current level. Defaults to `skipper-default.svg`
   - `feedEvents` is an array of `FeedEvent` objects (newest first) — the unified activity feed that captures XP gains, habit toggles, damage toggles, level-ups, rank transitions, prize unlocks, and item reward unlocks. Pushed automatically by `addXP`, `toggleHabitForToday`, `toggleDamageForToday`, `checkPrizeUnlocks`, and `checkItemRewardUnlocks`
@@ -313,6 +317,9 @@ src/types/
 - `isDamageMarkedToday(data, damageKey)` / `toggleDamageForToday(data, damageKey)` — daily damage toggle
 - `getDamageByDay(data, year, month)` — damage grouped by calendar day
 - `getEnabledDamage(data)` / `saveEnabledDamage(data, enabledDamage)` — which damage types are visible on dashboard
+- `generateCustomKey(prefix, label)` — creates unique key for custom habits/damage (e.g. `"custom_habit_meditation_1710000000"`)
+- `getCustomHabits(data)` / `addCustomHabit(data, def)` / `deleteCustomHabit(data, key)` — CRUD for custom habit definitions
+- `getCustomDamage(data)` / `addCustomDamage(data, def)` / `deleteCustomDamage(data, key)` — CRUD for custom damage definitions
 - `calculateLifetimePoints(data)` — derives total Power Points earned from habit/damage history
 - `getPointsBalance(data)` — returns `{ lifetimeEarned, lifetimeSpent, balance }`
 - `spendPoints(data, amount)` — deducts from wallet (returns null if insufficient balance)
