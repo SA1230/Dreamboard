@@ -21,6 +21,9 @@ const ALLOWED_EVENT_TYPES = new Set([
   "shop_purchase",
   "feature_used",
   "user_identified",
+  "onboarding_started",
+  "judge_modal_opened",
+  "onboarding_completed",
 ]);
 
 export async function POST(request: NextRequest) {

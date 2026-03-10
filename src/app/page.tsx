@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { GameData, StatKey, HabitKey, DamageKey } from "@/lib/types";
 import { STAT_KEYS } from "@/lib/stats";
@@ -168,6 +168,21 @@ function AuthenticatedHome() {
     setGameData(updated);
   }, []);
 
+  // Auto-open Judge for first-time users after a brief delay
+  const hasAutoOpenedJudge = useRef(false);
+  useEffect(() => {
+    if (!gameData) return;
+    if (gameData.activities.length === 0 && !hasAutoOpenedJudge.current) {
+      hasAutoOpenedJudge.current = true;
+      track("onboarding_started", {});
+      const timer = setTimeout(() => {
+        setShowJudge(true);
+        track("judge_modal_opened", { source: "auto_open_first_run" });
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [gameData]);
+
   // Merge custom overrides with defaults
   const definitions = useMemo(() => {
     if (!gameData) return null;
@@ -316,6 +331,14 @@ function AuthenticatedHome() {
 
       setGameData(currentData);
       setShowJudge(false);
+
+      // Track onboarding completion on first-ever verdict
+      if (gameData.activities.length === 0) {
+        track("onboarding_completed", {
+          statsAwarded: awards.map((a) => a.stat),
+          totalXP: awards.reduce((sum, a) => sum + a.amount, 0),
+        });
+      }
 
       // Track XP earned event
       track("xp_earned", {
@@ -499,7 +522,7 @@ function AuthenticatedHome() {
               judge your effort with some sass, and award XP across your stats.
             </p>
             <p className="text-xs text-stone-400 mt-3">
-              Tap below to log your first activity and start leveling up.
+              Your stats start at zero. Each one grows as you log activities.
             </p>
           </div>
         </div>
@@ -509,7 +532,13 @@ function AuthenticatedHome() {
       {isFirstRun ? (
         <div className="mb-6">
           <button
-            onClick={() => setShowJudge(true)}
+            onClick={() => {
+              setShowJudge(true);
+              if (!hasAutoOpenedJudge.current) {
+                hasAutoOpenedJudge.current = true;
+                track("judge_modal_opened", { source: "manual_tap" });
+              }
+            }}
             className="relative w-full flex flex-col items-center pt-12 pb-4 px-8 rounded-2xl border border-amber-200/60 hover:border-amber-300 transition-all cursor-pointer group active:scale-[0.98]"
             style={{
               background: "radial-gradient(ellipse at 50% -10%, rgba(252, 211, 77, 0.15) 0%, transparent 60%), linear-gradient(to bottom, #FFF8EB, #FFF0D4)",
@@ -583,7 +612,7 @@ function AuthenticatedHome() {
 
       {/* Chat with Skipper */}
       {!isFirstRun && (
-        <div className="mb-4">
+        <div className="mb-4 animate-fadeIn">
           <button
             onClick={() => {
               setShowCompanion(true);
@@ -749,7 +778,7 @@ function AuthenticatedHome() {
 
       {/* Monthly XP Summary — below stat cards for returning users */}
       {!isFirstRun && (
-        <div className="mb-8">
+        <div className="mb-8 animate-fadeIn">
           <MonthlyXPSummary
             currentMonthXP={monthlyXP.currentMonthXP}
             lastMonthXP={monthlyXP.lastMonthXP}
@@ -764,7 +793,7 @@ function AuthenticatedHome() {
 
       {/* Activity Log — hidden for first-run users */}
       {!isFirstRun && (
-        <section>
+        <section className="animate-fadeIn">
           <div className="flex items-center mb-4">
             <button
               onClick={() => setIsActivityExpanded(!isActivityExpanded)}
