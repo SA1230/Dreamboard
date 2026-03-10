@@ -1,4 +1,4 @@
-import { ShopItem, ItemRarity, EquipmentSlot, VisibleSlot } from "./types";
+import { ShopItem, ItemRarity, EquipmentSlot, VisibleSlot, ItemSet } from "./types";
 
 /** Color scheme per rarity tier — warm earth tones matching the app palette */
 export const RARITY_COLORS: Record<ItemRarity, { text: string; background: string; border: string }> = {
@@ -21,12 +21,39 @@ export const VISIBLE_SLOTS: { slot: VisibleSlot; label: string }[] = [
   { slot: "secondary", label: "Secondary" },
 ];
 
+/** Display labels for secondary stats */
+export const SECONDARY_STAT_LABELS: Record<string, { label: string; suffix?: string }> = {
+  ac: { label: "AC" },
+  hp: { label: "HP" },
+  mana: { label: "Mana" },
+  attack: { label: "Attack" },
+  haste: { label: "Haste", suffix: "%" },
+  hpRegen: { label: "HP Regen" },
+  manaRegen: { label: "Mana Regen" },
+  spellDmg: { label: "Spell Dmg" },
+  healAmt: { label: "Heal Amt" },
+  damageShield: { label: "Dmg Shield" },
+  shielding: { label: "Shielding", suffix: "%" },
+  avoidance: { label: "Avoidance", suffix: "%" },
+  accuracy: { label: "Accuracy", suffix: "%" },
+};
+
+/** Display labels for resistance types */
+export const RESIST_LABELS: Record<string, { label: string; color: string }> = {
+  substance: { label: "SbR", color: "#C45C3E" },
+  screentime: { label: "ScR", color: "#5B7AA5" },
+  junkfood: { label: "JfR", color: "#C9943E" },
+  badsleep: { label: "BsR", color: "#8B6BA5" },
+};
+
 /**
- * Starter item catalog — placeholder items for Phase 1.
- * svgAssetKey maps to the registry in itemSvgs.ts.
- * thumbnailSrc will use placeholder colors until real art is generated.
+ * Item catalog — EQ-style items with diverse stat bundles.
+ * Common items: 1-2 stats, simple. Higher rarity = more stats + effects.
+ * All secondary stats and resistances are display-only in v1 — they become
+ * mechanically active when the RPG combat system ships.
  */
 export const ITEM_CATALOG: ShopItem[] = [
+  // === HEAD SLOT ===
   {
     id: "leather-cap",
     name: "Leather Cap",
@@ -35,6 +62,9 @@ export const ITEM_CATALOG: ShopItem[] = [
     rarity: "common",
     cost: 3,
     svgAssetKey: "leather-cap",
+    weight: 0.5,
+    material: "Leather",
+    secondaryStats: { ac: 1, hp: 5 },
   },
   {
     id: "iron-helm",
@@ -45,7 +75,16 @@ export const ITEM_CATALOG: ShopItem[] = [
     cost: 8,
     levelRequirement: 5,
     svgAssetKey: "iron-helm",
+    weight: 2.0,
+    material: "Iron",
+    statModifiers: [
+      { stat: "discipline", flatBonus: 1 },
+    ],
+    secondaryStats: { ac: 3, hp: 10 },
+    resistances: { screentime: 5 },
   },
+
+  // === CHEST SLOT ===
   {
     id: "cloth-tunic",
     name: "Cloth Tunic",
@@ -54,6 +93,9 @@ export const ITEM_CATALOG: ShopItem[] = [
     rarity: "common",
     cost: 3,
     svgAssetKey: "cloth-tunic",
+    weight: 0.3,
+    material: "Cloth",
+    secondaryStats: { ac: 1, hp: 5 },
   },
   {
     id: "chain-mail",
@@ -64,7 +106,17 @@ export const ITEM_CATALOG: ShopItem[] = [
     cost: 15,
     levelRequirement: 10,
     svgAssetKey: "chain-mail",
+    weight: 4.0,
+    material: "Steel",
+    statModifiers: [
+      { stat: "strength", flatBonus: 1 },
+      { stat: "vitality", flatBonus: 1 },
+    ],
+    secondaryStats: { ac: 8, hp: 20, damageShield: 1 },
+    resistances: { substance: 5, junkfood: 5 },
   },
+
+  // === PRIMARY WEAPON ===
   {
     id: "wooden-sword",
     name: "Wooden Sword",
@@ -73,6 +125,10 @@ export const ITEM_CATALOG: ShopItem[] = [
     rarity: "common",
     cost: 2,
     svgAssetKey: "wooden-sword",
+    weight: 1.0,
+    material: "Wood",
+    weaponStats: { damage: 2, delay: 30, weaponType: "1HS" },
+    secondaryStats: { attack: 1 },
   },
   {
     id: "crystal-staff",
@@ -83,7 +139,25 @@ export const ITEM_CATALOG: ShopItem[] = [
     cost: 25,
     levelRequirement: 15,
     svgAssetKey: "crystal-staff",
+    weight: 3.5,
+    material: "Crystal",
+    statModifiers: [
+      { stat: "wisdom", flatBonus: 2 },
+      { stat: "craft", flatBonus: 1 },
+    ],
+    weaponStats: { damage: 6, delay: 38, weaponType: "Staff" },
+    secondaryStats: { mana: 15, spellDmg: 3, attack: 3 },
+    focusEffect: {
+      name: "Arcane Clarity",
+      description: "Enhances mental focus and insight.",
+      tier: 1,
+      modifiers: [
+        { stat: "wisdom", flatBonus: 1 },
+      ],
+    },
   },
+
+  // === SECONDARY SLOT ===
   {
     id: "buckler-shield",
     name: "Buckler Shield",
@@ -92,7 +166,12 @@ export const ITEM_CATALOG: ShopItem[] = [
     rarity: "common",
     cost: 3,
     svgAssetKey: "buckler-shield",
+    weight: 1.5,
+    material: "Wood",
+    secondaryStats: { ac: 2, hp: 5 },
   },
+
+  // === FEET SLOT ===
   {
     id: "wanderer-boots",
     name: "Wanderer's Boots",
@@ -101,7 +180,15 @@ export const ITEM_CATALOG: ShopItem[] = [
     rarity: "uncommon",
     cost: 5,
     svgAssetKey: "wanderer-boots",
+    weight: 1.0,
+    material: "Leather",
+    statModifiers: [
+      { stat: "vitality", flatBonus: 1 },
+    ],
+    secondaryStats: { ac: 2, hp: 5, haste: 1 },
   },
+
+  // === LEGS SLOT ===
   {
     id: "cloth-pants",
     name: "Cloth Pants",
@@ -110,6 +197,9 @@ export const ITEM_CATALOG: ShopItem[] = [
     rarity: "common",
     cost: 3,
     svgAssetKey: "cloth-pants",
+    weight: 0.3,
+    material: "Cloth",
+    secondaryStats: { ac: 1, hp: 5 },
   },
   {
     id: "plate-greaves",
@@ -120,7 +210,16 @@ export const ITEM_CATALOG: ShopItem[] = [
     cost: 12,
     levelRequirement: 8,
     svgAssetKey: "plate-greaves",
+    weight: 3.5,
+    material: "Steel",
+    statModifiers: [
+      { stat: "strength", flatBonus: 2 },
+    ],
+    secondaryStats: { ac: 6, hp: 15 },
+    resistances: { substance: 5 },
   },
+
+  // === HANDS SLOT ===
   {
     id: "leather-gloves",
     name: "Leather Gloves",
@@ -129,6 +228,9 @@ export const ITEM_CATALOG: ShopItem[] = [
     rarity: "common",
     cost: 2,
     svgAssetKey: "leather-gloves",
+    weight: 0.3,
+    material: "Leather",
+    secondaryStats: { ac: 1, attack: 1 },
   },
   {
     id: "iron-gauntlets",
@@ -139,7 +241,16 @@ export const ITEM_CATALOG: ShopItem[] = [
     cost: 6,
     levelRequirement: 5,
     svgAssetKey: "iron-gauntlets",
+    weight: 1.5,
+    material: "Iron",
+    statModifiers: [
+      { stat: "craft", flatBonus: 1 },
+      { stat: "discipline", flatBonus: 1 },
+    ],
+    secondaryStats: { ac: 3, hp: 5, attack: 2 },
   },
+
+  // === ROBE SLOT ===
   {
     id: "wanderer-robe",
     name: "Wanderer's Robe",
@@ -150,7 +261,28 @@ export const ITEM_CATALOG: ShopItem[] = [
     levelRequirement: 12,
     svgAssetKey: "wanderer-robe",
     overridesSlots: ["chest", "legs"],
+    weight: 1.5,
+    material: "Enchanted Silk",
+    statModifiers: [
+      { stat: "spirit", flatBonus: 1 },
+      { stat: "wisdom", flatBonus: 1 },
+    ],
+    secondaryStats: { ac: 5, hp: 15, mana: 10, hpRegen: 1 },
+    resistances: { substance: 5, screentime: 5, junkfood: 5, badsleep: 5 },
+    focusEffect: {
+      name: "Wanderer's Resolve",
+      description: "Strengthens spiritual endurance on long journeys.",
+      tier: 1,
+      modifiers: [
+        { stat: "spirit", flatBonus: 1 },
+      ],
+    },
   },
+];
+
+/** Item sets — wearing multiple pieces grants escalating bonuses */
+export const ITEM_SETS: ItemSet[] = [
+  // No sets in v1 — sets come with catalog expansion in follow-up PRs
 ];
 
 export function getItemById(id: string): ShopItem | undefined {
@@ -165,4 +297,17 @@ export function getAffordableItems(balance: number, level: number): ShopItem[] {
   return ITEM_CATALOG.filter(
     (item) => item.cost <= balance && (item.levelRequirement ?? 0) <= level
   );
+}
+
+/** Get all item sets */
+export function getItemSets(): ItemSet[] {
+  return ITEM_SETS;
+}
+
+/** Check which sets the player has pieces of, and how many */
+export function getActiveSetBonuses(equippedItemIds: string[]): { set: ItemSet; activeCount: number }[] {
+  return ITEM_SETS.map((set) => {
+    const activeCount = set.itemIds.filter((id) => equippedItemIds.includes(id)).length;
+    return { set, activeCount };
+  }).filter(({ activeCount }) => activeCount > 0);
 }

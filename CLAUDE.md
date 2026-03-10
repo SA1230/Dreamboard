@@ -195,7 +195,13 @@ src/types/
 - **HiddenSlot** — inventory-only slots (rings, ears, neck, shoulders, back, bracers, ranged) — no visual on character, for future stat items
 - **EquipmentSlot** — `VisibleSlot | HiddenSlot`
 - **ItemRarity** — `"common" | "uncommon" | "rare" | "epic" | "legendary"`
-- **ShopItem** — `{ id, name, description, slot, rarity, cost, levelRequirement?, svgAssetKey?, overridesSlots? }` — item definition. `overridesSlots` lets robes hide chest+legs visuals
+- **ItemStatModifier** — `{ stat: StatKey, flatBonus: number }` — flat XP bonus for a stat (e.g. +1 Wisdom). Used in item `statModifiers` and `focusEffect.modifiers`
+- **SecondaryStats** — `{ ac?, hp?, mana?, attack?, haste?, hpRegen?, manaRegen?, spellDmg?, healAmt?, damageShield?, shielding?, avoidance?, accuracy? }` — EQ-style secondary stats, all numeric. Display-only now; mechanically active when RPG combat ships
+- **ItemResistances** — `{ substance?, screentime?, junkfood?, badsleep? }` — damage type resistance values
+- **WeaponStats** — `{ damage, delay, weaponType?, proc? }` — weapon damage/delay (primary + secondary slots only)
+- **FocusEffect** — `{ name, description, tier?, modifiers: ItemStatModifier[] }` — named passive bonus on epic+ items. Modifiers stack with primary stat modifiers
+- **EquipmentBonuses** — `{ statModifiers, secondaryStats, resistances }` — aggregated bonuses from all equipped items. `statModifiers` maps `StatKey` → `{ flatBonus }`. Computed by `getEquippedBonuses()`
+- **ShopItem** — `{ id, name, description, slot, rarity, cost, levelRequirement?, svgAssetKey?, overridesSlots?, statModifiers?, secondaryStats?, resistances?, weaponStats?, weight?, material?, focusEffect? }` — item definition with EQ-style stat bundles. `overridesSlots` lets robes hide chest+legs visuals. All stat fields are optional (common items may have none)
 - **PlayerInventory** — `{ ownedItemIds: string[], equippedItems: Partial<Record<EquipmentSlot, string>> }` — owned items + slot-to-itemId mapping
 - **GameData** — the root object stored in localStorage: `{ stats, activities, customDefinitions?, healthyHabits?, enabledHabits?, dailyDamage?, enabledDamage?, pointsWallet?, mascotOverrides?, feedEvents?, inventory?, prizes?, activeChallenge?, pendingChainSteps? }`
   - `healthyHabits` maps each `HabitKey` to an array of `"YYYY-MM-DD"` date strings (days the habit was completed)
@@ -225,7 +231,7 @@ src/types/
 - **Daily Damage:** Mirrors healthy habits but tracks negative behaviors. Same date-string storage pattern. Same retrospective-only pattern on homepage via `YesterdayReview`. Each habit completed = +1 Power Point, each damage marked = -1 Power Point
 - **YesterdayReview panel:** Compact checklist at the top of the homepage — emoji + label checkboxes for yesterday's habits and damage, with a PP summary row. Uses `getYesterdayString()` computed once at render time (handles midnight edge case). Toggles trigger a brief PP toast animation (+1 PP / -1 PP) inline next to the balance
 - **Power Points (AA System):** Inspired by EverQuest's Alternate Advancement. `lifetimeEarned` is always derived from source data (total habit completions), never stored incrementally. `lifetimeSpent` is persisted. Balance is calculated day-by-day chronologically (habits minus damage per day, floored at 0 each day — no debt carries forward), then subtracts `lifetimeSpent`. Spent via the Power-Up Store (`/shop`)
-- **Equipment system (EQ-inspired):** Visible slots (head, chest, legs, robe, hands, feet, primary, secondary) render as SVG overlays on Skipper. Hidden slots (rings, ears, neck, etc.) are inventory-only for future stat items. Robes use `overridesSlots` to visually hide chest+legs when equipped
+- **Equipment system (EQ-inspired):** Visible slots (head, chest, legs, robe, hands, feet, primary, secondary) render as SVG overlays on Skipper. Hidden slots (rings, ears, neck, etc.) are inventory-only for future stat items. Robes use `overridesSlots` to visually hide chest+legs when equipped. Items have EQ-style stat bundles: primary stat modifiers (flat XP bonuses), secondary stats (AC, HP, Mana — display-only until RPG combat ships), resistances (per damage type), weapon stats (DMG/DLY), and focus effects (named passive bonuses). `getEquippedBonuses()` aggregates all equipped item stats; `addXP()` applies flat bonuses automatically. All stat modifiers are flat numbers — no percentage bonuses on primary stats
 - **SkipperCharacter component:** Inline SVG paper-doll that renders Skipper with layered equipment. Items are `<g>` groups from `itemSvgs.ts` inserted at z-order positions (feet → arms → weapons → body → armor → head → face). Uses dangerouslySetInnerHTML for item SVGs (safe — content is from our own registry). Rarity glow filters in `<defs>`: uncommon (brightness boost), rare (blue glow), epic (purple glow), legendary (animated golden shimmer via CSS keyframe). Power aura radial gradient behind Skipper when 3+ epic/legendary items equipped
 - **Dev tools (development only):** Dev auth bypass via `CredentialsProvider` in `auth.ts` (skip Google OAuth). Dev login button on landing page. Preview mode on shop page — try on any item without owning it, with "Equip Best"/"Clear All" quick actions. All gated by `process.env.NODE_ENV === "development"`, invisible in production
 - **`LevelDisplay` component** now uses `SkipperCharacter` instead of `<img>`. Lives in `src/components/LevelDisplay.tsx`. Accepts `equippedItems` prop. Shows Skipper inside SVG progress ring with level badge and rank title. Parallax tilt + shatter animation on level-up
@@ -267,10 +273,15 @@ src/types/
 
 - `RARITY_COLORS: Record<ItemRarity, { text, background, border }>` — color scheme per rarity tier
 - `VISIBLE_SLOTS: { slot, label }[]` — all visible slot names for shop UI tabs
+- `SECONDARY_STAT_LABELS: Record<string, { label, suffix? }>` — display labels for secondary stats (AC, HP, Mana, Haste%, etc.)
+- `RESIST_LABELS: Record<string, { label, color }>` — display labels + colors for resistance types (Substance, Screentime, Junkfood, Badsleep)
 - `ITEM_CATALOG: ShopItem[]` — full item catalog (13 items across all 8 visible slots)
+- `ITEM_SETS: ItemSet[]` — item set definitions (empty in v1, populated in follow-up PRs)
 - `getItemById(id)` — lookup a single item by ID
 - `getItemsBySlot(slot)` — filter items by equipment slot
 - `getAffordableItems(balance, level)` — items the player can buy right now
+- `getItemSets()` — returns all item set definitions
+- `getActiveSetBonuses(equippedItemIds)` — returns which sets the player has pieces of, with active counts
 
 ## Key exports in `visionColors.ts`
 
@@ -325,6 +336,9 @@ src/types/
 - `togglePinVisionCard(data, cardId)` — toggle pinned state, returns GameData or null
 - `saveBoardReading(data, text)` — stores the Oracle's latest board reading
 - `getLastBoardReading(data)` — returns most recent BoardReading or null
+- `EquipmentBonuses` (type) — `{ statModifiers, secondaryStats, resistances }` — aggregated bonuses from all equipped items
+- `getEquippedBonuses(data)` — aggregates flat stat bonuses, secondary stats, and resistances from all equipped items (includes focus effect modifiers)
+- `applyEquipmentBonus(baseAmount, statKey, bonuses)` — applies flat bonus to XP gain, floored at base amount (never reduces XP)
 
 ## Visual Design System
 

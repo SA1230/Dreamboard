@@ -1,4 +1,4 @@
-import { GameData, StatKey, HabitKey, DamageKey, Activity, StatProgress, CustomStatOverride, FeedEvent, PlayerInventory, EquipmentSlot, Prize, Challenge, ChainStep, VisionCard, BoardReading } from "./types";
+import { GameData, StatKey, HabitKey, DamageKey, Activity, StatProgress, CustomStatOverride, FeedEvent, PlayerInventory, EquipmentSlot, Prize, Challenge, ChainStep, VisionCard, BoardReading, SecondaryStats, ItemResistances } from "./types";
 import { getItemById } from "./items";
 import { STAT_KEYS, STAT_DEFINITIONS, StatDefinition, COLOR_PRESETS } from "./stats";
 import { getRankTitle } from "./ranks";
@@ -131,9 +131,13 @@ export function addXP(
   amount: number = 1,
   verdictMessage?: string
 ): { newData: GameData; leveledUp: boolean; previousLevel: number } {
+  // Apply equipment bonuses: flat + percent from equipped items
+  const equipBonuses = getEquippedBonuses(data);
+  const boostedAmount = applyEquipmentBonus(amount, statKey, equipBonuses);
+
   const previousLevel = data.stats[statKey].level;
   const stat = { ...data.stats[statKey] };
-  stat.xp += amount;
+  stat.xp += boostedAmount;
 
   let leveledUp = false;
   // Loop to handle multi-level gains from large XP awards
@@ -151,7 +155,7 @@ export function addXP(
     id: crypto.randomUUID(),
     stat: statKey,
     note,
-    amount,
+    amount: boostedAmount,
     timestamp: now,
     ...(verdictMessage ? { verdictMessage } : {}),
   };
@@ -169,7 +173,7 @@ export function addXP(
     timestamp: now,
     stat: statKey,
     note,
-    amount,
+    amount: boostedAmount,
     ...(verdictMessage ? { verdictMessage } : {}),
   });
 
@@ -912,6 +916,87 @@ export function unequipSlot(data: GameData, slot: EquipmentSlot): GameData {
   };
   saveGameData(newData);
   return newData;
+}
+
+// --- Equipment Bonus Engine ---
+
+/** Aggregated bonuses from all equipped items */
+export interface EquipmentBonuses {
+  /** Flat XP bonuses per stat (from statModifiers + focusEffect modifiers) */
+  statModifiers: Partial<Record<StatKey, { flatBonus: number }>>;
+  /** Totaled secondary stats (AC, HP, Mana, etc.) */
+  secondaryStats: SecondaryStats;
+  /** Totaled resistances */
+  resistances: ItemResistances;
+}
+
+/** Aggregate all stat bonuses from currently equipped items into a single bonus object. */
+export function getEquippedBonuses(data: GameData): EquipmentBonuses {
+  const inventory = getInventory(data);
+  const bonuses: EquipmentBonuses = {
+    statModifiers: {},
+    secondaryStats: {},
+    resistances: {},
+  };
+
+  for (const itemId of Object.values(inventory.equippedItems)) {
+    if (!itemId) continue;
+    const item = getItemById(itemId);
+    if (!item) continue;
+
+    // Aggregate primary stat modifiers
+    if (item.statModifiers) {
+      for (const mod of item.statModifiers) {
+        if (!bonuses.statModifiers[mod.stat]) {
+          bonuses.statModifiers[mod.stat] = { flatBonus: 0 };
+        }
+        bonuses.statModifiers[mod.stat]!.flatBonus += mod.flatBonus;
+      }
+    }
+
+    // Focus effect modifiers stack with primary stat modifiers
+    if (item.focusEffect) {
+      for (const mod of item.focusEffect.modifiers) {
+        if (!bonuses.statModifiers[mod.stat]) {
+          bonuses.statModifiers[mod.stat] = { flatBonus: 0 };
+        }
+        bonuses.statModifiers[mod.stat]!.flatBonus += mod.flatBonus;
+      }
+    }
+
+    // Aggregate secondary stats
+    if (item.secondaryStats) {
+      for (const [key, value] of Object.entries(item.secondaryStats)) {
+        if (value !== undefined) {
+          (bonuses.secondaryStats as Record<string, number>)[key] =
+            ((bonuses.secondaryStats as Record<string, number>)[key] ?? 0) + value;
+        }
+      }
+    }
+
+    // Aggregate resistances
+    if (item.resistances) {
+      for (const [key, value] of Object.entries(item.resistances)) {
+        if (value !== undefined) {
+          (bonuses.resistances as Record<string, number>)[key] =
+            ((bonuses.resistances as Record<string, number>)[key] ?? 0) + value;
+        }
+      }
+    }
+  }
+
+  return bonuses;
+}
+
+/** Apply equipment bonuses to a base XP amount for a specific stat.
+ *  Returns the boosted amount (always at least the base amount — equipment never reduces XP). */
+export function applyEquipmentBonus(baseAmount: number, statKey: StatKey, bonuses: EquipmentBonuses): number {
+  const statBonus = bonuses.statModifiers[statKey];
+  if (!statBonus) return baseAmount;
+
+  const boosted = baseAmount + statBonus.flatBonus;
+  // Ensure equipment never reduces XP below the base amount
+  return Math.max(baseAmount, boosted);
 }
 
 // --- Prize Track ---

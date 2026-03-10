@@ -54,6 +54,117 @@ export type EquipmentSlot = VisibleSlot | HiddenSlot;
 
 export type ItemRarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
 
+/** A stat modifier on an item — flat XP bonus or percentage XP multiplier */
+export interface ItemStatModifier {
+  stat: StatKey;
+  /** Flat bonus XP added to every gain in this stat (e.g. +1 means every Wisdom gain gets 1 extra XP) */
+  flatBonus: number;
+}
+
+/** Secondary stats on items (EQ-style AC, HP, Mana, etc.) — display-only now, mechanically active in future RPG system */
+export interface SecondaryStats {
+  /** Armor Class — reduces PP damage penalty (future: real AC in combat) */
+  ac?: number;
+  /** Hit Points — display-only now, becomes combat health pool in RPG system */
+  hp?: number;
+  /** Mana — display-only now, becomes ability resource in RPG system */
+  mana?: number;
+  /** Attack — flat bonus XP on activities */
+  attack?: number;
+  /** Haste % — proc chance for bonus XP on any activity (future: turn speed in combat) */
+  haste?: number;
+  /** HP Regen — passive PP earned per day (future: combat HP regen per tick) */
+  hpRegen?: number;
+  /** Mana Regen — clicky cooldown reduction (future: combat mana regen per tick) */
+  manaRegen?: number;
+  /** Spell Damage — bonus to mental stat XP (future: spell damage in combat) */
+  spellDmg?: number;
+  /** Heal Amount — streak protection (future: heal power in combat) */
+  healAmt?: number;
+  /** Damage Shield — PP gain when damage is marked (future: reflect damage in combat) */
+  damageShield?: number;
+  /** Shielding % — percentage reduction on damage PP penalty */
+  shielding?: number;
+  /** Avoidance — % chance to ignore a damage mark's PP penalty */
+  avoidance?: number;
+  /** Accuracy — % chance for +1 bonus XP on any activity */
+  accuracy?: number;
+}
+
+/** Resistance to damage types — reduces PP loss now, reduces combat damage in future RPG system */
+export interface ItemResistances {
+  substance?: number;
+  screentime?: number;
+  junkfood?: number;
+  badsleep?: number;
+}
+
+/** Shared effect payload used by procs, clickies, and worn effects */
+export type ItemEffectPayload =
+  | { type: "xp_multiplier"; multiplier: number; durationMinutes: number }
+  | { type: "grant_pp"; amount: number }
+  | { type: "bonus_xp"; stat: StatKey; amount: number }
+  | { type: "streak_shield"; durationDays: number }
+  | { type: "resist_boost"; resist: DamageKey; amount: number; durationHours: number }
+  | { type: "haste_burst"; hasteBonus: number; durationMinutes: number };
+
+/** Proc effect — random chance trigger on weapon hit / activity log */
+export interface ProcEffect {
+  name: string;
+  description: string;
+  /** Chance to trigger (0-100 percentage) */
+  chance: number;
+  effect: ItemEffectPayload;
+}
+
+/** Weapon-specific stats (EQ DMG/DLY). Only relevant for primary/secondary slot items */
+export interface WeaponStats {
+  /** DMG — primary weapon power (future: combat damage per hit) */
+  damage: number;
+  /** DLY — attack speed, lower is faster (future: combat attack delay) */
+  delay: number;
+  /** Weapon type classification */
+  weaponType?: "1HS" | "2HS" | "1HB" | "2HB" | "Piercing" | "Staff" | "H2H";
+  /** Random trigger on activity log (future: procs during combat rounds) */
+  proc?: ProcEffect;
+}
+
+/** Named passive bonus on an item (like EQ's "Improved Healing III") */
+export interface FocusEffect {
+  name: string;
+  description: string;
+  /** Tier for progression (I=1, II=2, III=3, etc.) */
+  tier?: number;
+  modifiers: ItemStatModifier[];
+}
+
+/** Activated ability with cooldown ("right-clicky" in EQ terms) */
+export interface ItemAbility {
+  name: string;
+  description: string;
+  /** Cooldown in hours between activations */
+  cooldownHours: number;
+  effect: ItemEffectPayload;
+}
+
+/** Set bonus at a specific piece count threshold */
+export interface ItemSetBonus {
+  /** Number of pieces required */
+  count: number;
+  /** Display label (e.g. "2/4") */
+  label: string;
+  modifiers?: ItemStatModifier[];
+  secondaryStats?: Partial<SecondaryStats>;
+}
+
+/** Item set definition — wearing multiple pieces grants escalating bonuses */
+export interface ItemSet {
+  id: string;
+  name: string;
+  itemIds: string[];
+  bonuses: ItemSetBonus[];
+}
+
 export interface ShopItem {
   id: string;
   name: string;
@@ -66,11 +177,49 @@ export interface ShopItem {
   svgAssetKey?: string;
   /** Slots this item visually overrides (e.g. robe overrides chest+legs) */
   overridesSlots?: VisibleSlot[];
+
+  // --- EQ-style stats ---
+
+  /** Primary stat modifiers — flat XP bonuses and/or percentage multipliers */
+  statModifiers?: ItemStatModifier[];
+  /** Secondary stats (AC, HP, Mana, Haste, etc.) */
+  secondaryStats?: SecondaryStats;
+  /** Resistance to damage types */
+  resistances?: ItemResistances;
+  /** Weapon stats — damage/delay/type/proc (primary + secondary slots only) */
+  weaponStats?: WeaponStats;
+
+  // --- Item properties ---
+
+  /** Item weight (flavor now, encumbrance in future) */
+  weight?: number;
+  /** Material composition (e.g. "Leather", "Iron", "Crystal", "Dragonscale") */
+  material?: string;
+  /** Recommended level (softer gate than levelRequirement — shows warning but doesn't prevent equip) */
+  recommendedLevel?: number;
+
+  // --- Effects ---
+
+  /** Named passive bonus (e.g. "Improved Physical Training III") */
+  focusEffect?: FocusEffect;
+  /** Activated ability with cooldown */
+  ability?: ItemAbility;
+
+  // --- Set & future ---
+
+  /** Item set this belongs to (matches ItemSet.id) */
+  setId?: string;
+  /** Number of augmentation sockets (future) */
+  augSlots?: number;
+  /** Whether this item levels up with use (future) */
+  evolving?: boolean;
 }
 
 export interface PlayerInventory {
   ownedItemIds: string[];
   equippedItems: Partial<Record<EquipmentSlot, string>>;
+  /** Tracks when each clicky ability was last activated — keyed by item ID, value is ISO timestamp */
+  abilityCooldowns?: Record<string, string>;
 }
 
 // --- Challenges (Judge-issued) ---
