@@ -58,7 +58,7 @@ The shared state file lives at `~/.claude/projects/-Users-shiroy-Dreamboard-clon
 - **AI Companion:** Anthropic Claude Haiku 4.5 (fallback: OpenAI GPT-4o-mini) via `/api/companion` route — whimsical chat with Skipper, no XP or evaluation. 10-message daily cap
 - **AI Image Gen:** OpenAI DALL-E 3 — generates vision board images from Oracle prompts. Requires `OPENAI_API_KEY` in `.env.local`
 - **Charts:** None — we build visualizations with plain CSS/SVG (no recharts, no d3)
-- **Animations:** 8 custom keyframe animations in `globals.css` (fadeIn, modalSlideUp, xpPop, levelUpGlow, levelUpText, particle) + AutoAnimate for list transitions + canvas-confetti for level-up celebrations
+- **Animations:** 9 custom keyframe animations in `globals.css` (fadeIn, modalSlideUp, xpPop, levelUpGlow, levelUpText, particle, radarReveal) + AutoAnimate for list transitions + canvas-confetti for level-up celebrations
 - **Sound:** Native HTML5 Audio API via `src/lib/sound.ts` — 4 royalty-free MP3s in `public/sounds/`. Off by default, opt-in via Settings. No external sound library
 - **Error Tracking:** Sentry (`@sentry/nextjs@10.42.0`) — client + server + edge error capture, session replay (10% sessions, 100% on error), performance tracing (100% dev, 10% prod). Org: `shiroy`, project: `dreamboard`. Source maps uploaded via `SENTRY_AUTH_TOKEN` in CI/Vercel. Vercel + GitHub integrations connected
 - **Performance:** React Compiler (`babel-plugin-react-compiler`) enabled via `next.config.ts` experimental flag — automatic memoization at build time
@@ -76,7 +76,7 @@ sentry.server.config.ts      # Sentry server SDK init — performance tracing
 sentry.edge.config.ts        # Sentry edge runtime SDK init
 src/
 ├── app/
-│   ├── page.tsx            # Homepage — YesterdayReview, Judge CTA, Skipper companion CTA, level display, stat cards, monthly XP, activity log
+│   ├── page.tsx            # Homepage — YesterdayReview, Judge CTA, Skipper companion CTA, level display, radar chart, stat cards, monthly XP, activity log
 │   ├── layout.tsx          # Root layout with Nunito font + global styles
 │   ├── globals.css         # Tailwind base + 6 custom keyframe animations + parchment grain texture overlay
 │   ├── api/judge/route.ts  # POST endpoint — sends activity to AI judge, returns XP verdict
@@ -101,6 +101,7 @@ src/
 │   └── vision/             # Vision Board — cozy mood/inspiration board with AI Oracle that weaves dreams into vivid visions
 ├── instrumentation.ts      # Next.js 15 instrumentation hook — loads Sentry server/edge configs, captures request errors
 ├── components/
+│   ├── StatRadarChart.tsx   # Pure SVG octagonal radar chart — 8-axis build shape with gold gradient fill, glow, stat-colored dots, dynamic scale, radarReveal animation
 │   ├── StatCard.tsx         # One card per stat (icon fill effect, level, XP bar, streak flame, dormant dimming) — read-only, no + button
 │   ├── MonthlyXPSummary.tsx # Monthly XP total with sparkline bar chart + trend vs last month
 │   ├── JudgeModal.tsx       # Conversational AI judge — multi-turn chat, awards variable XP (1-10 per stat)
@@ -403,7 +404,7 @@ This section exists because design changes are the easiest to mess up. Follow th
 - Maintain the warm, approachable, earth-toned aesthetic throughout
 - Use rounded corners on cards and buttons (existing Tailwind `rounded-xl` / `rounded-2xl` patterns)
 - Use colored background tints (not borders) to associate cards with their stat category
-- Keep animations subtle and fast — the existing 6 keyframe animations in `globals.css` set the standard
+- Keep animations subtle and fast — the existing 9 keyframe animations in `globals.css` set the standard
 - When adding new visual elements, match the weight and style of existing ones
 
 ### Visual Verification (the reflexive loop)

@@ -3,24 +3,20 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { GameData, StatKey } from "@/lib/types";
-import { STAT_KEYS } from "@/lib/stats";
-import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, getStatStreaks, getMonthlyXPTotals, getActivitiesByDay, getHabitsByDay, toggleHabitForDate, toggleDamageForDate, isHabitCompletedForDate, isDamageMarkedForDate, formatRelativeTime, getInventory, getMascotName, checkPrizeUnlocks, checkItemRewardUnlocks, issueChallenge, issueChallengeChain, completeChallenge, dismissChallenge } from "@/lib/storage";
+import { loadGameData, addXP, getOverallLevel, getTotalLifetimeXP, exportGameData, getEffectiveDefinitions, toggleHabitForDate, toggleDamageForDate, isHabitCompletedForDate, isDamageMarkedForDate, formatRelativeTime, getInventory, getMascotName, checkPrizeUnlocks, checkItemRewardUnlocks, issueChallenge, issueChallengeChain, completeChallenge, dismissChallenge } from "@/lib/storage";
 import { checkAchievementUnlocks } from "@/lib/achievements";
-import { StatCard } from "@/components/StatCard";
 import { StatIcon } from "@/components/StatIcons";
 import { JudgeModal } from "@/components/JudgeModal";
 import { ActivityLog } from "@/components/ActivityLog";
-import { MonthlyXPSummary } from "@/components/MonthlyXPSummary";
 import { YesterdayReview } from "@/components/YesterdayReview";
 import { LevelDisplay } from "@/components/LevelDisplay";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
-import { Download, Settings, CalendarDays, ShoppingBag, Trophy, Sparkles, Menu, X, Award } from "lucide-react";
+import { Download, Settings, CalendarDays, ShoppingBag, Trophy, Sparkles, Menu, X, Award, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { getRankTitle } from "@/lib/ranks";
 import { RARITY_COLORS } from "@/lib/items";
 import { UserMenu } from "@/components/UserMenu";
 import { CompanionModal } from "@/components/CompanionModal";
-import { StatRadarChart } from "@/components/StatRadarChart";
 import { track } from "@/lib/tracker";
 import { playSound, playSoundWithHaptic } from "@/lib/sound";
 import { STAT_DEFINITIONS } from "@/lib/stats";
@@ -139,7 +135,6 @@ function LandingPage() {
 
 function AuthenticatedHome() {
   const [gameData, setGameData] = useState<GameData | null>(null);
-  const [xpGainedStat, setXpGainedStat] = useState<{ stat: StatKey; amount: number } | null>(null);
   const [isActivityExpanded, setIsActivityExpanded] = useState(true);
   const [showJudge, setShowJudge] = useState(false);
   const [showCompanion, setShowCompanion] = useState(false);
@@ -147,9 +142,6 @@ function AuthenticatedHome() {
 
   // Post-verdict XP toasts
   const [xpToasts, setXpToasts] = useState<{ id: string; statKey: StatKey; amount: number; color: string; iconKey: string; name: string }[]>([]);
-  // Today XP pill pulse after verdict
-  const [todayXPPulsing, setTodayXPPulsing] = useState(false);
-
   // Power Points toggle toast (shown in YesterdayReview PP summary)
   const [ppToast, setPpToast] = useState<{ text: string; color: string } | null>(null);
 
@@ -228,66 +220,6 @@ function AuthenticatedHome() {
     return getEffectiveDefinitions(gameData);
   }, [gameData]);
 
-  // Calculate per-stat streaks
-  const streaks = useMemo(() => {
-    if (!gameData) return null;
-    return getStatStreaks(gameData.activities);
-  }, [gameData]);
-
-  // Calculate monthly XP totals for trend display
-  const monthlyXP = useMemo(() => {
-    if (!gameData) return null;
-    return getMonthlyXPTotals(gameData.activities);
-  }, [gameData]);
-
-  // Determine which stats have at least one activity this month
-  const activeStatsThisMonth = useMemo(() => {
-    if (!gameData) return new Set<StatKey>();
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-    const activeStats = new Set<StatKey>();
-    for (const activity of gameData.activities) {
-      const date = new Date(activity.timestamp);
-      if (date.getFullYear() === currentYear && date.getMonth() === currentMonth) {
-        activeStats.add(activity.stat);
-      }
-    }
-    return activeStats;
-  }, [gameData]);
-
-  // Build an array of daily XP totals for the Today counter
-  const dailyXPForMonth = useMemo(() => {
-    if (!gameData) return [];
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const today = now.getDate();
-    const activitiesByDay = getActivitiesByDay(gameData.activities, year, month);
-
-    // Create an array from day 1 to today, summing all stat XP per day
-    return Array.from({ length: today }, (_, index) => {
-      const day = index + 1;
-      const dayStats = activitiesByDay[day];
-      if (!dayStats) return 0;
-      return Object.values(dayStats).reduce((sum, xp) => sum + (xp ?? 0), 0);
-    });
-  }, [gameData]);
-
-  // Per-day per-stat XP breakdown for the stacked bar chart
-  const activitiesByDayForMonth = useMemo(() => {
-    if (!gameData) return {} as Record<number, Partial<Record<StatKey, number>>>;
-    const now = new Date();
-    return getActivitiesByDay(gameData.activities, now.getFullYear(), now.getMonth());
-  }, [gameData]);
-
-  // Per-day completed habits for the monthly chart icons
-  const habitsByDayForMonth = useMemo(() => {
-    if (!gameData) return {} as Record<number, string[]>;
-    const now = new Date();
-    return getHabitsByDay(gameData, now.getFullYear(), now.getMonth());
-  }, [gameData]);
-
   // Tick every 60 seconds to keep relative timestamps fresh
   const [, setTimeTick] = useState(0);
   useEffect(() => {
@@ -331,12 +263,6 @@ function AuthenticatedHome() {
       for (const award of awards) {
         const { newData, leveledUp } = addXP(currentData, award.stat, summary, award.amount, verdictMessage);
         currentData = newData;
-
-        // Trigger XP animation for the last award's stat
-        if (award === awards[awards.length - 1]) {
-          setXpGainedStat({ stat: award.stat, amount: award.amount });
-          setTimeout(() => setXpGainedStat(null), 900);
-        }
 
         // Handle level-up celebration for the first stat that levels up
         if (leveledUp && !celebrationInfo) {
@@ -426,9 +352,6 @@ function AuthenticatedHome() {
         }, index * 300);
       });
 
-      // Pulse the Today XP pill
-      setTodayXPPulsing(true);
-      setTimeout(() => setTodayXPPulsing(false), 800);
     },
     [gameData, definitions, celebrationInfo]
   );
@@ -465,7 +388,7 @@ function AuthenticatedHome() {
   );
 
   // Show nothing while loading from localStorage (prevents hydration flash)
-  if (!gameData || !definitions || !streaks || !monthlyXP) {
+  if (!gameData || !definitions) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-stone-300 border-t-stone-500 animate-spin" />
@@ -515,6 +438,14 @@ function AuthenticatedHome() {
         </div>
         {navOpen && (
           <nav className="mt-2 pt-2 border-t border-stone-200/50 flex flex-col gap-1">
+            <Link
+              href="/stats"
+              onClick={() => setNavOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-600 hover:bg-stone-100 transition-colors"
+            >
+              <BarChart3 size={18} className="text-stone-400" />
+              <span className="text-sm font-medium">Stats</span>
+            </Link>
             <Link
               href="/calendar"
               onClick={() => setNavOpen(false)}
@@ -825,49 +756,6 @@ function AuthenticatedHome() {
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Stat Radar Chart — visual build shape (above detail cards) */}
-      {!isFirstRun && (
-        <div className="mb-6 animate-fadeIn">
-          <StatRadarChart stats={gameData.stats} definitions={definitions} />
-        </div>
-      )}
-
-      {/* Stat Card Grid — active stats first, then inactive */}
-      <div className="grid grid-cols-2 gap-2.5 mb-8">
-        {[...STAT_KEYS].sort((a, b) => {
-          const aActive = activeStatsThisMonth.has(a) ? 0 : 1;
-          const bActive = activeStatsThisMonth.has(b) ? 0 : 1;
-          return aActive - bActive;
-        }).map((key) => (
-          <StatCard
-            key={key}
-            definition={definitions[key]}
-            progress={gameData.stats[key]}
-            leveledUp={false}
-            justGainedXP={xpGainedStat?.stat === key ? xpGainedStat.amount : false}
-            streak={streaks[key]}
-            isActiveThisMonth={activeStatsThisMonth.has(key)}
-            previousLevel={undefined}
-            isFirstRun={isFirstRun}
-          />
-        ))}
-      </div>
-
-      {/* Monthly XP Summary — below stat cards for returning users */}
-      {!isFirstRun && (
-        <div className="mb-8 animate-fadeIn">
-          <MonthlyXPSummary
-            currentMonthXP={monthlyXP.currentMonthXP}
-            lastMonthXP={monthlyXP.lastMonthXP}
-            activitiesByDay={activitiesByDayForMonth}
-            habitsByDay={habitsByDayForMonth}
-            statDefinitions={definitions}
-            todayXP={dailyXPForMonth[new Date().getDate() - 1] ?? 0}
-            todayXPPulsing={todayXPPulsing}
-          />
         </div>
       )}
 
