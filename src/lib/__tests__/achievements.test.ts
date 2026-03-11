@@ -263,17 +263,21 @@ describe("checkAchievementUnlocks", () => {
   });
 
   it("unlocks streak-kindled with a 3-day streak ending today", () => {
-    // getStatStreaks counts backwards from today, so we need recent consecutive days
+    // getStatStreaks uses local dates via toISOString().split("T")[0] on a Date
+    // with hours zeroed — we must match that format exactly to avoid timezone drift
     const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+    today.setHours(0, 0, 0, 0);
+    const formatDate = (date: Date) => date.toISOString().split("T")[0];
+
     const dayBefore = new Date(today);
     dayBefore.setDate(dayBefore.getDate() - 2);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
 
     const activities = [
-      makeActivity("strength", dayBefore.toISOString()),
-      makeActivity("strength", yesterday.toISOString()),
-      makeActivity("strength", today.toISOString()),
+      makeActivity("strength", `${formatDate(dayBefore)}T10:00:00.000Z`),
+      makeActivity("strength", `${formatDate(yesterday)}T10:00:00.000Z`),
+      makeActivity("strength", `${formatDate(today)}T10:00:00.000Z`),
     ];
     const result = checkAchievementUnlocks(makeGameData({ activities }));
     expect(result.unlockedAchievements).toContain("streak-kindled");
