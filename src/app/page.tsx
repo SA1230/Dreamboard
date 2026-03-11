@@ -20,6 +20,7 @@ import { getRankTitle } from "@/lib/ranks";
 import { RARITY_COLORS } from "@/lib/items";
 import { UserMenu } from "@/components/UserMenu";
 import { CompanionModal } from "@/components/CompanionModal";
+import { StatRadarChart } from "@/components/StatRadarChart";
 import { track } from "@/lib/tracker";
 import { playSound, playSoundWithHaptic } from "@/lib/sound";
 import { STAT_DEFINITIONS } from "@/lib/stats";
@@ -824,6 +825,13 @@ function AuthenticatedHome() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Stat Radar Chart — visual build shape (above detail cards) */}
+      {!isFirstRun && (
+        <div className="mb-6 animate-fadeIn">
+          <StatRadarChart stats={gameData.stats} definitions={definitions} />
         </div>
       )}
 
