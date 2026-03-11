@@ -76,7 +76,7 @@ sentry.server.config.ts      # Sentry server SDK init — performance tracing
 sentry.edge.config.ts        # Sentry edge runtime SDK init
 src/
 ├── app/
-│   ├── page.tsx            # Homepage — YesterdayReview, Judge CTA, Skipper companion CTA, level display, radar chart, stat cards, monthly XP, activity log
+│   ├── page.tsx            # Homepage — YesterdayReview, Judge CTA, Skipper companion CTA, level display, activity log
 │   ├── layout.tsx          # Root layout with Nunito font + global styles
 │   ├── globals.css         # Tailwind base + 6 custom keyframe animations + parchment grain texture overlay
 │   ├── api/judge/route.ts  # POST endpoint — sends activity to AI judge, returns XP verdict
@@ -94,6 +94,7 @@ src/
 │   ├── calendar/           # Month-at-a-glance view — daily XP totals with habit/damage icons, tap a day to see detail modal
 │   ├── settings/           # Customize stat names, descriptions, colors, icons + enable/disable habits & damage + create custom habits/vices + sound toggle
 │   ├── shop/               # Power-Up Store — buy and equip cosmetic items on Skipper
+│   ├── stats/              # Stats dashboard — LevelDisplay, StatRadarChart, StatCard grid (sorted active-first), MonthlyXPSummary
 │   ├── achievements/       # Achievement gallery — 38 achievements across 6 RPG categories, progress bars, secret achievements
 │   ├── prizes/             # Prize Track — dual-track timeline with system rewards (rank milestones) + user-created IRL prizes
 │   ├── terms/              # Terms of Service — static legal page (company-favorable, binding arbitration, class action waiver)
