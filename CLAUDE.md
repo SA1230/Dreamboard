@@ -14,6 +14,7 @@ The shared state file lives at `~/.claude/projects/-Users-shiroy-Dreamboard-clon
 
 ### Pre-flight (session start)
 
+0. **Sync with remote** — check for uncommitted local changes with `git status --short`. If dirty, stash or ask the user. If clean, run `git pull origin main` to get the latest. Never start work on stale code.
 1. **Read the flight manifest** — check Active Flights for tasks already claimed
 2. **Check open PRs** — run `gh pr list --state open` to see what's in flight
 3. **Check remote branches** — run `git branch -r` to see active work
